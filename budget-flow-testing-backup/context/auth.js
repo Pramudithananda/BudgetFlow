@@ -1,19 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { 
-  initializeAuth,
-  getReactNativePersistence,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut 
-} from 'firebase/auth';
-import { app } from '../firebase/config';
 
-// Initialize auth with persistence
-const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+const AUTH_STORAGE_KEY = 'local_auth_user_v1';
 
 const AuthContext = createContext({});
 
@@ -22,38 +10,39 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user || null);
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+        if (stored) {
+          setUser(JSON.parse(stored));
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const signIn = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error) {
+    // Simple local auth stub: accept any non-empty email/password
+    if (!email || !password) {
+      const error = new Error('Email and password are required');
+      error.code = 'auth/invalid-credentials';
       throw error;
     }
+    const localUser = { email, id: email.toLowerCase() };
+    setUser(localUser);
+    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(localUser));
+    return localUser;
   };
 
   const signUp = async (email, password) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error) {
-      throw error;
-    }
+    // For local mode, sign up behaves the same as sign in
+    return signIn(email, password);
   };
 
   const logOut = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      throw error;
-    }
+    setUser(null);
+    await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
   return (
