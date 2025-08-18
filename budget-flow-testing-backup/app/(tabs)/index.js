@@ -8,7 +8,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
 import ExpenseItem from '../../components/ExpenseItem';
-import { getCategories, getExpenses, getBudgetSummary, listenExpenses, listenCategories } from '../../services/firebaseService';
+import { getCategories, getExpenses, getBudgetSummary, listenExpenses, listenCategories } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function HomeScreen() {

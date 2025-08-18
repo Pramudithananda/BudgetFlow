@@ -5,7 +5,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import BudgetSummary from '../../components/BudgetSummary';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { getBudgetSummary, getExpenses, getCategories, getFunders, listenExpenses, listenCategories, listenFunders } from '../../services/firebaseService';
+import { getBudgetSummary, getExpenses, getCategories, getFunders, listenExpenses, listenCategories, listenFunders } from '../../services/sqliteService';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useTheme } from '../../context/theme';

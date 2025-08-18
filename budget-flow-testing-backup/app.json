@@ -30,13 +30,7 @@
     "extra": {
       "eas": {
         "projectId": "1e896b47-b192-47a8-9916-c5c47e5fd7c7"
-      },
-      "firebaseApiKey": "AIzaSyC_Nuw1MOkNnvJlKtwpbebqV2U-Au2vnW4",
-      "firebaseAuthDomain": "event-app-91310.firebaseapp.com",
-      "firebaseProjectId": "event-app-91310",
-      "firebaseStorageBucket": "event-app-91310.firebasestorage.app",
-      "firebaseMessagingSenderId": "1025959339738",
-      "firebaseAppId": "1:1025959339738:web:f2aafcfc3ed0cd6542a7e3"
+      }
     }
   }
 }

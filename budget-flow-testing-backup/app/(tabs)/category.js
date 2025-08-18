@@ -6,7 +6,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
-import { getCategories, getExpenses, listenCategories, listenExpenses } from '../../services/firebaseService';
+import { getCategories, getExpenses, listenCategories, listenExpenses } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function CategoryScreen() {

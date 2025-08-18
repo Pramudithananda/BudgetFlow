@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { getCategories, getFunders, addExpense } from '../../services/firebaseService';
+import { getCategories, getFunders, addExpense } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function NewExpenseScreen() {

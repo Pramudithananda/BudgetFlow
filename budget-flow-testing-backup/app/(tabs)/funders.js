@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { getFunders, addFunder, updateFunder, deleteFunder } from '../../services/firebaseService';
+import { getFunders, addFunder, updateFunder, deleteFunder } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function FundersScreen() {

@@ -1,6 +1,6 @@
 # BudgetFlow - Budget Management App
 
-A React Native/Expo budget management application with real-time Firebase integration for tracking expenses, categories, and funder management.
+A React Native/Expo budget management application with local SQLite database for tracking expenses, categories, and funder management.
 
 ## Features
 
@@ -8,15 +8,16 @@ A React Native/Expo budget management application with real-time Firebase integr
 - 📁 **Category Management**: Organize expenses by categories
 - 💰 **Expense Management**: Add, edit, and track expenses with status updates
 - 👥 **Funder Management**: Track funding sources and contributors
-- 🔄 **Real-time Sync**: Live updates with Firebase Firestore
+- 🔄 **Real-time Updates**: Live updates with local SQLite database
 - 🌙 **Dark/Light Theme**: Customizable theme support
 - 📱 **Cross-platform**: Works on iOS, Android, and Web
+- 💾 **Local Storage**: All data stored locally using SQLite
 
 ## Tech Stack
 
 - **Frontend**: React Native with Expo
 - **Navigation**: Expo Router
-- **Backend**: Firebase Firestore
+- **Database**: SQLite (expo-sqlite)
 - **State Management**: React Context API
 - **UI Components**: Custom themed components
 - **Icons**: Expo Vector Icons
@@ -26,7 +27,6 @@ A React Native/Expo budget management application with real-time Firebase integr
 - Node.js (v16 or higher)
 - npm or yarn
 - Expo CLI
-- Firebase project setup
 
 ## Installation
 
@@ -40,17 +40,10 @@ A React Native/Expo budget management application with real-time Firebase integr
    npm install
    ```
 
-3. **Configure Firebase**
-   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Enable Firestore Database
-   - Copy your Firebase configuration
-   - Update the Firebase config in `app.json` or use environment variables
-
-4. **Environment Setup (Optional)**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Firebase credentials
-   ```
+3. **Database Setup**
+   - The SQLite database will be automatically created on first app launch
+   - No additional configuration required
+   - All data is stored locally on the device
 
 ## Running the App
 
@@ -80,19 +73,56 @@ budget-flow-testing-backup/
 │   └── (tabs)/           # Main tab navigation
 ├── components/            # Reusable UI components
 ├── context/              # React Context providers
-├── firebase/             # Firebase configuration
-├── services/             # Firebase service functions
+├── services/             # SQLite database service
 ├── assets/               # Images and icons
 └── package.json          # Dependencies and scripts
 ```
 
-## Firebase Collections
+## Database Schema
 
-The app uses the following Firestore collections:
+The app uses SQLite with the following tables:
 
-- **categories**: Budget categories (name, description, color)
-- **expenses**: Individual expenses (amount, categoryId, status, description)
-- **funders**: Funding sources (name, contact, amount)
+### Categories Table
+- `id` (INTEGER PRIMARY KEY)
+- `name` (TEXT NOT NULL)
+- `description` (TEXT)
+- `color` (TEXT)
+- `createdAt` (TEXT)
+- `updatedAt` (TEXT)
+
+### Expenses Table
+- `id` (INTEGER PRIMARY KEY)
+- `amount` (REAL NOT NULL)
+- `description` (TEXT)
+- `categoryId` (INTEGER, FOREIGN KEY)
+- `status` (TEXT DEFAULT 'Outstanding')
+- `funderId` (INTEGER, FOREIGN KEY)
+- `createdAt` (TEXT)
+- `updatedAt` (TEXT)
+
+### Funders Table
+- `id` (INTEGER PRIMARY KEY)
+- `name` (TEXT NOT NULL)
+- `contact` (TEXT)
+- `amount` (REAL DEFAULT 0)
+- `createdAt` (TEXT)
+- `updatedAt` (TEXT)
+
+### Helpers Table
+- `id` (INTEGER PRIMARY KEY)
+- `name` (TEXT NOT NULL)
+- `contact` (TEXT)
+- `role` (TEXT)
+- `createdAt` (TEXT)
+- `updatedAt` (TEXT)
+
+### Budget Summary Table
+- `id` (INTEGER PRIMARY KEY)
+- `totalBudget` (REAL DEFAULT 0)
+- `receivedFund` (REAL DEFAULT 0)
+- `peopleOverFund` (REAL DEFAULT 0)
+- `remainingFund` (REAL DEFAULT 0)
+- `updatedAt` (TEXT)
 
 ## Status Types
 
@@ -101,6 +131,20 @@ Expenses can have the following statuses:
 - **Pending**: In process
 - **Received**: Funds available
 - **Spent**: Funds used
+
+## Data Management
+
+### Local Storage
+- All data is stored locally using SQLite
+- No internet connection required
+- Data persists between app sessions
+- Automatic database initialization on first launch
+
+### Data Export
+The app includes utility functions for:
+- Exporting all data as JSON
+- Clearing the database
+- Database backup and restore
 
 ## Contributing
 
