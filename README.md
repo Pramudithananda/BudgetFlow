@@ -196,9 +196,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/Pramudithananda)
+- GitHub: [@Ranjith Karunarathne](https://github.com/Pramudithananda)
 - Email: ranjithpalugolla@gmail.com
-- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/ranjith-karunarathne-941a01367?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
+- LinkedIn: [RANJITH](https://www.linkedin.com/in/ranjith-karunarathne-941a01367?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
 
 ## 🙏 Acknowledgments
 
