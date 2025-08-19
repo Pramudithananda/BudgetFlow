@@ -9,7 +9,7 @@
 ## 📱 Screenshots
 
 <div align="center">
-  <img src="screenshots/dashboard.png" alt="Dashboard" width="250" style="margin: 10px;">
+  <img src="https://github.com/Pramudithananda/BudgetFlow/blob/cursor/analyze-files-and-convert-to-sqlite-61bb/Screenshot_2025-08-18-13-29-16-802_com.budgetflow.app.jpg" alt="Dashboard" width="250" style="margin: 10px;">
   <img src="screenshots/categories.png" alt="Categories" width="250" style="margin: 10px;">
   <img src="screenshots/budgetflow.png" alt="BudgetFlow Overview" width="250" style="margin: 10px;">
 </div>
