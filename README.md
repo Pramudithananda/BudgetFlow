@@ -180,7 +180,7 @@ We welcome contributions to BudgetFlow! Here's how you can help:
 
 ## 🐛 Bug Reports & Feature Requests
 
-Found a bug or have a feature request? Please create an issue on our [GitHub Issues](https://github.com/yourusername/budgetflow/issues) page.
+Found a bug or have a feature request? Please create an issue on our [GitHub Issues](https://github.com/pramudithananda/budgetflow/issues) page.
 
 **Bug Report Template:**
 - Device/Platform information
