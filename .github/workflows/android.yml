@@ -1,26 +1,70 @@
 name: Android CI
 
+# Workflow trigger කරන events
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: set up JDK 11
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        cache: gradle
 
+    # Java 17 setup කරනවා (Android development සඳහා)
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # Android SDK setup කරනවා
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+
+    # Gradle wrapper permissions set කරනවා
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    - name: Build with Gradle
-      run: ./gradlew build
+
+    # Dependencies cache කරනවා (build time අඩු කරන්න)
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    # Debug APK build කරනවා
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+
+    # Release APK build කරනවා (optional)
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
+
+    # APK files upload කරනවා artifacts ලෙස
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: debug-apk
+        path: app/build/outputs/apk/debug/*.apk
+
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-apk
+        path: app/build/outputs/apk/release/*.apk
+
+    # APK file details show කරනවා
+    - name: Show APK details
+      run: |
+        echo "Debug APK:"
+        ls -la app/build/outputs/apk/debug/
+        echo "Release APK:"
+        ls -la app/build/outputs/apk/release/
