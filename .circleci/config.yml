@@ -1,0 +1,122 @@
+version: 2.1
+
+# CircleCI orbs (pre-built configs)
+orbs:
+  android: circleci/android@2.3.0
+  node: circleci/node@5.1.0
+
+jobs:
+  # React Native Dependencies Install කරන job
+  install-dependencies:
+    executor:
+      name: node/default
+      tag: '18.17'
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - persist_to_workspace:
+          root: .
+          paths:
+            - node_modules
+            - package-lock.json
+
+  # Android Build Job
+  build-android:
+    executor:
+      name: android/android-machine
+      resource-class: large
+      tag: 2023.07.1
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      
+      # Java 17 Setup
+      - run:
+          name: Set Java Version
+          command: |
+            echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> $BASH_ENV
+            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> $BASH_ENV
+            source $BASH_ENV
+      
+      # Android SDK Setup
+      - android/restore-gradle-cache
+      
+      # Node modules restore කරන්න
+      - run:
+          name: Install Node Dependencies
+          command: npm install
+      
+      # Metro bundler start කරන්න
+      - run:
+          name: Start Metro Bundler
+          command: npx react-native start
+          background: true
+      
+      # Gradle permissions
+      - run:
+          name: Make Gradlew Executable
+          command: chmod +x android/gradlew
+      
+      # Clean build
+      - run:
+          name: Clean Project
+          command: cd android && ./gradlew clean
+      
+      # Debug APK Build
+      - run:
+          name: Build Debug APK
+          command: cd android && ./gradlew assembleDebug
+      
+      # Release APK Build (unsigned)
+      - run:
+          name: Build Release APK
+          command: cd android && ./gradlew assembleRelease
+      
+      # APK files copy කරන්න
+      - run:
+          name: Copy APK Files
+          command: |
+            mkdir -p /tmp/apk-files
+            cp android/app/build/outputs/apk/debug/*.apk /tmp/apk-files/ || true
+            cp android/app/build/outputs/apk/release/*.apk /tmp/apk-files/ || true
+            ls -la /tmp/apk-files/
+      
+      # Store APK files as artifacts
+      - store_artifacts:
+          path: /tmp/apk-files
+          destination: apk-files
+      
+      # Save gradle cache
+      - android/save-gradle-cache
+
+  # Test job (optional)
+  run-tests:
+    executor:
+      name: node/default
+      tag: '18.17'
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Run Tests
+          command: npm test -- --watchAll=false
+
+# Workflow define කරන්න
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - install-dependencies
+      - run-tests:
+          requires:
+            - install-dependencies
+      - build-android:
+          requires:
+            - install-dependencies
+          filters:
+            branches:
+              only:
+                - main_budget
