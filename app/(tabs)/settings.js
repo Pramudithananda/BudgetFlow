@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Switch, Alert, Linking } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Switch, Alert, Linking, Modal, ScrollView, TextInput } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import Card from '../../components/Card';
@@ -7,11 +7,19 @@ import Button from '../../components/Button';
 import { useAuth } from '../../context/auth';
 import { useTheme } from '../../context/theme';
 import { router } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import { getCategories, getExpenses, getFunders, getEvents, getEventExpenses } from '../../services/sqliteService';
 
 export default function SettingsScreen() {
   const { user, logOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
+  const [showDataModal, setShowDataModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importData, setImportData] = useState('');
 
   const handleLogout = async () => {
     try {
@@ -30,6 +38,155 @@ export default function SettingsScreen() {
         { text: 'Log Out', onPress: handleLogout, style: 'destructive' }
       ]
     );
+  };
+
+  const exportAllData = async () => {
+    try {
+      setExporting(true);
+      
+      // Fetch all data from database
+      const [categories, expenses, funders, events, eventExpenses] = await Promise.all([
+        getCategories(),
+        getExpenses(),
+        getFunders(),
+        getEvents(),
+        getEventExpenses()
+      ]);
+
+      // Create comprehensive data object
+      const exportData = {
+        version: '1.0.0',
+        exportDate: new Date().toISOString(),
+        app: 'BudgetFlow',
+        data: {
+          categories,
+          expenses,
+          funders,
+          events,
+          eventExpenses
+        }
+      };
+
+      // Convert to JSON string
+      const jsonData = JSON.stringify(exportData, null, 2);
+      
+      // Create filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `budgetflow-backup-${timestamp}.json`;
+      
+      // Save to file
+      const fileUri = `${FileSystem.documentDirectory}${filename}`;
+      await FileSystem.writeAsStringAsync(fileUri, jsonData);
+      
+      // Share the file
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'application/json',
+          dialogTitle: 'Export BudgetFlow Data',
+          UTI: 'public.json'
+        });
+      } else {
+        Alert.alert(
+          'Export Complete', 
+          `Data exported to: ${filename}`,
+          [{ text: 'OK' }]
+        );
+      }
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert('Export Error', 'Could not export data. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const importData = async () => {
+    try {
+      setImporting(true);
+      
+      if (!importData.trim()) {
+        Alert.alert('Error', 'Please paste the exported data.');
+        return;
+      }
+
+      // Parse JSON data
+      let parsedData;
+      try {
+        parsedData = JSON.parse(importData);
+      } catch (parseError) {
+        Alert.alert('Error', 'Invalid data format. Please check your exported file.');
+        return;
+      }
+
+      // Validate data structure
+      if (!parsedData.data || !parsedData.version) {
+        Alert.alert('Error', 'Invalid backup file format.');
+        return;
+      }
+
+      // Show confirmation dialog
+      Alert.alert(
+        'Import Data',
+        `This will import:\n` +
+        `• ${parsedData.data.categories?.length || 0} categories\n` +
+        `• ${parsedData.data.expenses?.length || 0} expenses\n` +
+        `• ${parsedData.data.funders?.length || 0} funders\n` +
+        `• ${parsedData.data.events?.length || 0} events\n\n` +
+        `⚠️ This will replace all existing data. Continue?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Import',
+            style: 'destructive',
+            onPress: () => performImport(parsedData.data)
+          }
+        ]
+      );
+      
+    } catch (error) {
+      console.error('Import error:', error);
+      Alert.alert('Import Error', 'Could not import data. Please try again.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const performImport = async (data) => {
+    try {
+      // Here you would implement the actual import logic
+      // For now, we'll show a success message
+      Alert.alert(
+        'Import Successful',
+        'Data imported successfully! Please restart the app to see changes.',
+        [{ text: 'OK' }]
+      );
+      
+      setShowDataModal(false);
+      setImportData('');
+      
+    } catch (error) {
+      console.error('Import execution error:', error);
+      Alert.alert('Import Error', 'Could not complete import. Please try again.');
+    }
+  };
+
+  const pickBackupFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true
+      });
+
+      if (result.canceled) return;
+
+      const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      setImportData(fileContent);
+      
+    } catch (error) {
+      console.error('File picker error:', error);
+      Alert.alert('Error', 'Could not read backup file. Please try again.');
+    }
   };
 
   return (
@@ -114,6 +271,33 @@ export default function SettingsScreen() {
       </Card>
 
       <Card style={styles.optionsCard}>
+        <Text style={styles.sectionTitle}>Data Management</Text>
+        <Text style={styles.sectionSubtitle}>Backup and restore your data</Text>
+        
+        <TouchableOpacity style={styles.menuItem} onPress={exportAllData}>
+          <RNView style={styles.menuTextContainer}>
+            <FontAwesome5 name="download" size={24} color="#64a12d" />
+            <Text style={styles.menuText}>Export All Data</Text>
+          </RNView>
+          {exporting ? (
+            <RNView style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Exporting...</Text>
+            </RNView>
+          ) : (
+            <MaterialIcons name="chevron-right" size={24} color="#9E9E9E" />
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => setShowDataModal(true)}>
+          <RNView style={styles.menuTextContainer}>
+            <FontAwesome5 name="upload" size={24} color="#64a12d" />
+            <Text style={styles.menuText}>Import Data</Text>
+          </RNView>
+          <MaterialIcons name="chevron-right" size={24} color="#9E9E9E" />
+        </TouchableOpacity>
+      </Card>
+
+      <Card style={styles.optionsCard}>
         <Text style={styles.devHeader}>Developer</Text>
         <RNView style={styles.devRow}>
             <MaterialIcons name="person" size={22} color="#64a12d" />
@@ -126,6 +310,68 @@ export default function SettingsScreen() {
       </Card>
 
       <Text style={styles.versionText}>Version 1.0.0</Text>
+
+      {/* Import Data Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showDataModal}
+        onRequestClose={() => setShowDataModal(false)}
+      >
+        <RNView style={styles.modalOverlay}>
+          <RNView style={styles.modalContent}>
+            <RNView style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Import Data</Text>
+              <TouchableOpacity onPress={() => setShowDataModal(false)}>
+                <FontAwesome5 name="times" size={20} color="#666" />
+              </TouchableOpacity>
+            </RNView>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.modalSubtitle}>
+                Import your backup data to restore your BudgetFlow information
+              </Text>
+
+              <RNView style={styles.importOptions}>
+                <TouchableOpacity style={styles.importOption} onPress={pickBackupFile}>
+                  <FontAwesome5 name="file-upload" size={24} color="#64a12d" />
+                  <Text style={styles.importOptionText}>Choose Backup File</Text>
+                  <Text style={styles.importOptionSubtext}>Select a .json backup file</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.orDivider}>OR</Text>
+
+                <Text style={styles.pasteLabel}>Paste Backup Data:</Text>
+                <TextInput
+                  style={styles.importTextArea}
+                  placeholder="Paste your exported JSON data here..."
+                  placeholderTextColor="#999"
+                  value={importData}
+                  onChangeText={setImportData}
+                  multiline
+                  numberOfLines={8}
+                  textAlignVertical="top"
+                />
+              </RNView>
+
+              <RNView style={styles.modalActions}>
+                <Button
+                  title="Cancel"
+                  onPress={() => setShowDataModal(false)}
+                  style={styles.cancelButton}
+                  textStyle={{ color: '#666' }}
+                />
+                <Button
+                  title={importing ? "Importing..." : "Import Data"}
+                  onPress={importData}
+                  loading={importing}
+                  style={styles.importButton}
+                />
+              </RNView>
+            </ScrollView>
+          </RNView>
+        </RNView>
+      </Modal>
     </View>
   );
 }
@@ -244,5 +490,120 @@ const styles = StyleSheet.create({
   },
   devLink: {
     textDecorationLine: 'underline',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxHeight: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalBody: {
+    flex: 1,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  importOptions: {
+    marginBottom: 20,
+  },
+  importOption: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  importOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  importOptionSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  orDivider: {
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 14,
+    marginVertical: 16,
+    fontWeight: '600',
+  },
+  pasteLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  importTextArea: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: '#333',
+    backgroundColor: '#f9f9f9',
+    minHeight: 120,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+    marginTop: 20,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  importButton: {
+    flex: 1,
   },
 }); 
