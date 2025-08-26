@@ -22,7 +22,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.budgetflow.app"
+      "package": "com.budgetflow.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,6 +36,7 @@
       "eas": {
         "projectId": "1e896b47-b192-47a8-9916-c5c47e5fd7c7"
       }
-    }
+    },
+    "platforms": ["android", "ios", "web"]
   }
 }

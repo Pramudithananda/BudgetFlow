@@ -56,10 +56,34 @@ const initDatabase = async () => {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
       
+      CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        start_date DATETIME NOT NULL,
+        end_date DATETIME,
+        location TEXT,
+        budget REAL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'Planning',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS event_expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id INTEGER NOT NULL,
+        expense_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+        FOREIGN KEY (expense_id) REFERENCES expenses (id) ON DELETE CASCADE
+      );
+      
       CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id);
       CREATE INDEX IF NOT EXISTS idx_expenses_funder_id ON expenses(funder_id);
       CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
       CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
+      CREATE INDEX IF NOT EXISTS idx_event_expenses_event_id ON event_expenses(event_id);
+      CREATE INDEX IF NOT EXISTS idx_event_expenses_expense_id ON event_expenses(expense_id);
       
       -- Insert default budget record if not exists
       INSERT OR IGNORE INTO budget (id, total_budget, received_fund, people_over_fund, remaining_fund)
@@ -522,6 +546,144 @@ export const deleteFunder = async (funderId) => {
     return funderId;
   } catch (error) {
     console.error('Error deleting funder:', error);
+    throw error;
+  }
+};
+
+// Event Operations
+export const getEvents = async () => {
+  try {
+    const database = await getDatabase();
+    const result = await database.getAllAsync('SELECT * FROM events ORDER BY start_date DESC');
+    return result.map(convertRow);
+  } catch (error) {
+    console.error('Error getting events:', error);
+    throw error;
+  }
+};
+
+export const getEventById = async (id) => {
+  try {
+    const database = await getDatabase();
+    const result = await database.getFirstAsync('SELECT * FROM events WHERE id = ?', [id]);
+    return result ? convertRow(result) : null;
+  } catch (error) {
+    console.error('Error getting event:', error);
+    throw error;
+  }
+};
+
+export const addEvent = async (eventData) => {
+  try {
+    const database = await getDatabase();
+    const result = await database.runAsync(
+      'INSERT INTO events (title, description, start_date, end_date, location, budget, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [eventData.title, eventData.description, eventData.startDate, eventData.endDate, eventData.location, eventData.budget, eventData.status]
+    );
+    
+    const newEvent = {
+      id: result.lastInsertRowId,
+      ...eventData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    // Notify listeners
+    notifyListeners('events');
+    
+    return newEvent;
+  } catch (error) {
+    console.error('Error adding event:', error);
+    throw error;
+  }
+};
+
+export const updateEvent = async (id, eventData) => {
+  try {
+    const database = await getDatabase();
+    await database.runAsync(
+      'UPDATE events SET title = ?, description = ?, start_date = ?, end_date = ?, location = ?, budget = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [eventData.title, eventData.description, eventData.startDate, eventData.endDate, eventData.location, eventData.budget, eventData.status, id]
+    );
+    
+    // Notify listeners
+    notifyListeners('events');
+    
+    return { id, ...eventData };
+  } catch (error) {
+    console.error('Error updating event:', error);
+    throw error;
+  }
+};
+
+export const deleteEvent = async (id) => {
+  try {
+    const database = await getDatabase();
+    await database.runAsync('DELETE FROM events WHERE id = ?', [id]);
+    
+    // Notify listeners
+    notifyListeners('events');
+    
+    return id;
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    throw error;
+  }
+};
+
+// Event Expense Operations
+export const getEventExpenses = async (eventId) => {
+  try {
+    const database = await getDatabase();
+    const result = await database.getAllAsync(`
+      SELECT e.*, c.name as category_name, f.name as funder_name
+      FROM expenses e
+      LEFT JOIN categories c ON e.category_id = c.id
+      LEFT JOIN funders f ON e.funder_id = f.id
+      WHERE e.id IN (
+        SELECT expense_id FROM event_expenses WHERE event_id = ?
+      )
+      ORDER BY e.created_at DESC
+    `, [eventId]);
+    return result.map(convertRow);
+  } catch (error) {
+    console.error('Error getting event expenses:', error);
+    throw error;
+  }
+};
+
+export const addEventExpense = async (eventId, expenseId) => {
+  try {
+    const database = await getDatabase();
+    await database.runAsync(
+      'INSERT INTO event_expenses (event_id, expense_id) VALUES (?, ?)',
+      [eventId, expenseId]
+    );
+    
+    // Notify listeners
+    notifyListeners('events');
+    
+    return { eventId, expenseId };
+  } catch (error) {
+    console.error('Error adding event expense:', error);
+    throw error;
+  }
+};
+
+export const removeEventExpense = async (eventId, expenseId) => {
+  try {
+    const database = await getDatabase();
+    await database.runAsync(
+      'DELETE FROM event_expenses WHERE event_id = ? AND expense_id = ?',
+      [eventId, expenseId]
+    );
+    
+    // Notify listeners
+    notifyListeners('events');
+    
+    return { eventId, expenseId };
+  } catch (error) {
+    console.error('Error removing event expense:', error);
     throw error;
   }
 };
