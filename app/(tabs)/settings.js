@@ -101,7 +101,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const importData = async () => {
+  const handleImportData = async () => {
     try {
       setImporting(true);
       
@@ -363,7 +363,7 @@ export default function SettingsScreen() {
                 />
                 <Button
                   title={importing ? "Importing..." : "Import Data"}
-                  onPress={importData}
+                  onPress={handleImportData}
                   loading={importing}
                   style={styles.importButton}
                 />

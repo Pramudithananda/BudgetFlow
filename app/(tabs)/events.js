@@ -230,49 +230,35 @@ export default function EventsScreen() {
         </Card>
       ) : (
         events.map((event) => (
-          <TouchableOpacity 
-            key={event.id} 
-            onPress={() => router.push(`/event-detail?id=${event.id}`)}
-            style={styles.eventCardTouchable}
-          >
-            <Card style={styles.eventCard}>
-              <RNView style={styles.eventHeader}>
-                <RNView style={styles.eventTitleRow}>
-                  <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
-                  <RNView style={[styles.statusBadge, { backgroundColor: getStatusColor(event.status) }]}>
-                    <Text style={styles.statusText}>{event.status}</Text>
-                  </RNView>
+          <Card key={event.id} style={styles.eventCard}>
+            <RNView style={styles.eventHeader}>
+              <RNView style={styles.eventTitleRow}>
+                <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
+                <RNView style={[styles.statusBadge, { backgroundColor: getStatusColor(event.status) }]}>
+                  <Text style={styles.statusText}>{event.status}</Text>
                 </RNView>
-                              <RNView style={styles.eventActions}>
+              </RNView>
+              <RNView style={styles.eventActions}>
                 <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    openExpenseModal(event);
-                  }} 
+                  onPress={() => openExpenseModal(event)} 
                   style={styles.actionButton}
                 >
                   <FontAwesome5 name="receipt" size={16} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    openEditModal(event);
-                  }} 
+                  onPress={() => openEditModal(event)} 
                   style={styles.actionButton}
                 >
                   <FontAwesome5 name="edit" size={16} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleDelete(event.id);
-                  }} 
+                  onPress={() => handleDelete(event.id)} 
                   style={styles.actionButton}
                 >
                   <FontAwesome5 name="trash" size={16} color="#F44336" />
                 </TouchableOpacity>
               </RNView>
-              </RNView>
+            </RNView>
 
             {event.description && (
               <Text style={[styles.eventDescription, { color: colors.textSecondary }]}>
@@ -551,10 +537,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-  eventCardTouchable: {
-    marginBottom: 16,
-  },
   eventCard: {
+    marginBottom: 16,
     padding: 16,
   },
   eventHeader: {
