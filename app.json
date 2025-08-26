@@ -2,16 +2,16 @@
   "expo": {
     "name": "BudgetFlow",
     "slug": "budget-flow",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "budgetflow",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#64a12d"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,9 +20,14 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#64a12d"
       },
-      "package": "com.budgetflow.app"
+      "package": "com.budgetflow.app",
+      "versionCode": 2,
+      "permissions": [
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,6 +36,9 @@
       "eas": {
         "projectId": "1e896b47-b192-47a8-9916-c5c47e5fd7c7"
       }
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
