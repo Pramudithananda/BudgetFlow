@@ -103,6 +103,14 @@ export default function SettingsScreen() {
           <MaterialIcons name="chevron-right" size={24} color="#9E9E9E" />
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(screens)/setup-test-data')}>
+          <RNView style={styles.menuTextContainer}>
+            <FontAwesome5 name="vial" size={24} color="#2196F3" />
+            <Text style={styles.menuText}>Test Data Setup</Text>
+          </RNView>
+          <MaterialIcons name="chevron-right" size={24} color="#9E9E9E" />
+        </TouchableOpacity>
+
         {user && (
           <TouchableOpacity style={styles.menuItem} onPress={confirmLogout}>
             <RNView style={styles.menuTextContainer}>
