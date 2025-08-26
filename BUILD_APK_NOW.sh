@@ -3,8 +3,9 @@
 # BudgetFlow APK Builder Script
 # This script will help you get your APK download link quickly
 
-echo "🚀 BudgetFlow APK Builder v1.1.0"
-echo "=================================="
+echo "🚀 BudgetFlow Final APK Builder v1.1.0"
+echo "======================================="
+echo "Building with ALL latest features & changes!"
 echo ""
 
 # Colors for output
