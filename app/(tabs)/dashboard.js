@@ -5,6 +5,8 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import BudgetSummary from '../../components/BudgetSummary';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import NotificationCard from '../../components/NotificationCard';
+import { LineChartComponent, BarChartComponent, PieChartComponent } from '../../components/Chart';
 import { getBudgetSummary, getExpenses, getCategories, getFunders, listenExpenses, listenCategories, listenFunders } from '../../services/sqliteService';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -36,6 +38,8 @@ export default function DashboardScreen() {
   const [funderBreakdown, setFunderBreakdown] = useState([]);
   const [funderMap, setFunderMap] = useState({}); // id -> name for report usage
   const [recentExpenses, setRecentExpenses] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [selectedChart, setSelectedChart] = useState('category'); // category, funder, trend
 
   const fetchData = async () => {
     try {
@@ -104,70 +108,122 @@ export default function DashboardScreen() {
       setStatusAmounts(amounts);
       
       // Calculate category breakdown
-      const categoryMap = new Map();
+      const categoryMap = {};
       categoriesData.forEach(category => {
-        categoryMap.set(category.id, {
-          id: category.id,
-          name: category.name,
-          totalAmount: 0,
-          count: 0,
-        });
+        categoryMap[category.id] = category.name;
       });
       
+      const categoryData = {};
       expensesData.forEach(expense => {
-        if (expense.categoryId && categoryMap.has(expense.categoryId)) {
-          const category = categoryMap.get(expense.categoryId);
-          category.totalAmount += expense.amount;
-          category.count += 1;
+        const categoryName = categoryMap[expense.categoryId] || 'Uncategorized';
+        if (!categoryData[categoryName]) {
+          categoryData[categoryName] = 0;
         }
+        categoryData[categoryName] += expense.amount || 0;
       });
       
-      const breakdownData = Array.from(categoryMap.values())
-        .filter(category => category.totalAmount > 0)
-        .sort((a, b) => b.totalAmount - a.totalAmount);
+      const categoryBreakdownData = Object.entries(categoryData).map(([name, amount]) => ({
+        name,
+        amount,
+        color: getRandomColor(),
+        legendFontColor: isDarkMode ? '#fff' : '#000',
+        legendFontSize: 12,
+      }));
       
-      setCategoryBreakdown(breakdownData);
-
+      setCategoryBreakdown(categoryBreakdownData);
+      
       // Calculate funder breakdown
-      const funderMap = new Map();
+      const funderMap = {};
       fundersData.forEach(funder => {
-        funderMap.set(funder.id, {
-          id: funder.id,
-          name: funder.name,
-          totalAmount: 0,
-          count: 0,
-        });
+        funderMap[funder.id] = funder.name;
       });
+      setFunderMap(funderMap);
       
+      const funderData = {};
       expensesData.forEach(expense => {
-        if (expense.funderId && funderMap.has(expense.funderId)) {
-          const funder = funderMap.get(expense.funderId);
-          funder.totalAmount += expense.amount;
-          funder.count += 1;
+        const funderName = funderMap[expense.funderId] || 'Unknown';
+        if (!funderData[funderName]) {
+          funderData[funderName] = 0;
         }
+        funderData[funderName] += expense.amount || 0;
       });
       
-      const funderBreakdownData = Array.from(funderMap.values())
-        .filter(funder => funder.totalAmount > 0)
-        .sort((a, b) => b.totalAmount - a.totalAmount);
+      const funderBreakdownData = Object.entries(funderData).map(([name, amount]) => ({
+        name,
+        amount,
+        color: getRandomColor(),
+        legendFontColor: isDarkMode ? '#fff' : '#000',
+        legendFontSize: 12,
+      }));
       
-  setFunderBreakdown(funderBreakdownData);
-  // Build simple id->name map for reporting
-  const funderNameMap = {};
-  fundersData.forEach(f => { funderNameMap[f.id] = f.name; });
-  setFunderMap(funderNameMap);
-
+      setFunderBreakdown(funderBreakdownData);
+      
       // Get recent expenses
-      const sortedExpenses = [...expensesData]
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-        .slice(0, 5);
+      const sortedExpenses = [...expensesData].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setRecentExpenses(sortedExpenses.slice(0, 5));
       
-      setRecentExpenses(sortedExpenses);
+      // Generate notifications
+      generateNotifications(amounts, totalBudget, receivedFund);
+      
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      Alert.alert('Error', 'Could not load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateNotifications = (amounts, totalBudget, receivedFund) => {
+    const newNotifications = [];
+    
+    // Budget warning
+    if (amounts.remaining > totalBudget * 0.8) {
+      newNotifications.push({
+        id: 'budget_warning',
+        type: 'warning',
+        title: 'Budget Warning',
+        message: 'Outstanding expenses are approaching your total budget limit.',
+        onPress: () => Alert.alert('Budget Warning', 'Consider reviewing your expenses or increasing your budget.'),
+        onDismiss: () => removeNotification('budget_warning')
+      });
+    }
+    
+    // High pending amount
+    if (amounts.pending > receivedFund * 0.5) {
+      newNotifications.push({
+        id: 'pending_warning',
+        type: 'info',
+        title: 'Pending Amount Alert',
+        message: 'You have a high amount of pending expenses compared to received funds.',
+        onPress: () => Alert.alert('Pending Alert', 'Review pending expenses and follow up on fund disbursements.'),
+        onDismiss: () => removeNotification('pending_warning')
+      });
+    }
+    
+    // Low received funds
+    if (receivedFund < totalBudget * 0.3) {
+      newNotifications.push({
+        id: 'funds_warning',
+        type: 'error',
+        title: 'Low Fund Receipt',
+        message: 'Received funds are significantly lower than total budget.',
+        onPress: () => Alert.alert('Funds Warning', 'Focus on securing fund disbursements for your projects.'),
+        onDismiss: () => removeNotification('funds_warning')
+      });
+    }
+    
+    setNotifications(newNotifications);
+  };
+
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
+
+  const getRandomColor = () => {
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   const onRefresh = async () => {
@@ -176,360 +232,199 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
-  useEffect(() => {
-    fetchData();
-    // Real-time updates for expenses
-  const unsubExpenses = listenExpenses(null, (expensesLive) => {
-      // Normalize timestamps
-      const expensesData = expensesLive.map(exp => ({
-        ...exp,
-        createdAt: exp.createdAt?.toDate ? exp.createdAt.toDate().toISOString() : exp.createdAt,
-      }));
-
-      // Recalculate summaries dependent on expenses only
-      const totalBudget = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-      const receivedFund = expensesData
-        .filter(expense => expense.status === 'Received')
-        .reduce((sum, expense) => sum + (expense.amount || 0), 0);
-      setBudgetSummary(prev => ({
-        ...prev,
-        totalBudget,
-        receivedFund,
-        remainingFund: totalBudget - receivedFund,
-      }));
-
-      const counts = { remaining:0, pending:0, received:0, spent:0 };
-      const amounts = { remaining:0, pending:0, received:0, spent:0 };
-      expensesData.forEach(expense => {
-        if (expense.status === 'Outstanding') { counts.remaining++; amounts.remaining += expense.amount || 0; }
-        else if (expense.status === 'Pending') { counts.pending++; amounts.pending += expense.amount || 0; }
-        else if (expense.status === 'Received') { counts.received++; amounts.received += expense.amount || 0; }
-        else if (expense.status === 'Spent') { counts.spent++; amounts.spent += expense.amount || 0; }
-      });
-      setStatusCounts(counts);
-      setStatusAmounts(amounts);
-
-      // Recompute category breakdown using current categories state
-      setCategoryBreakdown(prevCats => {
-        const catMap = {}; // id -> {id,name,totalAmount,count}
-        prevCats.forEach(c => { catMap[c.id] = { ...c, totalAmount:0, count:0 }; });
-        expensesData.forEach(exp => {
-          if (exp.categoryId && catMap[exp.categoryId]) {
-            catMap[exp.categoryId].totalAmount += exp.amount || 0;
-            catMap[exp.categoryId].count += 1;
-          }
-        });
-        return Object.values(catMap).sort((a,b)=> b.totalAmount - a.totalAmount);
-      });
-
-      // Recompute funder breakdown using current funderMap
-      setFunderBreakdown(prev => {
-        const funderBase = {}; // id -> {id,name,totalAmount,count}
-        Object.entries(funderMap).forEach(([id,name])=> { funderBase[id]={ id, name, totalAmount:0, count:0 }; });
-        expensesData.forEach(exp => {
-          if (exp.funderId && funderBase[exp.funderId]) {
-            funderBase[exp.funderId].totalAmount += exp.amount || 0;
-            funderBase[exp.funderId].count += 1;
-          }
-        });
-        return Object.values(funderBase).sort((a,b)=> b.totalAmount - a.totalAmount);
-      });
-
-      // Recent expenses
-      const sortedExpenses = [...expensesData]
-        .sort((a,b)=> new Date(b.createdAt||0)-new Date(a.createdAt||0))
-        .slice(0,5);
-      setRecentExpenses(sortedExpenses);
-    });
-    // Real-time categories
-    const unsubCategories = listenCategories((catsLive) => {
-      // Recompute category breakdown with current expenses
-      setCategoryBreakdown(prev => {
-        // We'll recompute after expenses change; here just map base
-        const map = catsLive.map(c => ({ id: c.id, name: c.name, totalAmount:0, count:0 }));
-        return map;
-      });
-    });
-    // Real-time funders
-    const unsubFunders = listenFunders((fundersLive) => {
-      setFunderBreakdown(prev => {
-        const list = fundersLive.map(f => ({ id: f.id, name: f.name, totalAmount:0, count:0 }));
-        return list;
-      });
-      const funderNameMap = {};
-      fundersLive.forEach(f=> funderNameMap[f.id]=f.name);
-      setFunderMap(funderNameMap);
-    });
-    return () => {
-      unsubExpenses && unsubExpenses();
-      unsubCategories && unsubCategories();
-      unsubFunders && unsubFunders();
-    };
-  }, []);
-
-  const generateReport = () => {
-    const report = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Expense Management Report</title>
-    <style>
-        @page {
-            size: A4;
-            margin: 2cm;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #64a12d;
-            padding-bottom: 20px;
-        }
-        .header h1 {
-            color: #64a12d;
-            margin: 0;
-            font-size: 24px;
-        }
-        .header p {
-            color: #666;
-            margin: 10px 0 0;
-        }
-        .section {
-            margin-bottom: 30px;
-            page-break-inside: avoid;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #64a12d;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-        .item {
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .item-label {
-            flex: 1;
-        }
-        .amount {
-            color: #64a12d;
-            font-weight: bold;
-            text-align: right;
-        }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        th {
-            background-color: #f8f8f8;
-            color: #64a12d;
-        }
-        .category-section {
-            margin-top: 20px;
-            margin-bottom: 30px;
-        }
-        .category-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-            background-color: #f5f5f5;
-            padding: 8px;
-            border-radius: 4px;
-        }
-        .status-took-over {
-            color: #FF9800;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Expense Management System Report</h1>
-        <p>Generated on: ${new Date().toLocaleString()}</p>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Budget Summary</div>
-        <table>
-            <tr>
-                <th>Item</th>
-                <th>Amount</th>
-            </tr>
-            <tr>
-                <td>Total Budget</td>
-                <td class="amount">Rs. ${budgetSummary.totalBudget.toLocaleString()}</td>
-            </tr>
-      <tr>
-        <td>Received (Available + Spent)</td>
-        <td class="amount">Rs. ${(statusAmounts.received + statusAmounts.spent).toLocaleString()}</td>
-      </tr>
-      <tr>
-        <td>Remaining (Outstanding + Pending)</td>
-        <td class="amount">Rs. ${(statusAmounts.remaining + statusAmounts.pending).toLocaleString()}</td>
-      </tr>
-        </table>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Expense Status</div>
-        <table>
-            <tr>
-                <th>Status</th>
-                <th>Count</th>
-                <th>Amount</th>
-            </tr>
-            <tr>
-                <td>Outstanding</td>
-                <td>${statusCounts.remaining}</td>
-                <td class="amount">Rs. ${statusAmounts.remaining.toLocaleString()}</td>
-            </tr>
-            <tr>
-                <td>Pending</td>
-                <td>${statusCounts.pending}</td>
-                <td class="amount">Rs. ${statusAmounts.pending.toLocaleString()}</td>
-            </tr>
-            <tr>
-                <td>Available</td>
-                <td>${statusCounts.received}</td>
-                <td class="amount">Rs. ${statusAmounts.received.toLocaleString()}</td>
-            </tr>
-            <tr>
-                <td>Spent</td>
-                <td>${statusCounts.spent}</td>
-                <td class="amount">Rs. ${statusAmounts.spent.toLocaleString()}</td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Expenses by Category</div>
-        ${categoryBreakdown.map(category => `
-            <div class="category-section">
-                <div class="category-title">${category.name} (${category.count} expenses - Total: Rs. ${category.totalAmount.toLocaleString()})</div>
-                <table>
-                    <tr>
-                        <th>Title</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Funder</th>
-                        <th>Date</th>
-                    </tr>
-                    ${recentExpenses
-                        .filter(expense => expense.categoryId === category.id)
-                        .map(expense => `
-                            <tr>
-                                <td>${expense.title}</td>
-                                <td class="amount">Rs. ${expense.amount.toLocaleString()}</td>
-                                <td class="${expense.status === 'Pending' ? 'status-took-over' : ''}">${expense.status}</td>
-                                <td>${funderMap[expense.funderId] || 'Not Assigned'}</td>
-                                <td>${new Date(expense.createdAt).toLocaleDateString()}</td>
-                            </tr>
-                        `).join('')}
-                </table>
-            </div>
-        `).join('')}
-    </div>
-
-    <div class="section">
-        <div class="section-title">Expenses by Funder</div>
-        <table>
-            <tr>
-                <th>Funder</th>
-                <th>Count</th>
-                <th>Amount</th>
-            </tr>
-            ${funderBreakdown.map(funder => `
-                <tr>
-                    <td>${funder.name}</td>
-                    <td>${funder.count}</td>
-                    <td class="amount">Rs. ${funder.totalAmount.toLocaleString()}</td>
-                </tr>
-            `).join('')}
-        </table>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Recent Expenses</div>
-        <table>
-            <tr>
-                <th>Title</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Funder</th>
-                <th>Date</th>
-            </tr>
-            ${recentExpenses.map(expense => `
-                <tr>
-                    <td>${expense.title}</td>
-                    <td class="amount">Rs. ${expense.amount.toLocaleString()}</td>
-                    <td class="${expense.status === 'Pending' ? 'status-took-over' : ''}">${expense.status}</td>
-                    <td>${funderMap[expense.funderId] || 'Not Assigned'}</td>
-                    <td>${new Date(expense.createdAt).toLocaleDateString()}</td>
-                </tr>
-            `).join('')}
-        </table>
-    </div>
-
-    <div class="footer">
-        <p>This report was generated by the Expense Management System</p>
-    </div>
-</body>
-</html>
-    `;
-
-    return report;
-  };
-
-  const handleDownloadReport = async () => {
+  const generateReport = async () => {
     try {
-      const report = generateReport();
-      
-      // Generate PDF
-      const { uri } = await Print.printToFileAsync({
-        html: report,
-        width: 612, // US Letter width in points
-        height: 792, // US Letter height in points
-      });
+      const reportData = {
+        budgetSummary,
+        statusCounts,
+        statusAmounts,
+        categoryBreakdown,
+        funderBreakdown,
+        recentExpenses,
+        generatedAt: new Date().toLocaleString(),
+      };
 
-      // Share PDF
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, {
-          mimeType: 'application/pdf',
-          dialogTitle: 'Expense Management Report',
-        });
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>BudgetFlow Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; border-bottom: 2px solid #64a12d; padding-bottom: 20px; margin-bottom: 30px; }
+            .section { margin-bottom: 30px; }
+            .section h2 { color: #64a12d; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+            .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
+            .summary-card { background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #64a12d; }
+            .summary-card h3 { margin: 0 0 10px 0; color: #333; }
+            .summary-card .amount { font-size: 24px; font-weight: bold; color: #64a12d; }
+            .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            .table th, .table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            .table th { background-color: #f2f2f2; font-weight: bold; }
+            .status-outstanding { color: #F44336; }
+            .status-pending { color: #FF9800; }
+            .status-received { color: #2196F3; }
+            .status-spent { color: #4CAF50; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>💰 BudgetFlow Report</h1>
+            <p>Generated on ${reportData.generatedAt}</p>
+          </div>
+
+          <div class="section">
+            <h2>📊 Budget Summary</h2>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <h3>Total Budget</h3>
+                <div class="amount">Rs. ${reportData.budgetSummary.totalBudget.toLocaleString()}</div>
+              </div>
+              <div class="summary-card">
+                <h3>Received Funds</h3>
+                <div class="amount">Rs. ${reportData.budgetSummary.receivedFund.toLocaleString()}</div>
+              </div>
+              <div class="summary-card">
+                <h3>Remaining Budget</h3>
+                <div class="amount">Rs. ${reportData.budgetSummary.remainingFund.toLocaleString()}</div>
+              </div>
+              <div class="summary-card">
+                <h3>Total Spent</h3>
+                <div class="amount">Rs. ${reportData.statusAmounts.spent.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>📈 Status Breakdown</h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Count</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="status-outstanding">Outstanding</td>
+                  <td>${reportData.statusCounts.remaining}</td>
+                  <td>Rs. ${reportData.statusAmounts.remaining.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td class="status-pending">Pending</td>
+                  <td>${reportData.statusCounts.pending}</td>
+                  <td>Rs. ${reportData.statusAmounts.pending.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td class="status-received">Received</td>
+                  <td>${reportData.statusCounts.received}</td>
+                  <td>Rs. ${reportData.statusAmounts.received.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td class="status-spent">Spent</td>
+                  <td>${reportData.statusCounts.spent}</td>
+                  <td>Rs. ${reportData.statusAmounts.spent.toLocaleString()}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>🏷️ Category Breakdown</h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${reportData.categoryBreakdown.map(cat => `
+                  <tr>
+                    <td>${cat.name}</td>
+                    <td>Rs. ${cat.amount.toLocaleString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>👥 Funder Breakdown</h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Funder</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${reportData.funderBreakdown.map(funder => `
+                  <tr>
+                    <td>${funder.name}</td>
+                    <td>Rs. ${funder.amount.toLocaleString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>📝 Recent Expenses</h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${reportData.recentExpenses.map(expense => `
+                  <tr>
+                    <td>${expense.title}</td>
+                    <td>Rs. ${expense.amount.toLocaleString()}</td>
+                    <td class="status-${expense.status.toLowerCase()}">${expense.status}</td>
+                    <td>${new Date(expense.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
+      
+      if (Platform.OS === 'ios') {
+        await Sharing.shareAsync(uri);
       } else {
-        Alert.alert('Error', 'Sharing is not available on this device');
+        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Share Report' });
       }
     } catch (error) {
       console.error('Error generating report:', error);
       Alert.alert('Error', 'Could not generate report. Please try again.');
     }
   };
+
+  useEffect(() => {
+    fetchData();
+    
+    // Real-time listeners
+    const unsubExpenses = listenExpenses(null, () => fetchData());
+    const unsubCategories = listenCategories(() => fetchData());
+    const unsubFunders = listenFunders(() => fetchData());
+    
+    return () => {
+      unsubExpenses && unsubExpenses();
+      unsubCategories && unsubCategories();
+      unsubFunders && unsubFunders();
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -546,123 +441,204 @@ export default function DashboardScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <BudgetSummary
-        totalBudget={budgetSummary.totalBudget}
-        receivedFund={budgetSummary.receivedFund}
-        spent={statusAmounts.spent}
-      />
-      
-      <Card style={styles.card}>
-        <RNView style={styles.reportButtonContainer}>
-          <Button
-            title="Download Report"
-            onPress={handleDownloadReport}
-            variant="outline"
-            style={styles.reportButton}
-            icon={<FontAwesome5 name="download" size={16} color={colors.primary} style={styles.reportButtonIcon} />}
-          />
-        </RNView>
-      </Card>
-      
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>Expense Status</Text>
-        <RNView style={styles.statusCardsContainer}>
-          <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 39, 39, 0.63)' : '#FFCCCC' }]}>
-            <Text style={styles.statusNumber}>{statusCounts.remaining}</Text>
-            <Text style={styles.statusLabel}>Outstanding</Text>
-            <Text style={styles.statusAmount}>Rs. {statusAmounts.remaining.toLocaleString()}</Text>
-          </RNView>
-          <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 166, 33, 0.7)' : '#FFE0B2' }]}>
-            <Text style={styles.statusNumber}>{statusCounts.pending}</Text>
-            <Text style={styles.statusLabel}>Pending</Text>
-            <Text style={styles.statusAmount}>Rs. {statusAmounts.pending.toLocaleString()}</Text>
-          </RNView>
-          <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(51, 125, 254, 0.57)' : '#c4d9ffff' }]}>
-            <Text style={styles.statusNumber}>{statusCounts.received}</Text>
-            <Text style={styles.statusLabel}>Available</Text>
-            <Text style={styles.statusAmount}>Rs. {statusAmounts.received.toLocaleString()}</Text>
-          </RNView>
-          <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(83, 255, 49, 0.5)' : '#baffacff' }]}>
-            <Text style={styles.statusNumber}>{statusCounts.spent}</Text>
-            <Text style={styles.statusLabel}>Spent</Text>
-            <Text style={styles.statusAmount}>Rs. {statusAmounts.spent.toLocaleString()}</Text>
-          </RNView>
-        </RNView>
-      </Card>
-      
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>Expenses by Category</Text>
-        {categoryBreakdown.length === 0 ? (
-          <RNView style={styles.emptyState}>
-            <FontAwesome5 name="chart-pie" size={24} color={colors.text} />
-            <Text style={styles.emptyText}>No expense data</Text>
-          </RNView>
-        ) : (
-          categoryBreakdown.map((category) => (
-            <RNView key={category.id} style={styles.breakdownItem}>
-              <RNView style={styles.breakdownHeader}>
-                <RNView style={[styles.categoryDot, { backgroundColor: colors.primary }]} />
-                <Text style={styles.breakdownName}>{category.name}</Text>
-              </RNView>
-              <RNView style={styles.breakdownDetails}>
-                <Text style={[styles.breakdownAmount, { color: colors.primary }]}>Rs. {category.totalAmount.toLocaleString()}</Text>
-                <Text style={styles.breakdownCount}>({category.count} expenses)</Text>
-              </RNView>
-            </RNView>
-          ))
-        )}
-      </Card>
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <View style={styles.notificationsContainer}>
+          {notifications.map((notification) => (
+            <NotificationCard
+              key={notification.id}
+              type={notification.type}
+              title={notification.title}
+              message={notification.message}
+              onPress={notification.onPress}
+              onDismiss={notification.onDismiss}
+            />
+          ))}
+        </View>
+      )}
 
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>Expenses by Funder</Text>
-        {funderBreakdown.length === 0 ? (
-          <RNView style={styles.emptyState}>
-            <FontAwesome5 name="users" size={24} color={colors.text} />
-            <Text style={styles.emptyText}>No funder data</Text>
-          </RNView>
-        ) : (
-          funderBreakdown.map((funder) => (
-            <RNView key={funder.id} style={styles.breakdownItem}>
-              <RNView style={styles.breakdownHeader}>
-                <FontAwesome5 name="user" size={14} color={colors.primary} style={styles.funderIcon} />
-                <Text style={styles.breakdownName}>{funder.name}</Text>
-              </RNView>
-              <RNView style={styles.breakdownDetails}>
-                <Text style={[styles.breakdownAmount, { color: colors.primary }]}>Rs. {funder.totalAmount.toLocaleString()}</Text>
-                <Text style={styles.breakdownCount}>({funder.count} expenses)</Text>
-              </RNView>
-            </RNView>
-          ))
-        )}
-      </Card>
+      {/* Budget Summary */}
+      <View style={styles.section}>
+        <BudgetSummary 
+          totalBudget={budgetSummary.totalBudget}
+          receivedFund={budgetSummary.receivedFund}
+          remainingFund={budgetSummary.remainingFund}
+        />
+      </View>
 
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>Recent Expenses</Text>
-        {recentExpenses.length === 0 ? (
-          <RNView style={styles.emptyState}>
-            <FontAwesome5 name="receipt" size={24} color={colors.text} />
-            <Text style={styles.emptyText}>No recent expenses</Text>
-          </RNView>
-        ) : (
-          recentExpenses.map((expense) => (
-            <RNView key={expense.id} style={[styles.recentExpenseItem, { borderBottomColor: colors.border }]}>
-              <RNView style={styles.recentExpenseHeader}>
-                <Text style={styles.recentExpenseTitle}>{expense.title}</Text>
-                <Text style={[styles.recentExpenseAmount, { color: colors.primary }]}>Rs. {expense.amount.toLocaleString()}</Text>
-              </RNView>
-              <RNView style={styles.recentExpenseDetails}>
-                <Text style={styles.recentExpenseStatus}>{expense.status}</Text>
-                <Text style={styles.recentExpenseDate}>
-                  {new Date(expense.createdAt).toLocaleDateString()}
+      {/* Status Overview Cards */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Status Overview</Text>
+        <View style={styles.statusGrid}>
+          {Object.entries(statusAmounts).map(([status, amount]) => (
+            <Card key={status} style={styles.statusCard}>
+              <View style={styles.statusContent}>
+                <FontAwesome5 
+                  name={getStatusIcon(status)} 
+                  size={24} 
+                  color={getStatusColor(status)} 
+                />
+                <Text style={[styles.statusLabel, { color: colors.text }]}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
                 </Text>
-              </RNView>
-            </RNView>
-          ))
+                <Text style={[styles.statusAmount, { color: colors.primary }]}>
+                  Rs. {amount.toLocaleString()}
+                </Text>
+                <Text style={[styles.statusCount, { color: colors.textSecondary }]}>
+                  {statusCounts[status]} items
+                </Text>
+              </View>
+            </Card>
+          ))}
+        </View>
+      </View>
+
+      {/* Chart Selection */}
+      <View style={styles.section}>
+        <View style={styles.chartHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Analytics</Text>
+          <View style={styles.chartTabs}>
+            {[
+              { key: 'category', label: 'Categories', icon: 'list' },
+              { key: 'funder', label: 'Funders', icon: 'users' },
+              { key: 'trend', label: 'Trends', icon: 'chart-line' }
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[
+                  styles.chartTab,
+                  selectedChart === tab.key && { backgroundColor: colors.primary }
+                ]}
+                onPress={() => setSelectedChart(tab.key)}
+              >
+                <FontAwesome5 
+                  name={tab.icon} 
+                  size={16} 
+                  color={selectedChart === tab.key ? '#fff' : colors.text} 
+                />
+                <Text style={[
+                  styles.chartTabText,
+                  { color: selectedChart === tab.key ? '#fff' : colors.text }
+                ]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Charts */}
+        {selectedChart === 'category' && categoryBreakdown.length > 0 && (
+          <Card style={styles.chartCard}>
+            <PieChartComponent data={categoryBreakdown} />
+          </Card>
         )}
-      </Card>
+
+        {selectedChart === 'funder' && funderBreakdown.length > 0 && (
+          <Card style={styles.chartCard}>
+            <BarChartComponent 
+              data={{
+                labels: funderBreakdown.map(f => f.name),
+                datasets: [{
+                  data: funderBreakdown.map(f => f.amount)
+                }]
+              }}
+            />
+          </Card>
+        )}
+
+        {selectedChart === 'trend' && (
+          <Card style={styles.chartCard}>
+            <LineChartComponent 
+              data={{
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                  data: [0, 0, 0, 0, 0, 0] // Placeholder data
+                }]
+              }}
+            />
+          </Card>
+        )}
+      </View>
+
+      {/* Recent Expenses */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Expenses</Text>
+          <TouchableOpacity onPress={() => {}}>
+            <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {recentExpenses.map((expense) => (
+          <Card key={expense.id} style={styles.expenseCard}>
+            <View style={styles.expenseContent}>
+              <View style={styles.expenseInfo}>
+                <Text style={[styles.expenseTitle, { color: colors.text }]}>{expense.title}</Text>
+                <Text style={[styles.expenseCategory, { color: colors.textSecondary }]}>
+                  {categoryBreakdown.find(cat => cat.name === expense.categoryName)?.name || 'Uncategorized'}
+                </Text>
+              </View>
+              <View style={styles.expenseDetails}>
+                <Text style={[styles.expenseAmount, { color: colors.primary }]}>
+                  Rs. {expense.amount.toLocaleString()}
+                </Text>
+                <View style={[
+                  styles.statusBadge,
+                  { backgroundColor: getStatusColor(expense.status) + '20' }
+                ]}>
+                  <Text style={[styles.statusText, { color: getStatusColor(expense.status) }]}>
+                    {expense.status}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Card>
+        ))}
+      </View>
+
+      {/* Report Generation */}
+      <View style={styles.section}>
+        <Button 
+          title="📊 Generate Report" 
+          onPress={generateReport}
+          style={styles.reportButton}
+        />
+      </View>
     </ScrollView>
   );
 }
+
+// Helper functions
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'remaining':
+      return '#F44336';
+    case 'pending':
+      return '#FF9800';
+    case 'received':
+      return '#2196F3';
+    case 'spent':
+      return '#4CAF50';
+    default:
+      return '#9E9E9E';
+  }
+};
+
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'remaining':
+      return 'clock';
+    case 'pending':
+      return 'hourglass-half';
+    case 'received':
+      return 'check-circle';
+    case 'spent':
+      return 'money-bill-wave';
+    default:
+      return 'question-circle';
+  }
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -673,121 +649,122 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  card: {
-    marginTop: 16,
-    marginHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  notificationsContainer: {
     marginBottom: 16,
   },
-  statusCardsContainer: {
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  viewAllText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  statusGrid: {
+    flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    paddingHorizontal: 16,
+    gap: 12,
   },
   statusCard: {
     flex: 1,
-    minWidth: '48%',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
+    minWidth: '45%',
   },
-  statusNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
+  statusContent: {
+    alignItems: 'center',
+    padding: 16,
   },
   statusLabel: {
     fontSize: 14,
-    marginBottom: 4,
+    fontWeight: '500',
+    marginTop: 8,
+    textAlign: 'center',
   },
   statusAmount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  statusCount: {
     fontSize: 12,
+    marginTop: 4,
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 8,
-  },
-  breakdownItem: {
+  chartHeader: {
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
-  breakdownHeader: {
+  chartTabs: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  chartTab: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
   },
-  categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  funderIcon: {
-    marginRight: 8,
-  },
-  breakdownName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  breakdownDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  breakdownAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  breakdownCount: {
+  chartTabText: {
     fontSize: 14,
+    fontWeight: '500',
   },
-  recentExpenseItem: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
+  chartCard: {
+    marginHorizontal: 16,
   },
-  recentExpenseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  recentExpenseTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  recentExpenseAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  recentExpenseDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  recentExpenseStatus: {
-    fontSize: 14,
-  },
-  recentExpenseDate: {
-    fontSize: 14,
-  },
-  reportButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  expenseCard: {
+    marginHorizontal: 16,
     marginBottom: 8,
   },
-  reportButton: {
-    minWidth: 200,
+  expenseContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
   },
-  reportButtonIcon: {
-    marginRight: 8,
+  expenseInfo: {
+    flex: 1,
+  },
+  expenseTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  expenseCategory: {
+    fontSize: 14,
+  },
+  expenseDetails: {
+    alignItems: 'flex-end',
+  },
+  expenseAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  reportButton: {
+    marginHorizontal: 16,
+    backgroundColor: '#64a12d',
   },
 }); 
