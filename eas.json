@@ -17,6 +17,12 @@
       "android": {
         "buildType": "app-bundle"
       }
+    },
+    "apk": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      }
     }
   }
 } 
