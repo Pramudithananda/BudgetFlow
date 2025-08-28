@@ -9,7 +9,7 @@
 ## 📱 Screenshots
 
 <div align="center">
-  <img src="[https://github.com/Pramudithananda/BudgetFlow/blob/cursor/analyze-files-and-convert-to-sqlite-61bb/Screenshot_2025-08-18-13-29-16-802_com.budgetflow.app.jpg](https://github.com/Pramudithananda/BudgetFlow/blob/main_budget/Screenshot_2025-08-18-13-29-16-802_com.budgetflow.app.jpg)" alt="Dashboard" width="250" style="margin: 10px;">
+  <img src="https://github.com/Pramudithananda/BudgetFlow/blob/main_budget/Screenshot_2025-08-18-13-29-16-802_com.budgetflow.app.jpg" alt="Dashboard" width="250" style="margin: 10px;">
   <img src="https://github.com/Pramudithananda/BudgetFlow/blob/cursor/analyze-files-and-convert-to-sqlite-61bb/Screenshot_2025-08-18-13-29-23-268_com.budgetflow.app.jpg" alt="Categories" width="250" style="margin: 10px;">
   <img src="https://github.com/Pramudithananda/BudgetFlow/blob/cursor/analyze-files-and-convert-to-sqlite-61bb/Screenshot_2025-08-18-13-30-14-440_com.budgetflow.app.jpg" alt="BudgetFlow Overview" width="250" style="margin: 10px;">
 </div>
