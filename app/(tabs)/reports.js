@@ -1,105 +1,77 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   Alert,
   TouchableOpacity,
-  Modal,
-  TextInput,
 } from 'react-native';
 import { Text } from '../../components/Themed';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { useTheme } from '../../context/theme';
-import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
 export default function ReportsScreen() {
   const { isDarkMode } = useTheme();
-  const [events, setEvents] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [funders, setFunders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [dateRange, setDateRange] = useState({
-    startDate: '',
-    endDate: ''
-  });
-  const [selectedReportType, setSelectedReportType] = useState('overall');
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Hardcoded sample data
+  const events = [
+    {
+      id: 1,
+      name: 'Sample Event 1',
+      description: 'This is a sample event for testing',
+      startDate: '2025-01-01',
+      endDate: '2025-01-31',
+      budget: 1000.00,
+      location: 'Sample Location 1',
+      status: 'planned'
+    },
+    {
+      id: 2,
+      name: 'Sample Event 2',
+      description: 'Another sample event for testing',
+      startDate: '2025-02-01',
+      endDate: '2025-02-28',
+      budget: 2000.00,
+      location: 'Sample Location 2',
+      status: 'ongoing'
+    }
+  ];
 
-  useEffect(() => {
-    console.log('ReportsScreen: Loading with hardcoded data');
-    // Load hardcoded sample data instead of database
-    const sampleEvents = [
-      {
-        id: 1,
-        name: 'Sample Event 1',
-        description: 'This is a sample event for testing',
-        startDate: '2025-01-01',
-        endDate: '2025-01-31',
-        budget: 1000.00,
-        location: 'Sample Location 1',
-        status: 'planned'
-      },
-      {
-        id: 2,
-        name: 'Sample Event 2',
-        description: 'Another sample event for testing',
-        startDate: '2025-02-01',
-        endDate: '2025-02-28',
-        budget: 2000.00,
-        location: 'Sample Location 2',
-        status: 'ongoing'
-      }
-    ];
+  const categories = [
+    { id: 1, name: 'Food & Beverages', color: '#FF6B6B' },
+    { id: 2, name: 'Transportation', color: '#4ECDC4' },
+    { id: 3, name: 'Accommodation', color: '#45B7D1' },
+    { id: 4, name: 'Materials', color: '#96CEB4' },
+    { id: 5, name: 'Services', color: '#FFEAA7' }
+  ];
 
-    const sampleCategories = [
-      { id: 1, name: 'Food & Beverages', color: '#FF6B6B' },
-      { id: 2, name: 'Transportation', color: '#4ECDC4' },
-      { id: 3, name: 'Accommodation', color: '#45B7D1' },
-      { id: 4, name: 'Materials', color: '#96CEB4' },
-      { id: 5, name: 'Services', color: '#FFEAA7' }
-    ];
-
-    const sampleExpenses = [
-      {
-        id: 1,
-        description: 'Sample Expense 1',
-        amount: 150.00,
-        date: '2025-01-15',
-        categoryId: 1,
-        eventId: 1,
-        categoryName: 'Food & Beverages',
-        eventName: 'Sample Event 1'
-      },
-      {
-        id: 2,
-        description: 'Sample Expense 2',
-        amount: 300.00,
-        date: '2025-01-20',
-        categoryId: 2,
-        eventId: 1,
-        categoryName: 'Transportation',
-        eventName: 'Sample Event 1'
-      }
-    ];
-
-    const sampleFunders = [
-      { id: 1, name: 'Sample Funder 1', contact: 'contact1@example.com', amount: 500.00 },
-      { id: 2, name: 'Sample Funder 2', contact: 'contact2@example.com', amount: 1000.00 }
-    ];
-
-    setEvents(sampleEvents);
-    setCategories(sampleCategories);
-    setExpenses(sampleExpenses);
-    setFunders(sampleFunders);
-    
-    console.log('ReportsScreen: Sample data loaded successfully');
-  }, []);
+  const expenses = [
+    {
+      id: 1,
+      description: 'Sample Expense 1',
+      amount: 150.00,
+      date: '2025-01-15',
+      categoryId: 1,
+      eventId: 1,
+      categoryName: 'Food & Beverages',
+      eventName: 'Sample Event 1'
+    },
+    {
+      id: 2,
+      description: 'Sample Expense 2',
+      amount: 300.00,
+      date: '2025-01-20',
+      categoryId: 2,
+      eventId: 1,
+      categoryName: 'Transportation',
+      eventName: 'Sample Event 1'
+    }
+  ];
 
   const generateOverallReport = async () => {
     setIsGenerating(true);
@@ -108,20 +80,6 @@ export default function ReportsScreen() {
       const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
       const remainingBudget = totalBudget - totalExpenses;
       const budgetUtilization = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0;
-
-      // Calculate expenses by category
-      const expensesByCategory = {};
-      categories.forEach(cat => {
-        const catExpenses = expenses.filter(exp => exp.categoryId === cat.id);
-        expensesByCategory[cat.name] = catExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
-      });
-
-      // Calculate expenses by event
-      const expensesByEvent = {};
-      events.forEach(event => {
-        const eventExpenses = expenses.filter(exp => exp.eventId === event.id);
-        expensesByEvent[event.name] = eventExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
-      });
 
       const htmlContent = `
         <!DOCTYPE html>
@@ -139,9 +97,9 @@ export default function ReportsScreen() {
             .summary-label { font-size: 14px; color: #666; }
             .section { margin-bottom: 30px; }
             .section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
-            .category-item, .event-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-            .category-name, .event-name { font-weight: bold; }
-            .category-amount, .event-amount { color: #64a12d; font-weight: bold; }
+            .event-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+            .event-name { font-weight: bold; }
+            .event-budget { color: #64a12d; font-weight: bold; }
           </style>
         </head>
         <body>
@@ -171,26 +129,6 @@ export default function ReportsScreen() {
                 <div class="summary-label">Budget Utilization</div>
               </div>
             </div>
-          </div>
-          
-          <div class="section">
-            <div class="section-title">Expenses by Category</div>
-            ${Object.entries(expensesByCategory).map(([category, amount]) => `
-              <div class="category-item">
-                <span class="category-name">${category}</span>
-                <span class="category-amount">$${amount.toFixed(2)}</span>
-              </div>
-            `).join('')}
-          </div>
-          
-          <div class="section">
-            <div class="section-title">Expenses by Event</div>
-            ${Object.entries(expensesByEvent).map(([event, amount]) => `
-              <div class="event-item">
-                <span class="event-name">${event}</span>
-                <span class="event-amount">$${amount.toFixed(2)}</span>
-              </div>
-            `).join('')}
           </div>
           
           <div class="section">
@@ -514,13 +452,13 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   header: {
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   content: {
@@ -631,14 +569,5 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
-  },
-  categoryDetails: {
-    fontSize: 12,
-  },
-  noDataText: {
-    textAlign: 'center',
-    fontStyle: 'italic',
-    marginTop: 10,
   },
 });

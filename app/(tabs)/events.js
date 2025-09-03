@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   ScrollView,
@@ -12,18 +12,36 @@ import { Text } from '../../components/Themed';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { useTheme } from '../../context/theme';
-import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
 
 export default function EventsScreen() {
   const { isDarkMode } = useTheme();
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState([
+    {
+      id: 1,
+      name: 'Sample Event 1',
+      description: 'This is a sample event for testing',
+      startDate: '2025-01-01',
+      endDate: '2025-01-31',
+      budget: 1000.00,
+      location: 'Sample Location 1',
+      status: 'planned'
+    },
+    {
+      id: 2,
+      name: 'Sample Event 2',
+      description: 'Another sample event for testing',
+      startDate: '2025-02-01',
+      endDate: '2025-02-28',
+      budget: 2000.00,
+      location: 'Sample Location 2',
+      status: 'ongoing'
+    }
+  ]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [eventForm, setEventForm] = useState({
     name: '',
     description: '',
@@ -34,35 +52,6 @@ export default function EventsScreen() {
     status: 'planned'
   });
 
-  useEffect(() => {
-    console.log('EventsScreen: Loading with hardcoded data');
-    // Load hardcoded sample data instead of database
-    const sampleEvents = [
-      {
-        id: 1,
-        name: 'Sample Event 1',
-        description: 'This is a sample event for testing',
-        startDate: '2025-01-01',
-        endDate: '2025-01-31',
-        budget: 1000.00,
-        location: 'Sample Location 1',
-        status: 'planned'
-      },
-      {
-        id: 2,
-        name: 'Sample Event 2',
-        description: 'Another sample event for testing',
-        startDate: '2025-02-01',
-        endDate: '2025-02-28',
-        budget: 2000.00,
-        location: 'Sample Location 2',
-        status: 'ongoing'
-      }
-    ];
-    setEvents(sampleEvents);
-    console.log('EventsScreen: Sample events loaded:', sampleEvents.length);
-  }, []);
-
   const saveEvent = () => {
     if (!eventForm.name.trim()) {
       Alert.alert('Error', 'Event name is required');
@@ -70,7 +59,6 @@ export default function EventsScreen() {
     }
 
     if (editingEvent) {
-      // Update existing event
       const updatedEvents = events.map(event =>
         event.id === editingEvent.id
           ? { ...event, ...eventForm }
@@ -79,7 +67,6 @@ export default function EventsScreen() {
       setEvents(updatedEvents);
       Alert.alert('Success', 'Event updated successfully');
     } else {
-      // Add new event
       const newEvent = {
         id: Date.now(),
         ...eventForm,
@@ -159,7 +146,6 @@ export default function EventsScreen() {
             .detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
             .detail-label { font-weight: bold; color: #333; }
             .detail-value { color: #666; }
-            .status-${event.status} { color: ${getStatusColor(event.status)}; font-weight: bold; }
           </style>
         </head>
         <body>
@@ -191,7 +177,7 @@ export default function EventsScreen() {
             </div>
             <div class="detail-row">
               <span class="detail-label">Status:</span>
-              <span class="status-${event.status}">${getStatusText(event.status)}</span>
+              <span class="detail-value">${event.status}</span>
             </div>
           </div>
         </body>
@@ -433,21 +419,22 @@ export default function EventsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   addButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    backgroundColor: '#64a12d',
+    padding: 10,
+    borderRadius: 8,
   },
   content: {
     flex: 1,
@@ -460,9 +447,8 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    textAlign: 'center',
     marginTop: 16,
-    marginBottom: 8,
   },
   eventCard: {
     marginBottom: 16,
@@ -484,25 +470,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    alignSelf: 'flex-start',
   },
   statusText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
   },
   eventDescription: {
     fontSize: 14,
     marginBottom: 12,
-    lineHeight: 20,
   },
   eventDetails: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   detailText: {
     fontSize: 14,
@@ -552,9 +536,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingBottom: 15,
   },
   modalTitle: {
     fontSize: 20,
@@ -585,7 +566,6 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     marginRight: 10,
-    backgroundColor: '#6c757d',
   },
   saveButton: {
     flex: 1,
