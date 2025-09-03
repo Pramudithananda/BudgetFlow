@@ -27,31 +27,20 @@ export const runDatabaseMigration = () => {
         }
       );
 
-      // Check if eventId column exists in expenses table
+      // Create categories table if it doesn't exist
       tx.executeSql(
-        "PRAGMA table_info(expenses);",
+        `CREATE TABLE IF NOT EXISTS categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          color TEXT DEFAULT '#64a12d',
+          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        );`,
         [],
-        (_, { rows: { _array } }) => {
-          const hasEventId = _array.some(column => column.name === 'eventId');
-          
-          if (!hasEventId) {
-            // Add eventId column to expenses table
-            tx.executeSql(
-              "ALTER TABLE expenses ADD COLUMN eventId INTEGER;",
-              [],
-              () => {
-                console.log('eventId column added to expenses table');
-              },
-              (_, error) => {
-                console.error('Error adding eventId column:', error);
-              }
-            );
-          } else {
-            console.log('eventId column already exists in expenses table');
-          }
+        () => {
+          console.log('Categories table created successfully');
         },
         (_, error) => {
-          console.error('Error checking expenses table structure:', error);
+          console.error('Error creating categories table:', error);
         }
       );
 
@@ -73,23 +62,6 @@ export const runDatabaseMigration = () => {
         }
       );
 
-      // Create categories table if it doesn't exist
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS categories (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL UNIQUE,
-          color TEXT DEFAULT '#64a12d',
-          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-        );`,
-        [],
-        () => {
-          console.log('Categories table created successfully');
-        },
-        (_, error) => {
-          console.error('Error creating categories table:', error);
-        }
-      );
-
       // Create expenses table if it doesn't exist
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS expenses (
@@ -100,9 +72,7 @@ export const runDatabaseMigration = () => {
           categoryId INTEGER,
           eventId INTEGER,
           status TEXT DEFAULT 'Outstanding',
-          createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (categoryId) REFERENCES categories (id),
-          FOREIGN KEY (eventId) REFERENCES events (id)
+          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );`,
         [],
         () => {
@@ -136,6 +106,19 @@ export const runDatabaseMigration = () => {
           }
         );
       });
+
+      // Insert sample event for testing
+      tx.executeSql(
+        `INSERT OR IGNORE INTO events (name, description, startDate, endDate, budget, location, status) 
+         VALUES (?, ?, ?, ?, ?, ?, ?);`,
+        ['Sample Event', 'This is a sample event for testing', '2025-01-01', '2025-01-31', 1000.00, 'Sample Location', 'planned'],
+        () => {
+          console.log('Sample event inserted');
+        },
+        (_, error) => {
+          console.error('Error inserting sample event:', error);
+        }
+      );
 
     }, 
     (error) => {

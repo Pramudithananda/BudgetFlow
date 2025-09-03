@@ -17,8 +17,6 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as SQLite from 'expo-sqlite';
 
-const db = SQLite.openDatabase('budgetflow.db');
-
 export default function ReportsScreen() {
   const { isDarkMode } = useTheme();
   const [events, setEvents] = useState([]);
@@ -27,6 +25,7 @@ export default function ReportsScreen() {
   const [funders, setFunders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [db, setDb] = useState(null);
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: ''
@@ -35,14 +34,30 @@ export default function ReportsScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
+    initializeDatabase();
+  }, []);
+
+  const initializeDatabase = async () => {
+    try {
+      const database = SQLite.openDatabase('budgetflow.db');
+      setDb(database);
+      await initializeScreen(database);
+    } catch (err) {
+      console.error('Error initializing database:', err);
+      setError('Failed to initialize database. Please restart the app.');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     initializeScreen();
   }, []);
 
-  const initializeScreen = async () => {
+  const initializeScreen = async (database) => {
     try {
       setLoading(true);
       setError(null);
-      await loadData();
+      await loadData(database);
     } catch (err) {
       console.error('Error initializing reports screen:', err);
       setError('Failed to load data. Please try again.');
@@ -51,8 +66,13 @@ export default function ReportsScreen() {
     }
   };
 
-  const loadData = () => {
+  const loadData = (database) => {
     return new Promise((resolve, reject) => {
+      if (!database) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+
       let completed = 0;
       const totalQueries = 4;
       
@@ -64,7 +84,7 @@ export default function ReportsScreen() {
       };
 
       // Load events
-      db.transaction(tx => {
+      database.transaction(tx => {
         tx.executeSql('SELECT * FROM events ORDER BY startDate DESC;', [], (_, { rows: { _array } }) => {
           setEvents(_array);
           checkComplete();
@@ -75,7 +95,7 @@ export default function ReportsScreen() {
       });
 
       // Load categories
-      db.transaction(tx => {
+      database.transaction(tx => {
         tx.executeSql('SELECT * FROM categories ORDER BY name;', [], (_, { rows: { _array } }) => {
           setCategories(_array);
           checkComplete();
@@ -86,7 +106,7 @@ export default function ReportsScreen() {
       });
 
       // Load expenses
-      db.transaction(tx => {
+      database.transaction(tx => {
         tx.executeSql(`
           SELECT e.*, c.name as categoryName, ev.name as eventName 
           FROM expenses e 
@@ -103,7 +123,7 @@ export default function ReportsScreen() {
       });
 
       // Load funders
-      db.transaction(tx => {
+      database.transaction(tx => {
         tx.executeSql('SELECT * FROM funders ORDER BY name;', [], (_, { rows: { _array } }) => {
           setFunders(_array);
           checkComplete();

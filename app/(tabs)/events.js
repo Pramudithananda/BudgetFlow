@@ -18,8 +18,6 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 
-const db = SQLite.openDatabase('budgetflow.db');
-
 export default function EventsScreen() {
   const { isDarkMode } = useTheme();
   const [events, setEvents] = useState([]);
@@ -27,6 +25,7 @@ export default function EventsScreen() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [db, setDb] = useState(null);
   const [eventForm, setEventForm] = useState({
     name: '',
     description: '',
@@ -38,15 +37,31 @@ export default function EventsScreen() {
   });
 
   useEffect(() => {
+    initializeDatabase();
+  }, []);
+
+  const initializeDatabase = async () => {
+    try {
+      const database = SQLite.openDatabase('budgetflow.db');
+      setDb(database);
+      await initializeScreen(database);
+    } catch (err) {
+      console.error('Error initializing database:', err);
+      setError('Failed to initialize database. Please restart the app.');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     initializeScreen();
   }, []);
 
-  const initializeScreen = async () => {
+  const initializeScreen = async (database) => {
     try {
       setLoading(true);
       setError(null);
-      await createEventsTable();
-      await loadEvents();
+      await createEventsTable(database);
+      await loadEvents(database);
     } catch (err) {
       console.error('Error initializing events screen:', err);
       setError('Failed to load events. Please try again.');
@@ -55,9 +70,14 @@ export default function EventsScreen() {
     }
   };
 
-  const createEventsTable = () => {
+  const createEventsTable = (database) => {
     return new Promise((resolve, reject) => {
-      db.transaction(tx => {
+      if (!database) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+      
+      database.transaction(tx => {
         tx.executeSql(
           `CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,9 +98,14 @@ export default function EventsScreen() {
     });
   };
 
-  const loadEvents = () => {
+  const loadEvents = (database) => {
     return new Promise((resolve, reject) => {
-      db.transaction(tx => {
+      if (!database) {
+        reject(new Error('Database not initialized'));
+        return;
+      }
+      
+      database.transaction(tx => {
         tx.executeSql(
           'SELECT * FROM events ORDER BY startDate DESC;',
           [],
