@@ -25,6 +25,8 @@ export default function EventsScreen() {
   const [events, setEvents] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [eventForm, setEventForm] = useState({
     name: '',
     description: '',
@@ -36,40 +38,62 @@ export default function EventsScreen() {
   });
 
   useEffect(() => {
-    loadEvents();
-    createEventsTable();
+    initializeScreen();
   }, []);
 
+  const initializeScreen = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await createEventsTable();
+      await loadEvents();
+    } catch (err) {
+      console.error('Error initializing events screen:', err);
+      setError('Failed to load events. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createEventsTable = () => {
-    db.transaction(tx => {
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS events (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          description TEXT,
-          startDate TEXT,
-          endDate TEXT,
-          budget REAL,
-          location TEXT,
-          status TEXT DEFAULT 'planned',
-          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-        );`
-      );
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            startDate TEXT,
+            endDate TEXT,
+            budget REAL,
+            location TEXT,
+            status TEXT DEFAULT 'planned',
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+          );`,
+          [],
+          () => resolve(),
+          (_, error) => reject(error)
+        );
+      });
     });
   };
 
   const loadEvents = () => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM events ORDER BY startDate DESC;',
-        [],
-        (_, { rows: { _array } }) => {
-          setEvents(_array);
-        },
-        (_, error) => {
-          console.error('Error loading events:', error);
-        }
-      );
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM events ORDER BY startDate DESC;',
+          [],
+          (_, { rows: { _array } }) => {
+            setEvents(_array);
+            resolve();
+          },
+          (_, error) => {
+            console.error('Error loading events:', error);
+            reject(error);
+          }
+        );
+      });
     });
   };
 
@@ -338,6 +362,48 @@ export default function EventsScreen() {
       default: return status;
     }
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5' }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+            Events Management
+          </Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <FontAwesome5 name="spinner" size={48} color="#64a12d" />
+          <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+            Loading events...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5' }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+            Events Management
+          </Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <FontAwesome5 name="exclamation-triangle" size={48} color="#f44336" />
+          <Text style={[styles.errorText, { color: isDarkMode ? '#fff' : '#333' }]}>
+            {error}
+          </Text>
+          <Button
+            title="Retry"
+            onPress={initializeScreen}
+            icon="refresh"
+            style={styles.retryButton}
+          />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5' }]}>
@@ -798,5 +864,34 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
     marginLeft: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  retryButton: {
+    paddingHorizontal: 30,
+    paddingVertical: 12,
   },
 });

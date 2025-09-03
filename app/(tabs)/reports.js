@@ -25,6 +25,8 @@ export default function ReportsScreen() {
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [funders, setFunders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: ''
@@ -33,41 +35,82 @@ export default function ReportsScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    loadData();
+    initializeScreen();
   }, []);
 
+  const initializeScreen = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await loadData();
+    } catch (err) {
+      console.error('Error initializing reports screen:', err);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadData = () => {
-    // Load events
-    db.transaction(tx => {
-      tx.executeSql('SELECT * FROM events ORDER BY startDate DESC;', [], (_, { rows: { _array } }) => {
-        setEvents(_array);
-      });
-    });
+    return new Promise((resolve, reject) => {
+      let completed = 0;
+      const totalQueries = 4;
+      
+      const checkComplete = () => {
+        completed++;
+        if (completed === totalQueries) {
+          resolve();
+        }
+      };
 
-    // Load categories
-    db.transaction(tx => {
-      tx.executeSql('SELECT * FROM categories ORDER BY name;', [], (_, { rows: { _array } }) => {
-        setCategories(_array);
+      // Load events
+      db.transaction(tx => {
+        tx.executeSql('SELECT * FROM events ORDER BY startDate DESC;', [], (_, { rows: { _array } }) => {
+          setEvents(_array);
+          checkComplete();
+        }, (_, error) => {
+          console.error('Error loading events:', error);
+          checkComplete();
+        });
       });
-    });
 
-    // Load expenses
-    db.transaction(tx => {
-      tx.executeSql(`
-        SELECT e.*, c.name as categoryName, ev.name as eventName 
-        FROM expenses e 
-        LEFT JOIN categories c ON e.categoryId = c.id 
-        LEFT JOIN events ev ON e.eventId = ev.id 
-        ORDER BY e.date DESC;
-      `, [], (_, { rows: { _array } }) => {
-        setExpenses(_array);
+      // Load categories
+      db.transaction(tx => {
+        tx.executeSql('SELECT * FROM categories ORDER BY name;', [], (_, { rows: { _array } }) => {
+          setCategories(_array);
+          checkComplete();
+        }, (_, error) => {
+          console.error('Error loading categories:', error);
+          checkComplete();
+        });
       });
-    });
 
-    // Load funders
-    db.transaction(tx => {
-      tx.executeSql('SELECT * FROM funders ORDER BY name;', [], (_, { rows: { _array } }) => {
-        setFunders(_array);
+      // Load expenses
+      db.transaction(tx => {
+        tx.executeSql(`
+          SELECT e.*, c.name as categoryName, ev.name as eventName 
+          FROM expenses e 
+          LEFT JOIN categories c ON e.categoryId = c.id 
+          LEFT JOIN events ev ON e.eventId = ev.id 
+          ORDER BY e.date DESC;
+        `, [], (_, { rows: { _array } }) => {
+          setExpenses(_array);
+          checkComplete();
+        }, (_, error) => {
+          console.error('Error loading expenses:', error);
+          checkComplete();
+        });
+      });
+
+      // Load funders
+      db.transaction(tx => {
+        tx.executeSql('SELECT * FROM funders ORDER BY name;', [], (_, { rows: { _array } }) => {
+          setFunders(_array);
+          checkComplete();
+        }, (_, error) => {
+          console.error('Error loading funders:', error);
+          checkComplete();
+        });
       });
     });
   };
@@ -502,6 +545,48 @@ export default function ReportsScreen() {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5' }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+            Reports & Analytics
+          </Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <FontAwesome5 name="spinner" size={48} color="#64a12d" />
+          <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+            Loading reports data...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5' }]}>
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: isDarkMode ? '#fff' : '#333' }]}>
+            Reports & Analytics
+          </Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <FontAwesome5 name="exclamation-triangle" size={48} color="#f44336" />
+          <Text style={[styles.errorText, { color: isDarkMode ? '#fff' : '#333' }]}>
+            {error}
+          </Text>
+          <Button
+            title="Retry"
+            onPress={initializeScreen}
+            icon="refresh"
+            style={styles.retryButton}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5' }]}>
       <View style={styles.header}>
@@ -823,5 +908,34 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  retryButton: {
+    paddingHorizontal: 30,
+    paddingVertical: 12,
   },
 });
