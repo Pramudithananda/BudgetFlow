@@ -34,16 +34,19 @@ export default function ReportsScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
+    console.log('ReportsScreen: useEffect triggered');
     initializeDatabase();
   }, []);
 
   const initializeDatabase = async () => {
     try {
+      console.log('ReportsScreen: Initializing database...');
       const database = SQLite.openDatabase('budgetflow.db');
+      console.log('ReportsScreen: Database opened successfully');
       setDb(database);
       await initializeScreen(database);
     } catch (err) {
-      console.error('Error initializing database:', err);
+      console.error('ReportsScreen: Error initializing database:', err);
       setError('Failed to initialize database. Please restart the app.');
       setLoading(false);
     }
@@ -55,21 +58,34 @@ export default function ReportsScreen() {
 
   const initializeScreen = async (database) => {
     try {
+      console.log('ReportsScreen: Initializing screen with database:', !!database);
       setLoading(true);
       setError(null);
+      
+      if (!database) {
+        throw new Error('Database is null');
+      }
+      
       await loadData(database);
+      console.log('ReportsScreen: Data loaded successfully');
+      
     } catch (err) {
-      console.error('Error initializing reports screen:', err);
-      setError('Failed to load data. Please try again.');
+      console.error('ReportsScreen: Error initializing screen:', err);
+      setError(`Failed to load data: ${err.message}`);
     } finally {
+      console.log('ReportsScreen: Setting loading to false');
       setLoading(false);
     }
   };
 
   const loadData = (database) => {
     return new Promise((resolve, reject) => {
+      console.log('ReportsScreen: Loading data with database:', !!database);
+      
       if (!database) {
-        reject(new Error('Database not initialized'));
+        const error = new Error('Database not initialized');
+        console.error('ReportsScreen: Database is null in loadData');
+        reject(error);
         return;
       }
 
@@ -78,7 +94,9 @@ export default function ReportsScreen() {
       
       const checkComplete = () => {
         completed++;
+        console.log(`ReportsScreen: Query completed ${completed}/${totalQueries}`);
         if (completed === totalQueries) {
+          console.log('ReportsScreen: All queries completed successfully');
           resolve();
         }
       };

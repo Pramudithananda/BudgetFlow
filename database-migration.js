@@ -4,7 +4,11 @@ const db = SQLite.openDatabase('budgetflow.db');
 
 export const runDatabaseMigration = () => {
   return new Promise((resolve, reject) => {
+    console.log('DatabaseMigration: Starting database migration...');
+    
     db.transaction(tx => {
+      console.log('DatabaseMigration: Transaction started');
+      
       // Create events table if it doesn't exist
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS events (
@@ -20,10 +24,10 @@ export const runDatabaseMigration = () => {
         );`,
         [],
         () => {
-          console.log('Events table created successfully');
+          console.log('DatabaseMigration: Events table created successfully');
         },
         (_, error) => {
-          console.error('Error creating events table:', error);
+          console.error('DatabaseMigration: Error creating events table:', error);
         }
       );
 
@@ -37,10 +41,10 @@ export const runDatabaseMigration = () => {
         );`,
         [],
         () => {
-          console.log('Categories table created successfully');
+          console.log('DatabaseMigration: Categories table created successfully');
         },
         (_, error) => {
-          console.error('Error creating categories table:', error);
+          console.error('DatabaseMigration: Error creating categories table:', error);
         }
       );
 
@@ -55,10 +59,10 @@ export const runDatabaseMigration = () => {
         );`,
         [],
         () => {
-          console.log('Funders table created successfully');
+          console.log('DatabaseMigration: Funders table created successfully');
         },
         (_, error) => {
-          console.error('Error creating funders table:', error);
+          console.error('DatabaseMigration: Error creating funders table:', error);
         }
       );
 
@@ -76,10 +80,10 @@ export const runDatabaseMigration = () => {
         );`,
         [],
         () => {
-          console.log('Expenses table created successfully');
+          console.log('DatabaseMigration: Expenses table created successfully');
         },
         (_, error) => {
-          console.error('Error creating expenses table:', error);
+          console.error('DatabaseMigration: Error creating expenses table:', error);
         }
       );
 
@@ -99,10 +103,10 @@ export const runDatabaseMigration = () => {
           'INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?);',
           [category.name, category.color],
           () => {
-            console.log(`Default category ${category.name} inserted`);
+            console.log(`DatabaseMigration: Default category ${category.name} inserted`);
           },
           (_, error) => {
-            console.error(`Error inserting default category ${category.name}:`, error);
+            console.error(`DatabaseMigration: Error inserting default category ${category.name}:`, error);
           }
         );
       });
@@ -113,20 +117,20 @@ export const runDatabaseMigration = () => {
          VALUES (?, ?, ?, ?, ?, ?, ?);`,
         ['Sample Event', 'This is a sample event for testing', '2025-01-01', '2025-01-31', 1000.00, 'Sample Location', 'planned'],
         () => {
-          console.log('Sample event inserted');
+          console.log('DatabaseMigration: Sample event inserted');
         },
         (_, error) => {
-          console.error('Error inserting sample event:', error);
+          console.error('DatabaseMigration: Error inserting sample event:', error);
         }
       );
 
     }, 
     (error) => {
-      console.error('Database migration failed:', error);
+      console.error('DatabaseMigration: Database migration failed:', error);
       reject(error);
     },
     () => {
-      console.log('Database migration completed successfully');
+      console.log('DatabaseMigration: Database migration completed successfully');
       resolve();
     });
   });

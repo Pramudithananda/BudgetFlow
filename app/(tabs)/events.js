@@ -37,43 +37,57 @@ export default function EventsScreen() {
   });
 
   useEffect(() => {
+    console.log('EventsScreen: useEffect triggered');
     initializeDatabase();
   }, []);
 
   const initializeDatabase = async () => {
     try {
+      console.log('EventsScreen: Initializing database...');
       const database = SQLite.openDatabase('budgetflow.db');
+      console.log('EventsScreen: Database opened successfully');
       setDb(database);
       await initializeScreen(database);
     } catch (err) {
-      console.error('Error initializing database:', err);
+      console.error('EventsScreen: Error initializing database:', err);
       setError('Failed to initialize database. Please restart the app.');
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    initializeScreen();
-  }, []);
-
   const initializeScreen = async (database) => {
     try {
+      console.log('EventsScreen: Initializing screen with database:', !!database);
       setLoading(true);
       setError(null);
+      
+      if (!database) {
+        throw new Error('Database is null');
+      }
+      
       await createEventsTable(database);
+      console.log('EventsScreen: Events table created/verified');
+      
       await loadEvents(database);
+      console.log('EventsScreen: Events loaded successfully');
+      
     } catch (err) {
-      console.error('Error initializing events screen:', err);
-      setError('Failed to load events. Please try again.');
+      console.error('EventsScreen: Error initializing screen:', err);
+      setError(`Failed to load events: ${err.message}`);
     } finally {
+      console.log('EventsScreen: Setting loading to false');
       setLoading(false);
     }
   };
 
   const createEventsTable = (database) => {
     return new Promise((resolve, reject) => {
+      console.log('EventsScreen: Creating events table with database:', !!database);
+      
       if (!database) {
-        reject(new Error('Database not initialized'));
+        const error = new Error('Database not initialized');
+        console.error('EventsScreen: Database is null in createEventsTable');
+        reject(error);
         return;
       }
       
@@ -91,8 +105,14 @@ export default function EventsScreen() {
             createdAt TEXT DEFAULT CURRENT_TIMESTAMP
           );`,
           [],
-          () => resolve(),
-          (_, error) => reject(error)
+          () => {
+            console.log('EventsScreen: Events table created successfully');
+            resolve();
+          },
+          (_, error) => {
+            console.error('EventsScreen: Error creating events table:', error);
+            reject(error);
+          }
         );
       });
     });
@@ -100,8 +120,12 @@ export default function EventsScreen() {
 
   const loadEvents = (database) => {
     return new Promise((resolve, reject) => {
+      console.log('EventsScreen: Loading events with database:', !!database);
+      
       if (!database) {
-        reject(new Error('Database not initialized'));
+        const error = new Error('Database not initialized');
+        console.error('EventsScreen: Database is null in loadEvents');
+        reject(error);
         return;
       }
       
@@ -110,11 +134,12 @@ export default function EventsScreen() {
           'SELECT * FROM events ORDER BY startDate DESC;',
           [],
           (_, { rows: { _array } }) => {
+            console.log('EventsScreen: Events loaded, count:', _array.length);
             setEvents(_array);
             resolve();
           },
           (_, error) => {
-            console.error('Error loading events:', error);
+            console.error('EventsScreen: Error loading events:', error);
             reject(error);
           }
         );
