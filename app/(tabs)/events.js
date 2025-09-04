@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { Text } from '../../components/Themed';
 import { useTheme } from '../../context/theme';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { getFunders, addFunder } from '../../services/sqliteService';
 
 export default function EventsScreen() {
   const { isDarkMode } = useTheme();
@@ -44,19 +45,9 @@ export default function EventsScreen() {
   // Dropdown options
   const expenseStatusOptions = ['Outstanding', 'Pending', 'Available', 'Spent'];
   
-  // Sample funders data (in real app, this would come from funders tab)
-  const [funderOptions, setFunderOptions] = useState([
-    'ABC Foundation',
-    'XYZ Corporation', 
-    'DEF Trust',
-    'GHI Fund',
-    'JKL Organization',
-    'Ministry of Education',
-    'World Bank',
-    'UNICEF',
-    'Red Cross',
-    'Local Business Association'
-  ]);
+  // Funders data from database
+  const [funderOptions, setFunderOptions] = useState([]);
+  const [loadingFunders, setLoadingFunders] = useState(true);
 
   const styles = StyleSheet.create({
     container: {
@@ -263,6 +254,14 @@ export default function EventsScreen() {
     fontWeight: 'bold',
     marginLeft: 8,
   },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
 });
 
   const openAddModal = () => {
@@ -368,6 +367,32 @@ export default function EventsScreen() {
       default: return '#666';
     }
   };
+
+  // Load funders from database
+  useEffect(() => {
+    const loadFunders = async () => {
+      try {
+        setLoadingFunders(true);
+        const funders = await getFunders();
+        const funderNames = funders.map(funder => funder.name);
+        setFunderOptions(funderNames);
+      } catch (error) {
+        console.error('Error loading funders:', error);
+        // Fallback to default funders if database fails
+        setFunderOptions([
+          'ABC Foundation',
+          'XYZ Corporation', 
+          'DEF Trust',
+          'GHI Fund',
+          'JKL Organization'
+        ]);
+      } finally {
+        setLoadingFunders(false);
+      }
+    };
+
+    loadFunders();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -539,7 +564,14 @@ export default function EventsScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Funder *</Text>
               <View style={styles.dropdownContainer}>
-                {funderOptions.map((funder) => (
+                {loadingFunders ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                      Loading funders...
+                    </Text>
+                  </View>
+                ) : (
+                  funderOptions.map((funder) => (
                   <TouchableOpacity
                     key={funder}
                     style={[
@@ -560,7 +592,8 @@ export default function EventsScreen() {
                       <FontAwesome5 name="check" size={16} color="#64a12d" />
                     )}
                   </TouchableOpacity>
-                ))}
+                  ))
+                )}
                 
                 {/* Add New Funder Option */}
                 <TouchableOpacity
@@ -576,11 +609,24 @@ export default function EventsScreen() {
                         { text: 'Cancel', style: 'cancel' },
                         { 
                           text: 'Add', 
-                          onPress: (funderName) => {
+                          onPress: async (funderName) => {
                             if (funderName && funderName.trim()) {
-                              const newFunder = funderName.trim();
-                              setFunderOptions([...funderOptions, newFunder]);
-                              setEventForm({...eventForm, funder: newFunder});
+                              try {
+                                const newFunder = funderName.trim();
+                                // Add to database
+                                await addFunder({
+                                  name: newFunder,
+                                  contact: '',
+                                  amount: 0
+                                });
+                                // Update local state
+                                setFunderOptions([...funderOptions, newFunder]);
+                                setEventForm({...eventForm, funder: newFunder});
+                                Alert.alert('Success', 'Funder added successfully!');
+                              } catch (error) {
+                                console.error('Error adding funder:', error);
+                                Alert.alert('Error', 'Failed to add funder. Please try again.');
+                              }
                             }
                           }
                         }

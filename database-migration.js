@@ -111,6 +111,38 @@ export const runDatabaseMigration = () => {
         );
       });
 
+      // Insert sample funders if they don't exist
+      const sampleFunders = [
+        { name: 'ABC Foundation', contact: 'info@abcfoundation.org' },
+        { name: 'XYZ Corporation', contact: 'grants@xyzcorp.com' },
+        { name: 'DEF Trust', contact: 'contact@deftrust.org' },
+        { name: 'GHI Fund', contact: 'funding@ghifund.org' },
+        { name: 'JKL Organization', contact: 'support@jklorg.org' },
+        { name: 'Ministry of Education', contact: 'grants@moe.gov.lk' },
+        { name: 'World Bank', contact: 'info@worldbank.org' },
+        { name: 'UNICEF', contact: 'srilanka@unicef.org' },
+        { name: 'Red Cross', contact: 'srilanka@redcross.org' },
+        { name: 'Local Business Association', contact: 'info@lba.lk' },
+        { name: 'European Union', contact: 'delegation-srilanka@eeas.europa.eu' },
+        { name: 'USAID', contact: 'colombo@usaid.gov' },
+        { name: 'Australian Aid', contact: 'colombo@dfat.gov.au' },
+        { name: 'Japanese Embassy', contact: 'cultural@colombo.emb-japan.go.jp' },
+        { name: 'British Council', contact: 'info@britishcouncil.lk' }
+      ];
+
+      sampleFunders.forEach(funder => {
+        tx.executeSql(
+          'INSERT OR IGNORE INTO funders (name, contact) VALUES (?, ?);',
+          [funder.name, funder.contact],
+          () => {
+            console.log(`DatabaseMigration: Sample funder ${funder.name} inserted`);
+          },
+          (_, error) => {
+            console.error(`DatabaseMigration: Error inserting sample funder ${funder.name}:`, error);
+          }
+        );
+      });
+
       // Insert sample event for testing
       tx.executeSql(
         `INSERT OR IGNORE INTO events (name, description, startDate, endDate, budget, location, status) 
