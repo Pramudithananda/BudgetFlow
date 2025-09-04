@@ -87,15 +87,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color }) => (
-            <FontAwesome5 name="chart-pie" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
