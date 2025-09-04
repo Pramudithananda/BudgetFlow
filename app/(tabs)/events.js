@@ -1151,7 +1151,7 @@ export default function EventsScreen() {
               <Text style={[styles.inputSubLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
                 Select the types of expenses for this event
               </Text>
-              <View style={{ position: 'relative', overflow: 'visible', zIndex: 10000 }}>
+              <View style={{ position: 'relative', overflow: 'visible', zIndex: 100000 }}>
                 <TouchableOpacity
                   style={[
                     styles.dropdownButton,
@@ -1178,7 +1178,26 @@ export default function EventsScreen() {
                 {showExpenseCategoriesDropdown && (
                   <ScrollView style={[
                     styles.dropdownList,
-                    isDarkMode && styles.dropdownListDark
+                    isDarkMode && styles.dropdownListDark,
+                    { 
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: isDarkMode ? '#333' : '#fff',
+                      borderWidth: 1,
+                      borderColor: isDarkMode ? '#555' : '#e0e0e0',
+                      borderRadius: 8,
+                      marginTop: 4,
+                      maxHeight: 120,
+                      zIndex: 999999,
+                      elevation: 30,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 8 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: 10,
+                      overflow: 'hidden',
+                    }
                   ]} showsVerticalScrollIndicator={true}>
                     {loadingExpenseCategories ? (
                       <View style={styles.loadingContainer}>
