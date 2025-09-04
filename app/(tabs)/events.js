@@ -4,6 +4,7 @@ import { Text } from '../../components/Themed';
 import { useTheme } from '../../context/theme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { getFunders, addFunder } from '../../services/sqliteService';
+import * as SQLite from 'expo-sqlite';
 
 export default function EventsScreen() {
   const { isDarkMode } = useTheme();
@@ -16,7 +17,8 @@ export default function EventsScreen() {
       budget: 500000,
       description: 'Annual company conference with keynote speakers',
       expenseStatus: 'Available',
-      funder: 'ABC Foundation'
+      funder: 'ABC Foundation',
+      fundCategory: 'Private Foundations'
     },
     {
       id: 2,
@@ -26,7 +28,8 @@ export default function EventsScreen() {
       budget: 150000,
       description: 'Team building activities and workshops',
       expenseStatus: 'Pending',
-      funder: 'XYZ Corporation'
+      funder: 'XYZ Corporation',
+      fundCategory: 'Corporate Sponsors'
     }
   ]);
 
@@ -39,7 +42,8 @@ export default function EventsScreen() {
     budget: '',
     description: '',
     expenseStatus: 'Outstanding',
-    funder: ''
+    funder: '',
+    fundCategory: ''
   });
 
   // Dropdown options
@@ -48,6 +52,10 @@ export default function EventsScreen() {
   // Funders data from database
   const [funderOptions, setFunderOptions] = useState([]);
   const [loadingFunders, setLoadingFunders] = useState(true);
+  
+  // Fund categories data from database
+  const [fundCategoryOptions, setFundCategoryOptions] = useState([]);
+  const [loadingFundCategories, setLoadingFundCategories] = useState(true);
 
   const styles = StyleSheet.create({
     container: {
@@ -272,7 +280,8 @@ export default function EventsScreen() {
       budget: '',
       description: '',
       expenseStatus: 'Outstanding',
-      funder: ''
+      funder: '',
+      fundCategory: ''
     });
     setEditingEvent(null);
     setModalVisible(true);
@@ -286,7 +295,8 @@ export default function EventsScreen() {
       budget: event.budget.toString(),
       description: event.description,
       expenseStatus: event.expenseStatus || 'Outstanding',
-      funder: event.funder || ''
+      funder: event.funder || '',
+      fundCategory: event.fundCategory || ''
     });
     setEditingEvent(event);
     setModalVisible(true);
@@ -298,8 +308,8 @@ export default function EventsScreen() {
   };
 
   const saveEvent = () => {
-    if (!eventForm.name || !eventForm.date || !eventForm.location || !eventForm.budget || !eventForm.expenseStatus || !eventForm.funder) {
-      Alert.alert('Error', 'Please fill in all required fields including expense status and funder');
+    if (!eventForm.name || !eventForm.date || !eventForm.location || !eventForm.budget || !eventForm.expenseStatus || !eventForm.funder || !eventForm.fundCategory) {
+      Alert.alert('Error', 'Please fill in all required fields including expense status, funder, and fund category');
       return;
     }
 
@@ -311,7 +321,8 @@ export default function EventsScreen() {
       budget: parseFloat(eventForm.budget),
       description: eventForm.description,
       expenseStatus: eventForm.expenseStatus,
-      funder: eventForm.funder
+      funder: eventForm.funder,
+      fundCategory: eventForm.fundCategory
     };
 
     if (editingEvent) {
@@ -394,6 +405,51 @@ export default function EventsScreen() {
     loadFunders();
   }, []);
 
+  // Load fund categories from database
+  useEffect(() => {
+    const loadFundCategories = async () => {
+      try {
+        setLoadingFundCategories(true);
+        const db = SQLite.openDatabase('budgetflow.db');
+        
+        await new Promise((resolve, reject) => {
+          db.transaction(tx => {
+            tx.executeSql(
+              'SELECT * FROM fund_categories ORDER BY name;',
+              [],
+              (_, { rows }) => {
+                const categories = rows._array.map(cat => cat.name);
+                setFundCategoryOptions(categories);
+                resolve();
+              },
+              (_, error) => {
+                console.error('Error loading fund categories:', error);
+                reject(error);
+              }
+            );
+          });
+        });
+      } catch (error) {
+        console.error('Error loading fund categories:', error);
+        // Fallback to default fund categories
+        setFundCategoryOptions([
+          'Government Grants',
+          'International Organizations',
+          'Private Foundations',
+          'Corporate Sponsors',
+          'Embassy Funding',
+          'NGO Partners',
+          'Local Donors',
+          'Educational Institutions'
+        ]);
+      } finally {
+        setLoadingFundCategories(false);
+      }
+    };
+
+    loadFundCategories();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -437,6 +493,15 @@ export default function EventsScreen() {
               <View style={styles.eventDetail}>
                 <Text style={styles.eventLabel}>Funder</Text>
                 <Text style={styles.eventValue}>{event.funder}</Text>
+              </View>
+            </View>
+
+            <View style={styles.eventDetails}>
+              <View style={styles.eventDetail}>
+                <Text style={styles.eventLabel}>Fund Category</Text>
+                <Text style={[styles.eventValue, { color: '#64a12d', fontWeight: 'bold' }]}>
+                  {event.fundCategory}
+                </Text>
               </View>
             </View>
 
@@ -640,6 +705,42 @@ export default function EventsScreen() {
                     Add New Funder
                   </Text>
                 </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Fund Category *</Text>
+              <View style={styles.dropdownContainer}>
+                {loadingFundCategories ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                      Loading fund categories...
+                    </Text>
+                  </View>
+                ) : (
+                  fundCategoryOptions.map((category) => (
+                    <TouchableOpacity
+                      key={category}
+                      style={[
+                        styles.dropdownOption,
+                        eventForm.fundCategory === category && styles.selectedOption,
+                        { backgroundColor: isDarkMode ? '#333' : '#fff' }
+                      ]}
+                      onPress={() => setEventForm({...eventForm, fundCategory: category})}
+                    >
+                      <Text style={[
+                        styles.dropdownOptionText,
+                        { color: isDarkMode ? '#fff' : '#333' },
+                        eventForm.fundCategory === category && { color: '#64a12d', fontWeight: 'bold' }
+                      ]}>
+                        {category}
+                      </Text>
+                      {eventForm.fundCategory === category && (
+                        <FontAwesome5 name="check" size={16} color="#64a12d" />
+                      )}
+                    </TouchableOpacity>
+                  ))
+                )}
               </View>
             </View>
             

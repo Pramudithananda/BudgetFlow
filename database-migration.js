@@ -20,6 +20,7 @@ export const runDatabaseMigration = () => {
           budget REAL,
           location TEXT,
           status TEXT DEFAULT 'planned',
+          fundCategoryId INTEGER,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );`,
         [],
@@ -55,6 +56,7 @@ export const runDatabaseMigration = () => {
           name TEXT NOT NULL,
           contact TEXT,
           amount REAL DEFAULT 0,
+          fundCategoryId INTEGER,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );`,
         [],
@@ -63,6 +65,24 @@ export const runDatabaseMigration = () => {
         },
         (_, error) => {
           console.error('DatabaseMigration: Error creating funders table:', error);
+        }
+      );
+
+      // Create fund categories table if it doesn't exist
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS fund_categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          description TEXT,
+          color TEXT DEFAULT '#64a12d',
+          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        );`,
+        [],
+        () => {
+          console.log('DatabaseMigration: Fund categories table created successfully');
+        },
+        (_, error) => {
+          console.error('DatabaseMigration: Error creating fund categories table:', error);
         }
       );
 
@@ -111,29 +131,54 @@ export const runDatabaseMigration = () => {
         );
       });
 
+      // Insert sample fund categories if they don't exist
+      const sampleFundCategories = [
+        { name: 'Government Grants', description: 'Government funding and grants', color: '#FF6B6B' },
+        { name: 'International Organizations', description: 'UN, World Bank, etc.', color: '#4ECDC4' },
+        { name: 'Private Foundations', description: 'Private charitable foundations', color: '#45B7D1' },
+        { name: 'Corporate Sponsors', description: 'Business and corporate funding', color: '#96CEB4' },
+        { name: 'Embassy Funding', description: 'Foreign embassy grants', color: '#FFEAA7' },
+        { name: 'NGO Partners', description: 'Non-governmental organizations', color: '#DDA0DD' },
+        { name: 'Local Donors', description: 'Local community donors', color: '#F8BBD9' },
+        { name: 'Educational Institutions', description: 'Universities and schools', color: '#A8E6CF' }
+      ];
+
+      sampleFundCategories.forEach(category => {
+        tx.executeSql(
+          'INSERT OR IGNORE INTO fund_categories (name, description, color) VALUES (?, ?, ?);',
+          [category.name, category.description, category.color],
+          () => {
+            console.log(`DatabaseMigration: Fund category ${category.name} inserted`);
+          },
+          (_, error) => {
+            console.error(`DatabaseMigration: Error inserting fund category ${category.name}:`, error);
+          }
+        );
+      });
+
       // Insert sample funders if they don't exist
       const sampleFunders = [
-        { name: 'ABC Foundation', contact: 'info@abcfoundation.org' },
-        { name: 'XYZ Corporation', contact: 'grants@xyzcorp.com' },
-        { name: 'DEF Trust', contact: 'contact@deftrust.org' },
-        { name: 'GHI Fund', contact: 'funding@ghifund.org' },
-        { name: 'JKL Organization', contact: 'support@jklorg.org' },
-        { name: 'Ministry of Education', contact: 'grants@moe.gov.lk' },
-        { name: 'World Bank', contact: 'info@worldbank.org' },
-        { name: 'UNICEF', contact: 'srilanka@unicef.org' },
-        { name: 'Red Cross', contact: 'srilanka@redcross.org' },
-        { name: 'Local Business Association', contact: 'info@lba.lk' },
-        { name: 'European Union', contact: 'delegation-srilanka@eeas.europa.eu' },
-        { name: 'USAID', contact: 'colombo@usaid.gov' },
-        { name: 'Australian Aid', contact: 'colombo@dfat.gov.au' },
-        { name: 'Japanese Embassy', contact: 'cultural@colombo.emb-japan.go.jp' },
-        { name: 'British Council', contact: 'info@britishcouncil.lk' }
+        { name: 'ABC Foundation', contact: 'info@abcfoundation.org', categoryId: 3 },
+        { name: 'XYZ Corporation', contact: 'grants@xyzcorp.com', categoryId: 4 },
+        { name: 'DEF Trust', contact: 'contact@deftrust.org', categoryId: 3 },
+        { name: 'GHI Fund', contact: 'funding@ghifund.org', categoryId: 3 },
+        { name: 'JKL Organization', contact: 'support@jklorg.org', categoryId: 6 },
+        { name: 'Ministry of Education', contact: 'grants@moe.gov.lk', categoryId: 1 },
+        { name: 'World Bank', contact: 'info@worldbank.org', categoryId: 2 },
+        { name: 'UNICEF', contact: 'srilanka@unicef.org', categoryId: 2 },
+        { name: 'Red Cross', contact: 'srilanka@redcross.org', categoryId: 6 },
+        { name: 'Local Business Association', contact: 'info@lba.lk', categoryId: 7 },
+        { name: 'European Union', contact: 'delegation-srilanka@eeas.europa.eu', categoryId: 2 },
+        { name: 'USAID', contact: 'colombo@usaid.gov', categoryId: 2 },
+        { name: 'Australian Aid', contact: 'colombo@dfat.gov.au', categoryId: 2 },
+        { name: 'Japanese Embassy', contact: 'cultural@colombo.emb-japan.go.jp', categoryId: 5 },
+        { name: 'British Council', contact: 'info@britishcouncil.lk', categoryId: 5 }
       ];
 
       sampleFunders.forEach(funder => {
         tx.executeSql(
-          'INSERT OR IGNORE INTO funders (name, contact) VALUES (?, ?);',
-          [funder.name, funder.contact],
+          'INSERT OR IGNORE INTO funders (name, contact, fundCategoryId) VALUES (?, ?, ?);',
+          [funder.name, funder.contact, funder.categoryId],
           () => {
             console.log(`DatabaseMigration: Sample funder ${funder.name} inserted`);
           },
