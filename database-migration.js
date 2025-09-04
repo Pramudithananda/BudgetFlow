@@ -91,13 +91,17 @@ export const runDatabaseMigration = () => {
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS expenses (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          description TEXT NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT,
           amount REAL NOT NULL,
           date TEXT,
           categoryId INTEGER,
           eventId INTEGER,
+          funderId INTEGER,
           status TEXT DEFAULT 'Outstanding',
-          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+          assigned_to TEXT,
+          createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         );`,
         [],
         () => {

@@ -68,8 +68,9 @@ export default function NewExpenseScreen() {
         description: description.trim(),
         categoryId: selectedCategory,
         funderId: selectedFunder || null,
+        eventId: null, // No specific event for general expenses
+        date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD format
         status: 'Outstanding',
-        createdAt: new Date(),
       });
       
       Alert.alert('Success', 'Expense added successfully');
