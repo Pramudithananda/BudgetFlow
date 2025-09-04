@@ -18,7 +18,8 @@ export default function EventsScreen() {
       description: 'Annual company conference with keynote speakers',
       expenseStatus: 'Available',
       funder: 'ABC Foundation',
-      fundCategory: 'Private Foundations'
+      fundCategory: 'Private Foundations',
+      expenseCategories: ['Venue & Facilities', 'Catering & Food', 'Marketing & Promotion']
     },
     {
       id: 2,
@@ -29,7 +30,8 @@ export default function EventsScreen() {
       description: 'Team building activities and workshops',
       expenseStatus: 'Pending',
       funder: 'XYZ Corporation',
-      fundCategory: 'Corporate Sponsors'
+      fundCategory: 'Corporate Sponsors',
+      expenseCategories: ['Accommodation', 'Transportation', 'Materials & Supplies']
     }
   ]);
 
@@ -43,7 +45,8 @@ export default function EventsScreen() {
     description: '',
     expenseStatus: 'Outstanding',
     funder: '',
-    fundCategory: ''
+    fundCategory: '',
+    expenseCategories: []
   });
 
   // Dropdown options
@@ -56,6 +59,10 @@ export default function EventsScreen() {
   // Fund categories data from database
   const [fundCategoryOptions, setFundCategoryOptions] = useState([]);
   const [loadingFundCategories, setLoadingFundCategories] = useState(true);
+  
+  // Expense categories data from database
+  const [expenseCategoryOptions, setExpenseCategoryOptions] = useState([]);
+  const [loadingExpenseCategories, setLoadingExpenseCategories] = useState(true);
 
   const styles = StyleSheet.create({
     container: {
@@ -181,6 +188,39 @@ export default function EventsScreen() {
     maxHeight: 400,
     paddingHorizontal: 20,
   },
+  expenseCategoriesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  expenseCategoryTag: {
+    backgroundColor: '#64a12d',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  expenseCategoryText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  inputSubLabel: {
+    fontSize: 12,
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  selectedCategoriesContainer: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: isDarkMode ? '#333' : '#f0f0f0',
+    borderRadius: 8,
+  },
+  selectedCategoriesLabel: {
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
     inputGroup: {
       marginBottom: 16,
     },
@@ -281,7 +321,8 @@ export default function EventsScreen() {
       description: '',
       expenseStatus: 'Outstanding',
       funder: '',
-      fundCategory: ''
+      fundCategory: '',
+      expenseCategories: []
     });
     setEditingEvent(null);
     setModalVisible(true);
@@ -296,7 +337,8 @@ export default function EventsScreen() {
       description: event.description,
       expenseStatus: event.expenseStatus || 'Outstanding',
       funder: event.funder || '',
-      fundCategory: event.fundCategory || ''
+      fundCategory: event.fundCategory || '',
+      expenseCategories: event.expenseCategories || []
     });
     setEditingEvent(event);
     setModalVisible(true);
@@ -322,7 +364,8 @@ export default function EventsScreen() {
       description: eventForm.description,
       expenseStatus: eventForm.expenseStatus,
       funder: eventForm.funder,
-      fundCategory: eventForm.fundCategory
+      fundCategory: eventForm.fundCategory,
+      expenseCategories: eventForm.expenseCategories
     };
 
     if (editingEvent) {
@@ -376,6 +419,21 @@ export default function EventsScreen() {
       case 'Available': return '#2196F3';
       case 'Spent': return '#4caf50';
       default: return '#666';
+    }
+  };
+
+  const toggleExpenseCategory = (category) => {
+    const currentCategories = eventForm.expenseCategories || [];
+    if (currentCategories.includes(category)) {
+      setEventForm({
+        ...eventForm,
+        expenseCategories: currentCategories.filter(cat => cat !== category)
+      });
+    } else {
+      setEventForm({
+        ...eventForm,
+        expenseCategories: [...currentCategories, category]
+      });
     }
   };
 
@@ -450,6 +508,53 @@ export default function EventsScreen() {
     loadFundCategories();
   }, []);
 
+  // Load expense categories from database
+  useEffect(() => {
+    const loadExpenseCategories = async () => {
+      try {
+        setLoadingExpenseCategories(true);
+        const db = SQLite.openDatabase('budgetflow.db');
+        
+        await new Promise((resolve, reject) => {
+          db.transaction(tx => {
+            tx.executeSql(
+              'SELECT * FROM categories ORDER BY name;',
+              [],
+              (_, { rows }) => {
+                const categories = rows._array.map(cat => cat.name);
+                setExpenseCategoryOptions(categories);
+                resolve();
+              },
+              (_, error) => {
+                console.error('Error loading expense categories:', error);
+                reject(error);
+              }
+            );
+          });
+        });
+      } catch (error) {
+        console.error('Error loading expense categories:', error);
+        // Fallback to default expense categories
+        setExpenseCategoryOptions([
+          'Venue & Facilities',
+          'Catering & Food',
+          'Transportation',
+          'Marketing & Promotion',
+          'Equipment & Technology',
+          'Speakers & Training',
+          'Accommodation',
+          'Materials & Supplies',
+          'Security & Safety',
+          'Administrative'
+        ]);
+      } finally {
+        setLoadingExpenseCategories(false);
+      }
+    };
+
+    loadExpenseCategories();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -504,6 +609,21 @@ export default function EventsScreen() {
                 </Text>
               </View>
             </View>
+
+            {event.expenseCategories && event.expenseCategories.length > 0 && (
+              <View style={styles.eventDetails}>
+                <View style={styles.eventDetail}>
+                  <Text style={styles.eventLabel}>Expense Categories</Text>
+                  <View style={styles.expenseCategoriesContainer}>
+                    {event.expenseCategories.map((category, index) => (
+                      <View key={index} style={styles.expenseCategoryTag}>
+                        <Text style={styles.expenseCategoryText}>{category}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
 
             {event.description && (
               <Text style={styles.eventDescription}>{event.description}</Text>
@@ -742,6 +862,55 @@ export default function EventsScreen() {
                   ))
                 )}
               </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Expense Categories</Text>
+              <Text style={[styles.inputSubLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
+                Select the types of expenses for this event
+              </Text>
+              <View style={styles.dropdownContainer}>
+                {loadingExpenseCategories ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                      Loading expense categories...
+                    </Text>
+                  </View>
+                ) : (
+                  expenseCategoryOptions.map((category) => {
+                    const isSelected = eventForm.expenseCategories && eventForm.expenseCategories.includes(category);
+                    return (
+                      <TouchableOpacity
+                        key={category}
+                        style={[
+                          styles.dropdownOption,
+                          isSelected && styles.selectedOption,
+                          { backgroundColor: isDarkMode ? '#333' : '#fff' }
+                        ]}
+                        onPress={() => toggleExpenseCategory(category)}
+                      >
+                        <Text style={[
+                          styles.dropdownOptionText,
+                          { color: isDarkMode ? '#fff' : '#333' },
+                          isSelected && { color: '#64a12d', fontWeight: 'bold' }
+                        ]}>
+                          {category}
+                        </Text>
+                        {isSelected && (
+                          <FontAwesome5 name="check" size={16} color="#64a12d" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </View>
+              {eventForm.expenseCategories && eventForm.expenseCategories.length > 0 && (
+                <View style={styles.selectedCategoriesContainer}>
+                  <Text style={[styles.selectedCategoriesLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
+                    Selected: {eventForm.expenseCategories.join(', ')}
+                  </Text>
+                </View>
+              )}
             </View>
             
             </ScrollView>

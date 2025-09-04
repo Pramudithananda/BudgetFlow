@@ -38,6 +38,7 @@ export const runDatabaseMigration = () => {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL UNIQUE,
           color TEXT DEFAULT '#64a12d',
+          description TEXT,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );`,
         [],
@@ -107,21 +108,24 @@ export const runDatabaseMigration = () => {
         }
       );
 
-      // Insert default categories if they don't exist
+      // Insert default expense categories if they don't exist
       const defaultCategories = [
-        { name: 'Food & Beverages', color: '#FF6B6B' },
-        { name: 'Transportation', color: '#4ECDC4' },
-        { name: 'Accommodation', color: '#45B7D1' },
-        { name: 'Materials', color: '#96CEB4' },
-        { name: 'Services', color: '#FFEAA7' },
-        { name: 'Marketing', color: '#DDA0DD' },
-        { name: 'Other', color: '#F8BBD9' }
+        { name: 'Venue & Facilities', color: '#FF6B6B', description: 'Conference halls, meeting rooms, venues' },
+        { name: 'Catering & Food', color: '#4ECDC4', description: 'Meals, snacks, beverages for events' },
+        { name: 'Transportation', color: '#45B7D1', description: 'Travel, transport, logistics' },
+        { name: 'Marketing & Promotion', color: '#96CEB4', description: 'Advertising, flyers, social media' },
+        { name: 'Equipment & Technology', color: '#FFEAA7', description: 'AV equipment, laptops, projectors' },
+        { name: 'Speakers & Training', color: '#DDA0DD', description: 'Speaker fees, training materials' },
+        { name: 'Accommodation', color: '#F8BBD9', description: 'Hotel bookings, guest accommodation' },
+        { name: 'Materials & Supplies', color: '#A8E6CF', description: 'Stationery, printing, supplies' },
+        { name: 'Security & Safety', color: '#FFB6C1', description: 'Security services, safety equipment' },
+        { name: 'Administrative', color: '#D3D3D3', description: 'Office supplies, admin costs' }
       ];
 
       defaultCategories.forEach(category => {
         tx.executeSql(
-          'INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?);',
-          [category.name, category.color],
+          'INSERT OR IGNORE INTO categories (name, color, description) VALUES (?, ?, ?);',
+          [category.name, category.color, category.description],
           () => {
             console.log(`DatabaseMigration: Default category ${category.name} inserted`);
           },
