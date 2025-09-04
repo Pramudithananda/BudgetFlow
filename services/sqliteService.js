@@ -27,6 +27,8 @@ const initDatabase = async () => {
         status TEXT NOT NULL DEFAULT 'Outstanding',
         category_id INTEGER,
         funder_id INTEGER,
+        event_id INTEGER,
+        date TEXT,
         assigned_to TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -58,6 +60,7 @@ const initDatabase = async () => {
       
       CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id);
       CREATE INDEX IF NOT EXISTS idx_expenses_funder_id ON expenses(funder_id);
+      CREATE INDEX IF NOT EXISTS idx_expenses_event_id ON expenses(event_id);
       CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
       CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
       
@@ -66,6 +69,21 @@ const initDatabase = async () => {
       VALUES (1, 0, 0, 0, 0);
     `);
     
+    // Lightweight migration: ensure event_id and date columns exist on expenses
+    try {
+      const cols = await db.getAllAsync("PRAGMA table_info('expenses')");
+      const colNames = new Set(cols.map(c => c.name));
+      if (!colNames.has('event_id')) {
+        await db.execAsync("ALTER TABLE expenses ADD COLUMN event_id INTEGER;");
+        await db.execAsync("CREATE INDEX IF NOT EXISTS idx_expenses_event_id ON expenses(event_id);");
+      }
+      if (!colNames.has('date')) {
+        await db.execAsync("ALTER TABLE expenses ADD COLUMN date TEXT;");
+      }
+    } catch (migErr) {
+      console.warn('Expense table migration check failed (safe to ignore if fresh DB):', migErr);
+    }
+
     console.log('Database initialized successfully');
     return db;
   } catch (error) {
@@ -200,6 +218,25 @@ export const getExpenses = async (categoryId = null) => {
   }
 };
 
+export const getExpensesByEvent = async (eventId) => {
+  try {
+    const database = await getDatabase();
+    const result = await database.getAllAsync(
+      `SELECT e.*, c.name as category_name, f.name as funder_name
+       FROM expenses e
+       LEFT JOIN categories c ON c.id = e.category_id
+       LEFT JOIN funders f ON f.id = e.funder_id
+       WHERE e.event_id = ?
+       ORDER BY e.created_at DESC`,
+      [eventId]
+    );
+    return result.map(convertRow);
+  } catch (error) {
+    console.error('Error getting expenses by event:', error);
+    throw error;
+  }
+};
+
 // Data change listeners for SQLite
 const listeners = {
   expenses: new Set(),
@@ -303,13 +340,15 @@ export const addExpense = async (expenseData) => {
   try {
     const database = await getDatabase();
     const result = await database.runAsync(
-      'INSERT INTO expenses (title, amount, status, category_id, funder_id, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO expenses (title, amount, status, category_id, funder_id, event_id, date, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         expenseData.title,
         expenseData.amount || 0,
         expenseData.status || 'Outstanding',
         expenseData.categoryId || null,
         expenseData.funderId || null,
+        expenseData.eventId || null,
+        expenseData.date || new Date().toISOString().slice(0,10),
         expenseData.assignedTo || null
       ]
     );
@@ -321,6 +360,8 @@ export const addExpense = async (expenseData) => {
       status: expenseData.status || 'Outstanding',
       categoryId: expenseData.categoryId || null,
       funderId: expenseData.funderId || null,
+      eventId: expenseData.eventId || null,
+      date: expenseData.date || new Date().toISOString().slice(0,10),
       assignedTo: expenseData.assignedTo || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -340,13 +381,15 @@ export const updateExpense = async (expenseId, expenseData) => {
   try {
     const database = await getDatabase();
     await database.runAsync(
-      'UPDATE expenses SET title = ?, amount = ?, status = ?, category_id = ?, funder_id = ?, assigned_to = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE expenses SET title = ?, amount = ?, status = ?, category_id = ?, funder_id = ?, event_id = ?, date = ?, assigned_to = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [
         expenseData.title,
         expenseData.amount,
         expenseData.status,
         expenseData.categoryId || null,
         expenseData.funderId || null,
+        expenseData.eventId || null,
+        expenseData.date || null,
         expenseData.assignedTo || null,
         expenseId
       ]
