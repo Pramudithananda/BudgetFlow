@@ -85,10 +85,22 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       
+      // Ensure database is initialized before fetching data
+      const database = await import('../../services/sqliteService');
+      
       const [budgetData, expensesData, categoriesData] = await Promise.all([
-        getBudgetSummary(),
-        getExpenses(),
-        getCategories()
+        database.getBudgetSummary().catch(err => {
+          console.warn('Budget fetch failed, using defaults:', err);
+          return { totalBudget: 0, receivedFund: 0 };
+        }),
+        database.getExpenses().catch(err => {
+          console.warn('Expenses fetch failed, using empty array:', err);
+          return [];
+        }),
+        database.getCategories().catch(err => {
+          console.warn('Categories fetch failed, using empty array:', err);
+          return [];
+        })
       ]);
       
       // Calculate total budget as sum of all expenses
@@ -143,7 +155,8 @@ export default function HomeScreen() {
       setRecentExpenses(expensesData.slice(0, 5)); // Get only 5 most recent expenses
     } catch (error) {
       console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Could not load data. Please try again.');
+      // Don't show alert for database initialization errors, just log and continue
+      console.warn('Continuing with default data due to error:', error);
     } finally {
       setLoading(false);
     }

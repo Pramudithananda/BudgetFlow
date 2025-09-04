@@ -95,7 +95,7 @@ const initDatabase = async () => {
 // Helper function to ensure database is initialized
 const getDatabase = async () => {
   if (!db) {
-    await initDatabase();
+    await ensureDatabase();
   }
   return db;
 };
@@ -570,4 +570,13 @@ export const deleteFunder = async (funderId) => {
 };
 
 // Initialize database when module loads
-initDatabase().catch(console.error);
+let initPromise = null;
+const ensureDatabase = async () => {
+  if (!initPromise) {
+    initPromise = initDatabase();
+  }
+  return initPromise;
+};
+
+// Initialize database when module loads
+ensureDatabase().catch(console.error);
