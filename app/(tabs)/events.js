@@ -13,7 +13,9 @@ export default function EventsScreen() {
       date: '2024-03-15',
       location: 'Colombo Convention Centre',
       budget: 500000,
-      description: 'Annual company conference with keynote speakers'
+      description: 'Annual company conference with keynote speakers',
+      expenseStatus: 'Available',
+      funder: 'ABC Foundation'
     },
     {
       id: 2,
@@ -21,7 +23,9 @@ export default function EventsScreen() {
       date: '2024-02-20',
       location: 'Mount Lavinia Hotel',
       budget: 150000,
-      description: 'Team building activities and workshops'
+      description: 'Team building activities and workshops',
+      expenseStatus: 'Pending',
+      funder: 'XYZ Corporation'
     }
   ]);
 
@@ -32,8 +36,14 @@ export default function EventsScreen() {
     date: '',
     location: '',
     budget: '',
-    description: ''
+    description: '',
+    expenseStatus: 'Outstanding',
+    funder: ''
   });
+
+  // Dropdown options
+  const expenseStatusOptions = ['Outstanding', 'Pending', 'Available', 'Spent'];
+  const funderOptions = ['ABC Foundation', 'XYZ Corporation', 'DEF Trust', 'GHI Fund', 'JKL Organization'];
 
   const styles = StyleSheet.create({
     container: {
@@ -188,12 +198,35 @@ export default function EventsScreen() {
     saveButton: {
       backgroundColor: '#64a12d',
     },
-    modalButtonText: {
-      color: '#fff',
-      textAlign: 'center',
-      fontWeight: 'bold',
-    },
-  });
+      modalButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  
+  // Dropdown styles
+  dropdownContainer: {
+    marginTop: 8,
+  },
+  dropdownOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  selectedOption: {
+    borderColor: '#64a12d',
+    borderWidth: 2,
+  },
+  dropdownOptionText: {
+    fontSize: 16,
+    flex: 1,
+  },
+});
 
   const openAddModal = () => {
     setEventForm({
@@ -201,7 +234,9 @@ export default function EventsScreen() {
       date: '',
       location: '',
       budget: '',
-      description: ''
+      description: '',
+      expenseStatus: 'Outstanding',
+      funder: ''
     });
     setEditingEvent(null);
     setModalVisible(true);
@@ -213,7 +248,9 @@ export default function EventsScreen() {
       date: event.date,
       location: event.location,
       budget: event.budget.toString(),
-      description: event.description
+      description: event.description,
+      expenseStatus: event.expenseStatus || 'Outstanding',
+      funder: event.funder || ''
     });
     setEditingEvent(event);
     setModalVisible(true);
@@ -225,8 +262,8 @@ export default function EventsScreen() {
   };
 
   const saveEvent = () => {
-    if (!eventForm.name || !eventForm.date || !eventForm.location || !eventForm.budget) {
-      Alert.alert('Error', 'Please fill in all required fields');
+    if (!eventForm.name || !eventForm.date || !eventForm.location || !eventForm.budget || !eventForm.expenseStatus || !eventForm.funder) {
+      Alert.alert('Error', 'Please fill in all required fields including expense status and funder');
       return;
     }
 
@@ -236,7 +273,9 @@ export default function EventsScreen() {
       date: eventForm.date,
       location: eventForm.location,
       budget: parseFloat(eventForm.budget),
-      description: eventForm.description
+      description: eventForm.description,
+      expenseStatus: eventForm.expenseStatus,
+      funder: eventForm.funder
     };
 
     if (editingEvent) {
@@ -283,6 +322,16 @@ export default function EventsScreen() {
     });
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Outstanding': return '#f44336';
+      case 'Pending': return '#ff9800';
+      case 'Available': return '#2196F3';
+      case 'Spent': return '#4caf50';
+      default: return '#666';
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -313,6 +362,19 @@ export default function EventsScreen() {
               <View style={styles.eventDetail}>
                 <Text style={styles.eventLabel}>Budget</Text>
                 <Text style={styles.eventValue}>{formatCurrency(event.budget)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.eventDetails}>
+              <View style={styles.eventDetail}>
+                <Text style={styles.eventLabel}>Expense Status</Text>
+                <Text style={[styles.eventValue, { color: getStatusColor(event.expenseStatus) }]}>
+                  {event.expenseStatus}
+                </Text>
+              </View>
+              <View style={styles.eventDetail}>
+                <Text style={styles.eventLabel}>Funder</Text>
+                <Text style={styles.eventValue}>{event.funder}</Text>
               </View>
             </View>
 
@@ -405,6 +467,62 @@ export default function EventsScreen() {
                 placeholderTextColor={isDarkMode ? '#666' : '#999'}
                 multiline
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Expense Status *</Text>
+              <View style={styles.dropdownContainer}>
+                {expenseStatusOptions.map((status) => (
+                  <TouchableOpacity
+                    key={status}
+                    style={[
+                      styles.dropdownOption,
+                      eventForm.expenseStatus === status && styles.selectedOption,
+                      { backgroundColor: isDarkMode ? '#333' : '#fff' }
+                    ]}
+                    onPress={() => setEventForm({...eventForm, expenseStatus: status})}
+                  >
+                    <Text style={[
+                      styles.dropdownOptionText,
+                      { color: isDarkMode ? '#fff' : '#333' },
+                      eventForm.expenseStatus === status && { color: '#64a12d', fontWeight: 'bold' }
+                    ]}>
+                      {status}
+                    </Text>
+                    {eventForm.expenseStatus === status && (
+                      <FontAwesome5 name="check" size={16} color="#64a12d" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Funder *</Text>
+              <View style={styles.dropdownContainer}>
+                {funderOptions.map((funder) => (
+                  <TouchableOpacity
+                    key={funder}
+                    style={[
+                      styles.dropdownOption,
+                      eventForm.funder === funder && styles.selectedOption,
+                      { backgroundColor: isDarkMode ? '#333' : '#fff' }
+                    ]}
+                    onPress={() => setEventForm({...eventForm, funder: funder})}
+                  >
+                    <Text style={[
+                      styles.dropdownOptionText,
+                      { color: isDarkMode ? '#fff' : '#333' },
+                      eventForm.funder === funder && { color: '#64a12d', fontWeight: 'bold' }
+                    ]}>
+                      {funder}
+                    </Text>
+                    {eventForm.funder === funder && (
+                      <FontAwesome5 name="check" size={16} color="#64a12d" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             <View style={styles.modalActions}>
