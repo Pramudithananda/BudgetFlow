@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput
 import { Text } from '../../components/Themed';
 import { useTheme } from '../../context/theme';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { getFunders, addFunder } from '../../services/sqliteService';
+import { getFunders, addFunder, getCategories } from '../../services/sqliteService';
 import * as SQLite from 'expo-sqlite';
 
 export default function EventsScreen() {
@@ -19,7 +19,8 @@ export default function EventsScreen() {
       expenseStatus: 'Available',
       funder: 'ABC Foundation',
       fundCategory: 'Private Foundations',
-      expenseCategories: ['Venue & Facilities', 'Catering & Food', 'Marketing & Promotion']
+      expenseCategories: ['Venue & Facilities', 'Catering & Food', 'Marketing & Promotion'],
+      category: 'Venue & Facilities'
     },
     {
       id: 2,
@@ -31,7 +32,8 @@ export default function EventsScreen() {
       expenseStatus: 'Pending',
       funder: 'XYZ Corporation',
       fundCategory: 'Corporate Sponsors',
-      expenseCategories: ['Accommodation', 'Transportation', 'Materials & Supplies']
+      expenseCategories: ['Accommodation', 'Transportation', 'Materials & Supplies'],
+      category: 'Accommodation'
     }
   ]);
 
@@ -46,7 +48,8 @@ export default function EventsScreen() {
     expenseStatus: 'Outstanding',
     funder: '',
     fundCategory: '',
-    expenseCategories: []
+    expenseCategories: [],
+    category: ''
   });
 
   // Dropdown options
@@ -63,6 +66,10 @@ export default function EventsScreen() {
   // Expense categories data from database
   const [expenseCategoryOptions, setExpenseCategoryOptions] = useState([]);
   const [loadingExpenseCategories, setLoadingExpenseCategories] = useState(true);
+  
+  // Categories data from database
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   const styles = StyleSheet.create({
     container: {
@@ -322,7 +329,8 @@ export default function EventsScreen() {
       expenseStatus: 'Outstanding',
       funder: '',
       fundCategory: '',
-      expenseCategories: []
+      expenseCategories: [],
+      category: ''
     });
     setEditingEvent(null);
     setModalVisible(true);
@@ -338,7 +346,8 @@ export default function EventsScreen() {
       expenseStatus: event.expenseStatus || 'Outstanding',
       funder: event.funder || '',
       fundCategory: event.fundCategory || '',
-      expenseCategories: event.expenseCategories || []
+      expenseCategories: event.expenseCategories || [],
+      category: event.category || ''
     });
     setEditingEvent(event);
     setModalVisible(true);
@@ -350,8 +359,8 @@ export default function EventsScreen() {
   };
 
   const saveEvent = () => {
-    if (!eventForm.name || !eventForm.date || !eventForm.location || !eventForm.budget || !eventForm.expenseStatus || !eventForm.funder || !eventForm.fundCategory) {
-      Alert.alert('Error', 'Please fill in all required fields including expense status, funder, and fund category');
+    if (!eventForm.name || !eventForm.date || !eventForm.location || !eventForm.budget || !eventForm.expenseStatus || !eventForm.funder || !eventForm.fundCategory || !eventForm.category) {
+      Alert.alert('Error', 'Please fill in all required fields including expense status, funder, fund category, and category');
       return;
     }
 
@@ -365,7 +374,8 @@ export default function EventsScreen() {
       expenseStatus: eventForm.expenseStatus,
       funder: eventForm.funder,
       fundCategory: eventForm.fundCategory,
-      expenseCategories: eventForm.expenseCategories
+      expenseCategories: eventForm.expenseCategories,
+      category: eventForm.category
     };
 
     if (editingEvent) {
@@ -555,6 +565,37 @@ export default function EventsScreen() {
     loadExpenseCategories();
   }, []);
 
+  // Load categories from database
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const categories = await getCategories();
+        const categoryNames = categories.map(cat => cat.name);
+        setCategoryOptions(categoryNames);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to default categories if database fails
+        setCategoryOptions([
+          'Venue & Facilities',
+          'Catering & Food',
+          'Transportation',
+          'Marketing & Promotion',
+          'Equipment & Technology',
+          'Speakers & Training',
+          'Accommodation',
+          'Materials & Supplies',
+          'Security & Safety',
+          'Administrative'
+        ]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -606,6 +647,12 @@ export default function EventsScreen() {
                 <Text style={styles.eventLabel}>Fund Category</Text>
                 <Text style={[styles.eventValue, { color: '#64a12d', fontWeight: 'bold' }]}>
                   {event.fundCategory}
+                </Text>
+              </View>
+              <View style={styles.eventDetail}>
+                <Text style={styles.eventLabel}>Category</Text>
+                <Text style={[styles.eventValue, { color: '#2196F3', fontWeight: 'bold' }]}>
+                  {event.category}
                 </Text>
               </View>
             </View>
@@ -857,6 +904,42 @@ export default function EventsScreen() {
                       </Text>
                       {eventForm.fundCategory === category && (
                         <FontAwesome5 name="check" size={16} color="#64a12d" />
+                      )}
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Category *</Text>
+              <View style={styles.dropdownContainer}>
+                {loadingCategories ? (
+                  <View style={styles.loadingContainer}>
+                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                      Loading categories...
+                    </Text>
+                  </View>
+                ) : (
+                  categoryOptions.map((category) => (
+                    <TouchableOpacity
+                      key={category}
+                      style={[
+                        styles.dropdownOption,
+                        eventForm.category === category && styles.selectedOption,
+                        { backgroundColor: isDarkMode ? '#333' : '#fff' }
+                      ]}
+                      onPress={() => setEventForm({...eventForm, category: category})}
+                    >
+                      <Text style={[
+                        styles.dropdownOptionText,
+                        { color: isDarkMode ? '#fff' : '#333' },
+                        eventForm.category === category && { color: '#2196F3', fontWeight: 'bold' }
+                      ]}>
+                        {category}
+                      </Text>
+                      {eventForm.category === category && (
+                        <FontAwesome5 name="check" size={16} color="#2196F3" />
                       )}
                     </TouchableOpacity>
                   ))
