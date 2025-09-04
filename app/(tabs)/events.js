@@ -388,6 +388,7 @@ export default function EventsScreen() {
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
+      overflow: 'hidden',
     },
     dropdownItem: {
       padding: 12,
@@ -604,7 +605,7 @@ export default function EventsScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Category</Text>
-                <View style={{ position: 'relative' }}>
+                <View style={{ position: 'relative', zIndex: 1000 }}>
                   <TouchableOpacity
                     style={styles.dropdownButton}
                     onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
@@ -620,26 +621,44 @@ export default function EventsScreen() {
                   </TouchableOpacity>
                   
                   {showCategoryDropdown && (
-                    <ScrollView style={styles.dropdownList}>
-                      {loadingCategories ? (
-                        <View style={styles.dropdownItem}>
-                          <Text style={styles.dropdownItemText}>Loading...</Text>
-                        </View>
-                      ) : (
-                        categories.map((category) => (
-                          <TouchableOpacity
-                            key={category}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setEventForm({...eventForm, category: category});
-                              setShowCategoryDropdown(false);
-                            }}
-                          >
-                            <Text style={styles.dropdownItemText}>{category}</Text>
-                          </TouchableOpacity>
-                        ))
-                      )}
-                    </ScrollView>
+                    <View style={styles.dropdownList}>
+                      <ScrollView 
+                        showsVerticalScrollIndicator={true}
+                        nestedScrollEnabled={true}
+                        style={{ maxHeight: 180 }}
+                      >
+                        {loadingCategories ? (
+                          <View style={styles.dropdownItem}>
+                            <Text style={styles.dropdownItemText}>Loading categories...</Text>
+                          </View>
+                        ) : categories.length === 0 ? (
+                          <View style={styles.dropdownItem}>
+                            <Text style={styles.dropdownItemText}>No categories available</Text>
+                          </View>
+                        ) : (
+                          categories.map((category, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={[
+                                styles.dropdownItem,
+                                eventForm.category === category && { backgroundColor: isDarkMode ? '#444' : '#f0f8ff' }
+                              ]}
+                              onPress={() => {
+                                setEventForm({...eventForm, category: category});
+                                setShowCategoryDropdown(false);
+                              }}
+                            >
+                              <Text style={[
+                                styles.dropdownItemText,
+                                eventForm.category === category && { color: '#64a12d', fontWeight: 'bold' }
+                              ]}>
+                                {category}
+                              </Text>
+                            </TouchableOpacity>
+                          ))
+                        )}
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
               </View>
@@ -691,7 +710,7 @@ export default function EventsScreen() {
             <ScrollView showsVerticalScrollIndicator={true}>
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Funder *</Text>
-                <View style={{ position: 'relative' }}>
+                <View style={{ position: 'relative', zIndex: 1000 }}>
                   <TouchableOpacity
                     style={styles.dropdownButton}
                     onPress={() => setShowFunderDropdown(!showFunderDropdown)}
@@ -707,26 +726,44 @@ export default function EventsScreen() {
                   </TouchableOpacity>
                   
                   {showFunderDropdown && (
-                    <ScrollView style={styles.dropdownList}>
-                      {loadingFunders ? (
-                        <View style={styles.dropdownItem}>
-                          <Text style={styles.dropdownItemText}>Loading...</Text>
-                        </View>
-                      ) : (
-                        funders.map((funder) => (
-                          <TouchableOpacity
-                            key={funder}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setFundForm({...fundForm, funder: funder});
-                              setShowFunderDropdown(false);
-                            }}
-                          >
-                            <Text style={styles.dropdownItemText}>{funder}</Text>
-                          </TouchableOpacity>
-                        ))
-                      )}
-                    </ScrollView>
+                    <View style={styles.dropdownList}>
+                      <ScrollView 
+                        showsVerticalScrollIndicator={true}
+                        nestedScrollEnabled={true}
+                        style={{ maxHeight: 180 }}
+                      >
+                        {loadingFunders ? (
+                          <View style={styles.dropdownItem}>
+                            <Text style={styles.dropdownItemText}>Loading funders...</Text>
+                          </View>
+                        ) : funders.length === 0 ? (
+                          <View style={styles.dropdownItem}>
+                            <Text style={styles.dropdownItemText}>No funders available</Text>
+                          </View>
+                        ) : (
+                          funders.map((funder, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={[
+                                styles.dropdownItem,
+                                fundForm.funder === funder && { backgroundColor: isDarkMode ? '#444' : '#f0f8ff' }
+                              ]}
+                              onPress={() => {
+                                setFundForm({...fundForm, funder: funder});
+                                setShowFunderDropdown(false);
+                              }}
+                            >
+                              <Text style={[
+                                styles.dropdownItemText,
+                                fundForm.funder === funder && { color: '#64a12d', fontWeight: 'bold' }
+                              ]}>
+                                {funder}
+                              </Text>
+                            </TouchableOpacity>
+                          ))
+                        )}
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
               </View>
@@ -745,7 +782,7 @@ export default function EventsScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Status *</Text>
-                <View style={{ position: 'relative' }}>
+                <View style={{ position: 'relative', zIndex: 1000 }}>
                   <TouchableOpacity
                     style={styles.dropdownButton}
                     onPress={() => setShowStatusDropdown(!showStatusDropdown)}
@@ -761,27 +798,41 @@ export default function EventsScreen() {
                   </TouchableOpacity>
                   
                   {showStatusDropdown && (
-                    <ScrollView style={styles.dropdownList}>
-                      {['Outstanding', 'Pending', 'Available', 'Spent'].map((status) => (
-                        <TouchableOpacity
-                          key={status}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setFundForm({...fundForm, status: status});
-                            setShowStatusDropdown(false);
-                          }}
-                        >
-                          <Text style={styles.dropdownItemText}>{status}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
+                    <View style={styles.dropdownList}>
+                      <ScrollView 
+                        showsVerticalScrollIndicator={true}
+                        nestedScrollEnabled={true}
+                        style={{ maxHeight: 180 }}
+                      >
+                        {['Outstanding', 'Pending', 'Available', 'Spent'].map((status, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.dropdownItem,
+                              fundForm.status === status && { backgroundColor: isDarkMode ? '#444' : '#f0f8ff' }
+                            ]}
+                            onPress={() => {
+                              setFundForm({...fundForm, status: status});
+                              setShowStatusDropdown(false);
+                            }}
+                          >
+                            <Text style={[
+                              styles.dropdownItemText,
+                              fundForm.status === status && { color: '#64a12d', fontWeight: 'bold' }
+                            ]}>
+                              {status}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Expense Category *</Text>
-                <View style={{ position: 'relative' }}>
+                <View style={{ position: 'relative', zIndex: 1000 }}>
                   <TouchableOpacity
                     style={styles.dropdownButton}
                     onPress={() => setShowFundCategoryDropdown(!showFundCategoryDropdown)}
@@ -797,26 +848,44 @@ export default function EventsScreen() {
                   </TouchableOpacity>
                   
                   {showFundCategoryDropdown && (
-                    <ScrollView style={styles.dropdownList}>
-                      {loadingCategories ? (
-                        <View style={styles.dropdownItem}>
-                          <Text style={styles.dropdownItemText}>Loading...</Text>
-                        </View>
-                      ) : (
-                        categories.map((category) => (
-                          <TouchableOpacity
-                            key={category}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setFundForm({...fundForm, category: category});
-                              setShowFundCategoryDropdown(false);
-                            }}
-                          >
-                            <Text style={styles.dropdownItemText}>{category}</Text>
-                          </TouchableOpacity>
-                        ))
-                      )}
-                    </ScrollView>
+                    <View style={styles.dropdownList}>
+                      <ScrollView 
+                        showsVerticalScrollIndicator={true}
+                        nestedScrollEnabled={true}
+                        style={{ maxHeight: 180 }}
+                      >
+                        {loadingCategories ? (
+                          <View style={styles.dropdownItem}>
+                            <Text style={styles.dropdownItemText}>Loading categories...</Text>
+                          </View>
+                        ) : categories.length === 0 ? (
+                          <View style={styles.dropdownItem}>
+                            <Text style={styles.dropdownItemText}>No categories available</Text>
+                          </View>
+                        ) : (
+                          categories.map((category, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={[
+                                styles.dropdownItem,
+                                fundForm.category === category && { backgroundColor: isDarkMode ? '#444' : '#f0f8ff' }
+                              ]}
+                              onPress={() => {
+                                setFundForm({...fundForm, category: category});
+                                setShowFundCategoryDropdown(false);
+                              }}
+                            >
+                              <Text style={[
+                                styles.dropdownItemText,
+                                fundForm.category === category && { color: '#64a12d', fontWeight: 'bold' }
+                              ]}>
+                                {category}
+                              </Text>
+                            </TouchableOpacity>
+                          ))
+                        )}
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
               </View>
