@@ -149,20 +149,26 @@ export default function EventsScreen() {
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',
     },
-    modalContent: {
-      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-      padding: 20,
-      borderRadius: 12,
-      width: '90%',
-      maxHeight: '80%',
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: isDarkMode ? '#fff' : '#333',
-      marginBottom: 20,
-      textAlign: 'center',
-    },
+      modalContent: {
+    backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+    padding: 0,
+    borderRadius: 12,
+    width: '90%',
+    maxHeight: '85%',
+  },
+      modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: isDarkMode ? '#fff' : '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+    padding: 20,
+    paddingBottom: 0,
+  },
+  modalScrollView: {
+    maxHeight: 400,
+    paddingHorizontal: 20,
+  },
     inputGroup: {
       marginBottom: 16,
     },
@@ -181,11 +187,14 @@ export default function EventsScreen() {
       color: isDarkMode ? '#fff' : '#333',
       backgroundColor: isDarkMode ? '#333' : '#fff',
     },
-    modalActions: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 20,
-    },
+      modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
     modalButton: {
       flex: 1,
       paddingVertical: 12,
@@ -411,6 +420,8 @@ export default function EventsScreen() {
             <Text style={styles.modalTitle}>
               {editingEvent ? 'Edit Event' : 'Add New Event'}
             </Text>
+            
+            <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={true}>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Event Name *</Text>
@@ -524,6 +535,8 @@ export default function EventsScreen() {
                 ))}
               </View>
             </View>
+            
+            </ScrollView>
 
             <View style={styles.modalActions}>
               <TouchableOpacity 
