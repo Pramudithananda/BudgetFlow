@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert, StatusBar } from 'react-native';
+import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert, StatusBar, TouchableOpacity, Modal } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -27,6 +27,41 @@ export default function HomeScreen() {
     received: 0,
     spent: 0,
   });
+  
+  // Events state
+  const [events, setEvents] = useState([
+    {
+      id: 1,
+      name: 'Annual Conference 2024',
+      date: '2024-03-15',
+      location: 'Colombo Convention Centre',
+      budget: 500000,
+      spent: 450000,
+      description: 'Annual company conference with keynote speakers'
+    },
+    {
+      id: 2,
+      name: 'Team Building Workshop',
+      date: '2024-02-20',
+      location: 'Mount Lavinia Hotel',
+      budget: 150000,
+      spent: 120000,
+      description: 'Team building activities and workshops'
+    },
+    {
+      id: 3,
+      name: 'Product Launch',
+      date: '2024-01-10',
+      location: 'Cinnamon Grand',
+      budget: 300000,
+      spent: 280000,
+      description: 'New product launch event'
+    }
+  ]);
+  
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [showEventDropdown, setShowEventDropdown] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -102,6 +137,34 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  // Event handling functions
+  const handleEventSelect = (event) => {
+    setSelectedEvent(event);
+    setShowEventModal(true);
+    setShowEventDropdown(false);
+  };
+
+  const closeEventModal = () => {
+    setShowEventModal(false);
+    setSelectedEvent(null);
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-LK', {
+      style: 'currency',
+      currency: 'LKR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-LK', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   useEffect(() => {
     fetchData();
   const unsubscribeExpenses = listenExpenses(null, (expensesLive) => {
@@ -168,6 +231,54 @@ export default function HomeScreen() {
           receivedFund={budgetSummary.receivedFund}
           spent={statusTotals.spent}
         />
+        
+        {/* Events Dropdown Section */}
+        <Card style={styles.sectionCard}>
+          <RNView style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Events Overview</Text>
+            <TouchableOpacity 
+              style={styles.eventsDropdownButton}
+              onPress={() => setShowEventDropdown(!showEventDropdown)}
+            >
+              <Text style={styles.eventsDropdownText}>
+                {showEventDropdown ? 'Hide Events' : 'View Events'}
+              </Text>
+              <FontAwesome5 
+                name={showEventDropdown ? 'chevron-up' : 'chevron-down'} 
+                size={16} 
+                color={colors.primary} 
+              />
+            </TouchableOpacity>
+          </RNView>
+          
+          {showEventDropdown && (
+            <RNView style={styles.eventsList}>
+              {events.map((event) => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={[styles.eventItem, { backgroundColor: isDarkMode ? '#333' : '#f8f9fa' }]}
+                  onPress={() => handleEventSelect(event)}
+                >
+                  <RNView style={styles.eventHeader}>
+                    <Text style={[styles.eventName, { color: colors.text }]}>{event.name}</Text>
+                    <FontAwesome5 name="chevron-right" size={14} color={colors.text} />
+                  </RNView>
+                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
+                    {formatDate(event.date)}
+                  </Text>
+                  <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>
+                    📍 {event.location}
+                  </Text>
+                  <RNView style={styles.eventBudget}>
+                    <Text style={[styles.eventBudgetText, { color: colors.text }]}>
+                      Budget: {formatCurrency(event.budget)} | Spent: {formatCurrency(event.spent)}
+                    </Text>
+                  </RNView>
+                </TouchableOpacity>
+              ))}
+            </RNView>
+          )}
+        </Card>
         
         <Card style={styles.sectionCard}>
           <RNView style={styles.sectionHeader}>
@@ -272,6 +383,111 @@ export default function HomeScreen() {
           )}
         </Card>
       </ScrollView>
+
+      {/* Individual Event Modal */}
+      <Modal
+        visible={showEventModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeEventModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+            {selectedEvent && (
+              <>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>
+                    {selectedEvent.name}
+                  </Text>
+                  <TouchableOpacity onPress={closeEventModal} style={styles.closeButton}>
+                    <FontAwesome5 name="times" size={20} color={colors.text} />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView style={styles.modalBody}>
+                  <View style={styles.eventDetailSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>
+                      {formatDate(selectedEvent.date)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.eventDetailSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Location</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>
+                      📍 {selectedEvent.location}
+                    </Text>
+                  </View>
+
+                  <View style={styles.eventDetailSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Budget</Text>
+                    <Text style={[styles.detailValue, { color: '#64a12d', fontWeight: 'bold' }]}>
+                      {formatCurrency(selectedEvent.budget)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.eventDetailSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Spent</Text>
+                    <Text style={[styles.detailValue, { color: '#f44336', fontWeight: 'bold' }]}>
+                      {formatCurrency(selectedEvent.spent)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.eventDetailSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Remaining</Text>
+                    <Text style={[styles.detailValue, { color: '#2196F3', fontWeight: 'bold' }]}>
+                      {formatCurrency(selectedEvent.budget - selectedEvent.spent)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.eventDetailSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Utilization</Text>
+                    <Text style={[styles.detailValue, { color: colors.text }]}>
+                      {((selectedEvent.spent / selectedEvent.budget) * 100).toFixed(1)}%
+                    </Text>
+                  </View>
+
+                  {selectedEvent.description && (
+                    <View style={styles.eventDetailSection}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Description</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>
+                        {selectedEvent.description}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.progressSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Budget Progress</Text>
+                    <View style={[styles.progressBar, { backgroundColor: isDarkMode ? '#333' : '#e0e0e0' }]}>
+                      <View 
+                        style={[
+                          styles.progressFill, 
+                          { 
+                            width: `${(selectedEvent.spent / selectedEvent.budget) * 100}%`,
+                            backgroundColor: selectedEvent.spent > selectedEvent.budget ? '#f44336' : '#64a12d'
+                          }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+                      {formatCurrency(selectedEvent.spent)} of {formatCurrency(selectedEvent.budget)}
+                    </Text>
+                  </View>
+                </ScrollView>
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity 
+                    style={[styles.modalButton, styles.closeModalButton]}
+                    onPress={closeEventModal}
+                  >
+                    <Text style={styles.modalButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -335,5 +551,149 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     marginTop: 4,
+  },
+  
+  // Events dropdown styles
+  eventsDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#64a12d',
+  },
+  eventsDropdownText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64a12d',
+    marginRight: 8,
+  },
+  eventsList: {
+    marginTop: 12,
+  },
+  eventItem: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  eventName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  eventDate: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  eventLocation: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  eventBudget: {
+    marginTop: 8,
+  },
+  eventBudgetText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '90%',
+    maxHeight: '80%',
+    borderRadius: 16,
+    padding: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
+  },
+  eventDetailSection: {
+    marginBottom: 16,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 16,
+  },
+  progressSection: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    marginVertical: 8,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  modalButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 100,
+  },
+  closeModalButton: {
+    backgroundColor: '#64a12d',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 }); 
