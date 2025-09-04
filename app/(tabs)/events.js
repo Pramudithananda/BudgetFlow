@@ -275,6 +275,7 @@ export default function EventsScreen() {
   // Dropdown styles
   dropdownContainer: {
     marginTop: 8,
+    maxHeight: 200,
   },
   dropdownOption: {
     flexDirection: 'row',
@@ -767,7 +768,7 @@ export default function EventsScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Expense Status *</Text>
-              <View style={styles.dropdownContainer}>
+              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
                 {expenseStatusOptions.map((status) => (
                   <TouchableOpacity
                     key={status}
@@ -790,12 +791,12 @@ export default function EventsScreen() {
                     )}
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             </View>
 
-            <View style={styles.inputGroup}>
+                        <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Funder *</Text>
-              <View style={styles.dropdownContainer}>
+              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
                 {loadingFunders ? (
                   <View style={styles.loadingContainer}>
                     <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
@@ -804,26 +805,26 @@ export default function EventsScreen() {
                   </View>
                 ) : (
                   funderOptions.map((funder) => (
-                  <TouchableOpacity
-                    key={funder}
-                    style={[
-                      styles.dropdownOption,
-                      eventForm.funder === funder && styles.selectedOption,
-                      { backgroundColor: isDarkMode ? '#333' : '#fff' }
-                    ]}
-                    onPress={() => setEventForm({...eventForm, funder: funder})}
-                  >
-                    <Text style={[
-                      styles.dropdownOptionText,
-                      { color: isDarkMode ? '#fff' : '#333' },
-                      eventForm.funder === funder && { color: '#64a12d', fontWeight: 'bold' }
-                    ]}>
-                      {funder}
-                    </Text>
-                    {eventForm.funder === funder && (
-                      <FontAwesome5 name="check" size={16} color="#64a12d" />
-                    )}
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      key={funder}
+                      style={[
+                        styles.dropdownOption,
+                        eventForm.funder === funder && styles.selectedOption,
+                        { backgroundColor: isDarkMode ? '#333' : '#fff' }
+                      ]}
+                      onPress={() => setEventForm({...eventForm, funder: funder})}
+                    >
+                      <Text style={[
+                        styles.dropdownOptionText,
+                        { color: isDarkMode ? '#fff' : '#333' },
+                        eventForm.funder === funder && { color: '#64a12d', fontWeight: 'bold' }
+                      ]}>
+                        {funder}
+                      </Text>
+                      {eventForm.funder === funder && (
+                        <FontAwesome5 name="check" size={16} color="#64a12d" />
+                      )}
+                    </TouchableOpacity>
                   ))
                 )}
                 
@@ -872,12 +873,12 @@ export default function EventsScreen() {
                     Add New Funder
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </ScrollView>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Fund Category *</Text>
-              <View style={styles.dropdownContainer}>
+              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
                 {loadingFundCategories ? (
                   <View style={styles.loadingContainer}>
                     <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
@@ -908,12 +909,12 @@ export default function EventsScreen() {
                     </TouchableOpacity>
                   ))
                 )}
-              </View>
+              </ScrollView>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Category *</Text>
-              <View style={styles.dropdownContainer}>
+              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
                 {loadingCategories ? (
                   <View style={styles.loadingContainer}>
                     <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
@@ -944,7 +945,7 @@ export default function EventsScreen() {
                     </TouchableOpacity>
                   ))
                 )}
-              </View>
+              </ScrollView>
             </View>
 
             <View style={styles.inputGroup}>
@@ -952,7 +953,7 @@ export default function EventsScreen() {
               <Text style={[styles.inputSubLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
                 Select the types of expenses for this event
               </Text>
-              <View style={styles.dropdownContainer}>
+              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
                 {loadingExpenseCategories ? (
                   <View style={styles.loadingContainer}>
                     <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
@@ -986,7 +987,7 @@ export default function EventsScreen() {
                     );
                   })
                 )}
-              </View>
+              </ScrollView>
               {eventForm.expenseCategories && eventForm.expenseCategories.length > 0 && (
                 <View style={styles.selectedCategoriesContainer}>
                   <Text style={[styles.selectedCategoriesLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
