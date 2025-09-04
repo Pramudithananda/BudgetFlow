@@ -70,6 +70,13 @@ export default function EventsScreen() {
   // Categories data from database
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  
+  // Dropdown visibility states
+  const [showExpenseStatusDropdown, setShowExpenseStatusDropdown] = useState(false);
+  const [showFunderDropdown, setShowFunderDropdown] = useState(false);
+  const [showFundCategoryDropdown, setShowFundCategoryDropdown] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showExpenseCategoriesDropdown, setShowExpenseCategoriesDropdown] = useState(false);
 
   const styles = StyleSheet.create({
     container: {
@@ -227,6 +234,75 @@ export default function EventsScreen() {
   selectedCategoriesLabel: {
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    marginTop: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: '#fff',
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  dropdownButtonDark: {
+    backgroundColor: '#333',
+    borderColor: '#555',
+  },
+  dropdownButtonTextDark: {
+    color: '#fff',
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginTop: 4,
+    maxHeight: 200,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  dropdownListDark: {
+    backgroundColor: '#333',
+    borderColor: '#555',
+  },
+  dropdownListItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  dropdownListItemDark: {
+    borderBottomColor: '#555',
+  },
+  dropdownListItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  dropdownListItemTextDark: {
+    color: '#fff',
+  },
+  dropdownListItemSelected: {
+    backgroundColor: '#f0f8ff',
+  },
+  dropdownListItemSelectedDark: {
+    backgroundColor: '#444',
+  },
+  dropdownListItemTextSelected: {
+    color: '#64a12d',
+    fontWeight: 'bold',
   },
     inputGroup: {
       marginBottom: 16,
@@ -768,184 +844,301 @@ export default function EventsScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Expense Status *</Text>
-              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
-                {expenseStatusOptions.map((status) => (
-                  <TouchableOpacity
-                    key={status}
-                    style={[
-                      styles.dropdownOption,
-                      eventForm.expenseStatus === status && styles.selectedOption,
-                      { backgroundColor: isDarkMode ? '#333' : '#fff' }
-                    ]}
-                    onPress={() => setEventForm({...eventForm, expenseStatus: status})}
-                  >
-                    <Text style={[
-                      styles.dropdownOptionText,
-                      { color: isDarkMode ? '#fff' : '#333' },
-                      eventForm.expenseStatus === status && { color: '#64a12d', fontWeight: 'bold' }
-                    ]}>
-                      {status}
-                    </Text>
-                    {eventForm.expenseStatus === status && (
-                      <FontAwesome5 name="check" size={16} color="#64a12d" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-                        <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Funder *</Text>
-              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
-                {loadingFunders ? (
-                  <View style={styles.loadingContainer}>
-                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
-                      Loading funders...
-                    </Text>
-                  </View>
-                ) : (
-                  funderOptions.map((funder) => (
-                    <TouchableOpacity
-                      key={funder}
-                      style={[
-                        styles.dropdownOption,
-                        eventForm.funder === funder && styles.selectedOption,
-                        { backgroundColor: isDarkMode ? '#333' : '#fff' }
-                      ]}
-                      onPress={() => setEventForm({...eventForm, funder: funder})}
-                    >
-                      <Text style={[
-                        styles.dropdownOptionText,
-                        { color: isDarkMode ? '#fff' : '#333' },
-                        eventForm.funder === funder && { color: '#64a12d', fontWeight: 'bold' }
-                      ]}>
-                        {funder}
-                      </Text>
-                      {eventForm.funder === funder && (
-                        <FontAwesome5 name="check" size={16} color="#64a12d" />
-                      )}
-                    </TouchableOpacity>
-                  ))
-                )}
-                
-                {/* Add New Funder Option */}
+              <View style={{ position: 'relative' }}>
                 <TouchableOpacity
                   style={[
-                    styles.addNewOption,
-                    { backgroundColor: isDarkMode ? '#444' : '#f0f0f0' }
+                    styles.dropdownButton,
+                    isDarkMode && styles.dropdownButtonDark
                   ]}
-                  onPress={() => {
-                    Alert.prompt(
-                      'Add New Funder',
-                      'Enter the name of the new funder:',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { 
-                          text: 'Add', 
-                          onPress: async (funderName) => {
-                            if (funderName && funderName.trim()) {
-                              try {
-                                const newFunder = funderName.trim();
-                                // Add to database
-                                await addFunder({
-                                  name: newFunder,
-                                  contact: '',
-                                  amount: 0
-                                });
-                                // Update local state
-                                setFunderOptions([...funderOptions, newFunder]);
-                                setEventForm({...eventForm, funder: newFunder});
-                                Alert.alert('Success', 'Funder added successfully!');
-                              } catch (error) {
-                                console.error('Error adding funder:', error);
-                                Alert.alert('Error', 'Failed to add funder. Please try again.');
+                  onPress={() => setShowExpenseStatusDropdown(!showExpenseStatusDropdown)}
+                >
+                  <Text style={[
+                    styles.dropdownButtonText,
+                    isDarkMode && styles.dropdownButtonTextDark
+                  ]}>
+                    {eventForm.expenseStatus || 'Select Status'}
+                  </Text>
+                  <FontAwesome5 
+                    name={showExpenseStatusDropdown ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={isDarkMode ? '#fff' : '#333'} 
+                  />
+                </TouchableOpacity>
+                
+                {showExpenseStatusDropdown && (
+                  <ScrollView style={[
+                    styles.dropdownList,
+                    isDarkMode && styles.dropdownListDark
+                  ]} showsVerticalScrollIndicator={true}>
+                    {expenseStatusOptions.map((status) => (
+                      <TouchableOpacity
+                        key={status}
+                        style={[
+                          styles.dropdownListItem,
+                          isDarkMode && styles.dropdownListItemDark,
+                          eventForm.expenseStatus === status && styles.dropdownListItemSelected,
+                          eventForm.expenseStatus === status && isDarkMode && styles.dropdownListItemSelectedDark
+                        ]}
+                        onPress={() => {
+                          setEventForm({...eventForm, expenseStatus: status});
+                          setShowExpenseStatusDropdown(false);
+                        }}
+                      >
+                        <Text style={[
+                          styles.dropdownListItemText,
+                          isDarkMode && styles.dropdownListItemTextDark,
+                          eventForm.expenseStatus === status && styles.dropdownListItemTextSelected
+                        ]}>
+                          {status}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Funder *</Text>
+              <View style={{ position: 'relative' }}>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownButton,
+                    isDarkMode && styles.dropdownButtonDark
+                  ]}
+                  onPress={() => setShowFunderDropdown(!showFunderDropdown)}
+                >
+                  <Text style={[
+                    styles.dropdownButtonText,
+                    isDarkMode && styles.dropdownButtonTextDark
+                  ]}>
+                    {eventForm.funder || 'Select Funder'}
+                  </Text>
+                  <FontAwesome5 
+                    name={showFunderDropdown ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={isDarkMode ? '#fff' : '#333'} 
+                  />
+                </TouchableOpacity>
+                
+                {showFunderDropdown && (
+                  <ScrollView style={[
+                    styles.dropdownList,
+                    isDarkMode && styles.dropdownListDark
+                  ]} showsVerticalScrollIndicator={true}>
+                    {loadingFunders ? (
+                      <View style={styles.loadingContainer}>
+                        <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                          Loading funders...
+                        </Text>
+                      </View>
+                    ) : (
+                      funderOptions.map((funder) => (
+                        <TouchableOpacity
+                          key={funder}
+                          style={[
+                            styles.dropdownListItem,
+                            isDarkMode && styles.dropdownListItemDark,
+                            eventForm.funder === funder && styles.dropdownListItemSelected,
+                            eventForm.funder === funder && isDarkMode && styles.dropdownListItemSelectedDark
+                          ]}
+                          onPress={() => {
+                            setEventForm({...eventForm, funder: funder});
+                            setShowFunderDropdown(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.dropdownListItemText,
+                            isDarkMode && styles.dropdownListItemTextDark,
+                            eventForm.funder === funder && styles.dropdownListItemTextSelected
+                          ]}>
+                            {funder}
+                          </Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                    
+                    {/* Add New Funder Option */}
+                    <TouchableOpacity
+                      style={[
+                        styles.dropdownListItem,
+                        isDarkMode && styles.dropdownListItemDark,
+                        { backgroundColor: isDarkMode ? '#444' : '#f0f8ff' }
+                      ]}
+                      onPress={() => {
+                        setShowFunderDropdown(false);
+                        Alert.prompt(
+                          'Add New Funder',
+                          'Enter the name of the new funder:',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { 
+                              text: 'Add', 
+                              onPress: async (funderName) => {
+                                if (funderName && funderName.trim()) {
+                                  try {
+                                    const newFunder = funderName.trim();
+                                    // Add to database
+                                    await addFunder({
+                                      name: newFunder,
+                                      contact: '',
+                                      amount: 0
+                                    });
+                                    // Update local state
+                                    setFunderOptions([...funderOptions, newFunder]);
+                                    setEventForm({...eventForm, funder: newFunder});
+                                    Alert.alert('Success', 'Funder added successfully!');
+                                  } catch (error) {
+                                    console.error('Error adding funder:', error);
+                                    Alert.alert('Error', 'Failed to add funder. Please try again.');
+                                  }
+                                }
                               }
                             }
-                          }
-                        }
-                      ],
-                      'plain-text'
-                    );
-                  }}
-                >
-                  <FontAwesome5 name="plus" size={16} color="#64a12d" />
-                  <Text style={[styles.addNewOptionText, { color: '#64a12d' }]}>
-                    Add New Funder
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
+                          ],
+                          'plain-text'
+                        );
+                      }}
+                    >
+                      <Text style={[
+                        styles.dropdownListItemText,
+                        isDarkMode && styles.dropdownListItemTextDark,
+                        { color: '#64a12d', fontWeight: 'bold' }
+                      ]}>
+                        + Add New Funder
+                      </Text>
+                    </TouchableOpacity>
+                  </ScrollView>
+                )}
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Fund Category *</Text>
-              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
-                {loadingFundCategories ? (
-                  <View style={styles.loadingContainer}>
-                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
-                      Loading fund categories...
-                    </Text>
-                  </View>
-                ) : (
-                  fundCategoryOptions.map((category) => (
-                    <TouchableOpacity
-                      key={category}
-                      style={[
-                        styles.dropdownOption,
-                        eventForm.fundCategory === category && styles.selectedOption,
-                        { backgroundColor: isDarkMode ? '#333' : '#fff' }
-                      ]}
-                      onPress={() => setEventForm({...eventForm, fundCategory: category})}
-                    >
-                      <Text style={[
-                        styles.dropdownOptionText,
-                        { color: isDarkMode ? '#fff' : '#333' },
-                        eventForm.fundCategory === category && { color: '#64a12d', fontWeight: 'bold' }
-                      ]}>
-                        {category}
-                      </Text>
-                      {eventForm.fundCategory === category && (
-                        <FontAwesome5 name="check" size={16} color="#64a12d" />
-                      )}
-                    </TouchableOpacity>
-                  ))
+              <View style={{ position: 'relative' }}>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownButton,
+                    isDarkMode && styles.dropdownButtonDark
+                  ]}
+                  onPress={() => setShowFundCategoryDropdown(!showFundCategoryDropdown)}
+                >
+                  <Text style={[
+                    styles.dropdownButtonText,
+                    isDarkMode && styles.dropdownButtonTextDark
+                  ]}>
+                    {eventForm.fundCategory || 'Select Fund Category'}
+                  </Text>
+                  <FontAwesome5 
+                    name={showFundCategoryDropdown ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={isDarkMode ? '#fff' : '#333'} 
+                  />
+                </TouchableOpacity>
+                
+                {showFundCategoryDropdown && (
+                  <ScrollView style={[
+                    styles.dropdownList,
+                    isDarkMode && styles.dropdownListDark
+                  ]} showsVerticalScrollIndicator={true}>
+                    {loadingFundCategories ? (
+                      <View style={styles.loadingContainer}>
+                        <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                          Loading fund categories...
+                        </Text>
+                      </View>
+                    ) : (
+                      fundCategoryOptions.map((category) => (
+                        <TouchableOpacity
+                          key={category}
+                          style={[
+                            styles.dropdownListItem,
+                            isDarkMode && styles.dropdownListItemDark,
+                            eventForm.fundCategory === category && styles.dropdownListItemSelected,
+                            eventForm.fundCategory === category && isDarkMode && styles.dropdownListItemSelectedDark
+                          ]}
+                          onPress={() => {
+                            setEventForm({...eventForm, fundCategory: category});
+                            setShowFundCategoryDropdown(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.dropdownListItemText,
+                            isDarkMode && styles.dropdownListItemTextDark,
+                            eventForm.fundCategory === category && styles.dropdownListItemTextSelected
+                          ]}>
+                            {category}
+                          </Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
                 )}
-              </ScrollView>
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Category *</Text>
-              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
-                {loadingCategories ? (
-                  <View style={styles.loadingContainer}>
-                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
-                      Loading categories...
-                    </Text>
-                  </View>
-                ) : (
-                  categoryOptions.map((category) => (
-                    <TouchableOpacity
-                      key={category}
-                      style={[
-                        styles.dropdownOption,
-                        eventForm.category === category && styles.selectedOption,
-                        { backgroundColor: isDarkMode ? '#333' : '#fff' }
-                      ]}
-                      onPress={() => setEventForm({...eventForm, category: category})}
-                    >
-                      <Text style={[
-                        styles.dropdownOptionText,
-                        { color: isDarkMode ? '#fff' : '#333' },
-                        eventForm.category === category && { color: '#2196F3', fontWeight: 'bold' }
-                      ]}>
-                        {category}
-                      </Text>
-                      {eventForm.category === category && (
-                        <FontAwesome5 name="check" size={16} color="#2196F3" />
-                      )}
-                    </TouchableOpacity>
-                  ))
+              <View style={{ position: 'relative' }}>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownButton,
+                    isDarkMode && styles.dropdownButtonDark
+                  ]}
+                  onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                >
+                  <Text style={[
+                    styles.dropdownButtonText,
+                    isDarkMode && styles.dropdownButtonTextDark
+                  ]}>
+                    {eventForm.category || 'Select Category'}
+                  </Text>
+                  <FontAwesome5 
+                    name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={isDarkMode ? '#fff' : '#333'} 
+                  />
+                </TouchableOpacity>
+                
+                {showCategoryDropdown && (
+                  <ScrollView style={[
+                    styles.dropdownList,
+                    isDarkMode && styles.dropdownListDark
+                  ]} showsVerticalScrollIndicator={true}>
+                    {loadingCategories ? (
+                      <View style={styles.loadingContainer}>
+                        <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                          Loading categories...
+                        </Text>
+                      </View>
+                    ) : (
+                      categoryOptions.map((category) => (
+                        <TouchableOpacity
+                          key={category}
+                          style={[
+                            styles.dropdownListItem,
+                            isDarkMode && styles.dropdownListItemDark,
+                            eventForm.category === category && styles.dropdownListItemSelected,
+                            eventForm.category === category && isDarkMode && styles.dropdownListItemSelectedDark
+                          ]}
+                          onPress={() => {
+                            setEventForm({...eventForm, category: category});
+                            setShowCategoryDropdown(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.dropdownListItemText,
+                            isDarkMode && styles.dropdownListItemTextDark,
+                            eventForm.category === category && { color: '#2196F3', fontWeight: 'bold' }
+                          ]}>
+                            {category}
+                          </Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
                 )}
-              </ScrollView>
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
