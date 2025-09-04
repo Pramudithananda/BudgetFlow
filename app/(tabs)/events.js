@@ -43,7 +43,20 @@ export default function EventsScreen() {
 
   // Dropdown options
   const expenseStatusOptions = ['Outstanding', 'Pending', 'Available', 'Spent'];
-  const funderOptions = ['ABC Foundation', 'XYZ Corporation', 'DEF Trust', 'GHI Fund', 'JKL Organization'];
+  
+  // Sample funders data (in real app, this would come from funders tab)
+  const [funderOptions, setFunderOptions] = useState([
+    'ABC Foundation',
+    'XYZ Corporation', 
+    'DEF Trust',
+    'GHI Fund',
+    'JKL Organization',
+    'Ministry of Education',
+    'World Bank',
+    'UNICEF',
+    'Red Cross',
+    'Local Business Association'
+  ]);
 
   const styles = StyleSheet.create({
     container: {
@@ -234,6 +247,21 @@ export default function EventsScreen() {
   dropdownOptionText: {
     fontSize: 16,
     flex: 1,
+  },
+  addNewOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginTop: 8,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#64a12d',
+    borderStyle: 'dashed',
+  },
+  addNewOptionText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
 
@@ -533,6 +561,39 @@ export default function EventsScreen() {
                     )}
                   </TouchableOpacity>
                 ))}
+                
+                {/* Add New Funder Option */}
+                <TouchableOpacity
+                  style={[
+                    styles.addNewOption,
+                    { backgroundColor: isDarkMode ? '#444' : '#f0f0f0' }
+                  ]}
+                  onPress={() => {
+                    Alert.prompt(
+                      'Add New Funder',
+                      'Enter the name of the new funder:',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Add', 
+                          onPress: (funderName) => {
+                            if (funderName && funderName.trim()) {
+                              const newFunder = funderName.trim();
+                              setFunderOptions([...funderOptions, newFunder]);
+                              setEventForm({...eventForm, funder: newFunder});
+                            }
+                          }
+                        }
+                      ],
+                      'plain-text'
+                    );
+                  }}
+                >
+                  <FontAwesome5 name="plus" size={16} color="#64a12d" />
+                  <Text style={[styles.addNewOptionText, { color: '#64a12d' }]}>
+                    Add New Funder
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
             
