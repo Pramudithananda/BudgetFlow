@@ -28,7 +28,7 @@ export default function HomeScreen() {
     spent: 0,
   });
   
-  // Events state
+  // Events state with expense breakdown
   const [events, setEvents] = useState([
     {
       id: 1,
@@ -37,7 +37,13 @@ export default function HomeScreen() {
       location: 'Colombo Convention Centre',
       budget: 500000,
       spent: 450000,
-      description: 'Annual company conference with keynote speakers'
+      description: 'Annual company conference with keynote speakers',
+      expenses: {
+        outstanding: 50000,
+        pending: 75000,
+        available: 200000,
+        spent: 175000
+      }
     },
     {
       id: 2,
@@ -46,7 +52,13 @@ export default function HomeScreen() {
       location: 'Mount Lavinia Hotel',
       budget: 150000,
       spent: 120000,
-      description: 'Team building activities and workshops'
+      description: 'Team building activities and workshops',
+      expenses: {
+        outstanding: 20000,
+        pending: 10000,
+        available: 50000,
+        spent: 70000
+      }
     },
     {
       id: 3,
@@ -55,7 +67,13 @@ export default function HomeScreen() {
       location: 'Cinnamon Grand',
       budget: 300000,
       spent: 280000,
-      description: 'New product launch event'
+      description: 'New product launch event',
+      expenses: {
+        outstanding: 30000,
+        pending: 25000,
+        available: 100000,
+        spent: 145000
+      }
     }
   ]);
   
@@ -282,25 +300,66 @@ export default function HomeScreen() {
         
         <Card style={styles.sectionCard}>
           <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Expense Status</Text>
+            <Text style={styles.sectionTitle}>Expense Status by Events</Text>
           </RNView>
-          <RNView style={styles.statusCardsContainer}>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 39, 39, 0.73)' : '#FFCCCC' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.remaining || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Outstanding</Text>
+          
+          {/* Overall Summary */}
+          <RNView style={styles.overallSummary}>
+            <Text style={[styles.summaryTitle, { color: colors.text }]}>Overall Summary</Text>
+            <RNView style={styles.statusCardsContainer}>
+              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 39, 39, 0.73)' : '#FFCCCC' }]}>
+                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.outstanding, 0).toLocaleString()}</Text>
+                <Text style={styles.statusLabel}>Outstanding</Text>
+              </RNView>
+              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 148, 33, 0.7)' : '#ffe0b2ff' }]}>
+                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.pending, 0).toLocaleString()}</Text>
+                <Text style={styles.statusLabel}>Pending</Text>
+              </RNView>
+              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(51, 125, 254, 0.57)' : '#c4d9ffff' }]}>
+                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.available, 0).toLocaleString()}</Text>
+                <Text style={styles.statusLabel}>Available</Text>
+              </RNView>
+              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(83, 255, 49, 0.5)' : '#3ee14977' }]}>
+                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.spent, 0).toLocaleString()}</Text>
+                <Text style={styles.statusLabel}>Spent</Text>
+              </RNView>
             </RNView>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 148, 33, 0.7)' : '#ffe0b2ff' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.pending || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Pending</Text>
-            </RNView>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(51, 125, 254, 0.57)' : '#c4d9ffff' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.received || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Available</Text>
-            </RNView>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(83, 255, 49, 0.5)' : '#3ee14977' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.spent || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Spent</Text>
-            </RNView>
+          </RNView>
+
+          {/* Event-wise Breakdown */}
+          <RNView style={styles.eventBreakdown}>
+            <Text style={[styles.breakdownTitle, { color: colors.text }]}>Event-wise Breakdown</Text>
+            {events.map((event) => (
+              <RNView key={event.id} style={[styles.eventStatusCard, { backgroundColor: isDarkMode ? '#333' : '#f8f9fa' }]}>
+                <Text style={[styles.eventStatusName, { color: colors.text }]}>{event.name}</Text>
+                <RNView style={styles.eventStatusGrid}>
+                  <RNView style={styles.eventStatusItem}>
+                    <Text style={[styles.eventStatusAmount, { color: '#f44336' }]}>
+                      Rs. {event.expenses.outstanding.toLocaleString()}
+                    </Text>
+                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Outstanding</Text>
+                  </RNView>
+                  <RNView style={styles.eventStatusItem}>
+                    <Text style={[styles.eventStatusAmount, { color: '#ff9800' }]}>
+                      Rs. {event.expenses.pending.toLocaleString()}
+                    </Text>
+                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Pending</Text>
+                  </RNView>
+                  <RNView style={styles.eventStatusItem}>
+                    <Text style={[styles.eventStatusAmount, { color: '#2196F3' }]}>
+                      Rs. {event.expenses.available.toLocaleString()}
+                    </Text>
+                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Available</Text>
+                  </RNView>
+                  <RNView style={styles.eventStatusItem}>
+                    <Text style={[styles.eventStatusAmount, { color: '#4caf50' }]}>
+                      Rs. {event.expenses.spent.toLocaleString()}
+                    </Text>
+                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Spent</Text>
+                  </RNView>
+                </RNView>
+              </RNView>
+            ))}
           </RNView>
         </Card>
         
@@ -472,6 +531,37 @@ export default function HomeScreen() {
                     <Text style={[styles.progressText, { color: colors.textSecondary }]}>
                       {formatCurrency(selectedEvent.spent)} of {formatCurrency(selectedEvent.budget)}
                     </Text>
+                  </View>
+
+                  {/* Expense Status Breakdown */}
+                  <View style={styles.expenseBreakdownSection}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Expense Status Breakdown</Text>
+                    <View style={styles.expenseBreakdownGrid}>
+                      <View style={styles.expenseBreakdownItem}>
+                        <Text style={[styles.expenseBreakdownAmount, { color: '#f44336' }]}>
+                          {formatCurrency(selectedEvent.expenses.outstanding)}
+                        </Text>
+                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Outstanding</Text>
+                      </View>
+                      <View style={styles.expenseBreakdownItem}>
+                        <Text style={[styles.expenseBreakdownAmount, { color: '#ff9800' }]}>
+                          {formatCurrency(selectedEvent.expenses.pending)}
+                        </Text>
+                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Pending</Text>
+                      </View>
+                      <View style={styles.expenseBreakdownItem}>
+                        <Text style={[styles.expenseBreakdownAmount, { color: '#2196F3' }]}>
+                          {formatCurrency(selectedEvent.expenses.available)}
+                        </Text>
+                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Available</Text>
+                      </View>
+                      <View style={styles.expenseBreakdownItem}>
+                        <Text style={[styles.expenseBreakdownAmount, { color: '#4caf50' }]}>
+                          {formatCurrency(selectedEvent.expenses.spent)}
+                        </Text>
+                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Spent</Text>
+                      </View>
+                    </View>
                   </View>
                 </ScrollView>
 
@@ -695,5 +785,83 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  
+  // Expense breakdown styles
+  overallSummary: {
+    marginBottom: 20,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  eventBreakdown: {
+    marginTop: 20,
+  },
+  breakdownTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  eventStatusCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  eventStatusName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  eventStatusGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  eventStatusItem: {
+    width: '48%',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  eventStatusAmount: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  eventStatusLabel: {
+    fontSize: 12,
+  },
+  
+  // Modal expense breakdown styles
+  expenseBreakdownSection: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  expenseBreakdownGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  expenseBreakdownItem: {
+    width: '48%',
+    alignItems: 'center',
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  expenseBreakdownAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  expenseBreakdownLabel: {
+    fontSize: 12,
   },
 }); 
