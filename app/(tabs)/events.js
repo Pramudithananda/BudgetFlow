@@ -1146,41 +1146,72 @@ export default function EventsScreen() {
               <Text style={[styles.inputSubLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
                 Select the types of expenses for this event
               </Text>
-              <ScrollView style={styles.dropdownContainer} showsVerticalScrollIndicator={true}>
-                {loadingExpenseCategories ? (
-                  <View style={styles.loadingContainer}>
-                    <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
-                      Loading expense categories...
-                    </Text>
-                  </View>
-                ) : (
-                  expenseCategoryOptions.map((category) => {
-                    const isSelected = eventForm.expenseCategories && eventForm.expenseCategories.includes(category);
-                    return (
-                      <TouchableOpacity
-                        key={category}
-                        style={[
-                          styles.dropdownOption,
-                          isSelected && styles.selectedOption,
-                          { backgroundColor: isDarkMode ? '#333' : '#fff' }
-                        ]}
-                        onPress={() => toggleExpenseCategory(category)}
-                      >
-                        <Text style={[
-                          styles.dropdownOptionText,
-                          { color: isDarkMode ? '#fff' : '#333' },
-                          isSelected && { color: '#64a12d', fontWeight: 'bold' }
-                        ]}>
-                          {category}
+              <View style={{ position: 'relative' }}>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownButton,
+                    isDarkMode && styles.dropdownButtonDark
+                  ]}
+                  onPress={() => setShowExpenseCategoriesDropdown(!showExpenseCategoriesDropdown)}
+                >
+                  <Text style={[
+                    styles.dropdownButtonText,
+                    isDarkMode && styles.dropdownButtonTextDark
+                  ]}>
+                    {eventForm.expenseCategories && eventForm.expenseCategories.length > 0 
+                      ? `${eventForm.expenseCategories.length} categories selected`
+                      : 'Select Expense Categories'
+                    }
+                  </Text>
+                  <FontAwesome5 
+                    name={showExpenseCategoriesDropdown ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={isDarkMode ? '#fff' : '#333'} 
+                  />
+                </TouchableOpacity>
+                
+                {showExpenseCategoriesDropdown && (
+                  <ScrollView style={[
+                    styles.dropdownList,
+                    isDarkMode && styles.dropdownListDark
+                  ]} showsVerticalScrollIndicator={true}>
+                    {loadingExpenseCategories ? (
+                      <View style={styles.loadingContainer}>
+                        <Text style={[styles.loadingText, { color: isDarkMode ? '#fff' : '#333' }]}>
+                          Loading expense categories...
                         </Text>
-                        {isSelected && (
-                          <FontAwesome5 name="check" size={16} color="#64a12d" />
-                        )}
-                      </TouchableOpacity>
-                    );
-                  })
+                      </View>
+                    ) : (
+                      expenseCategoryOptions.map((category) => {
+                        const isSelected = eventForm.expenseCategories && eventForm.expenseCategories.includes(category);
+                        return (
+                          <TouchableOpacity
+                            key={category}
+                            style={[
+                              styles.dropdownListItem,
+                              isDarkMode && styles.dropdownListItemDark,
+                              isSelected && styles.dropdownListItemSelected,
+                              isSelected && isDarkMode && styles.dropdownListItemSelectedDark
+                            ]}
+                            onPress={() => toggleExpenseCategory(category)}
+                          >
+                            <Text style={[
+                              styles.dropdownListItemText,
+                              isDarkMode && styles.dropdownListItemTextDark,
+                              isSelected && styles.dropdownListItemTextSelected
+                            ]}>
+                              {category}
+                            </Text>
+                            {isSelected && (
+                              <FontAwesome5 name="check" size={16} color="#64a12d" />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })
+                    )}
+                  </ScrollView>
                 )}
-              </ScrollView>
+              </View>
               {eventForm.expenseCategories && eventForm.expenseCategories.length > 0 && (
                 <View style={styles.selectedCategoriesContainer}>
                   <Text style={[styles.selectedCategoriesLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
