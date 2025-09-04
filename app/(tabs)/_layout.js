@@ -60,11 +60,29 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="events"
+        options={{
+          title: 'Events',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome5 name="calendar-alt" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="all-expenses"
         options={{
           title: 'Expenses',
           tabBarIcon: ({ color }) => (
             <FontAwesome5 name="receipt" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: 'Reports',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome5 name="file-alt" size={24} color={color} />
           ),
         }}
       />
