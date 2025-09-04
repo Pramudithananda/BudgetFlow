@@ -188,6 +188,7 @@ export default function EventsScreen() {
     borderRadius: 12,
     width: '90%',
     maxHeight: '85%',
+    overflow: 'visible',
   },
       modalTitle: {
     fontSize: 20,
@@ -201,6 +202,7 @@ export default function EventsScreen() {
   modalScrollView: {
     maxHeight: 400,
     paddingHorizontal: 20,
+    overflow: 'visible',
   },
   expenseCategoriesContainer: {
     flexDirection: 'row',
@@ -268,12 +270,13 @@ export default function EventsScreen() {
     borderRadius: 8,
     marginTop: 4,
     maxHeight: 200,
-    zIndex: 1000,
-    elevation: 5,
+    zIndex: 9999,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    overflow: 'hidden',
   },
   dropdownListDark: {
     backgroundColor: '#333',
@@ -306,6 +309,7 @@ export default function EventsScreen() {
   },
     inputGroup: {
       marginBottom: 16,
+      overflow: 'visible',
     },
     inputLabel: {
       fontSize: 14,
@@ -844,7 +848,7 @@ export default function EventsScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Expense Status *</Text>
-              <View style={{ position: 'relative' }}>
+              <View style={{ position: 'relative', overflow: 'visible', zIndex: 1000 }}>
                 <TouchableOpacity
                   style={[
                     styles.dropdownButton,
@@ -900,7 +904,7 @@ export default function EventsScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Funder *</Text>
-              <View style={{ position: 'relative' }}>
+              <View style={{ position: 'relative', overflow: 'visible', zIndex: 1000 }}>
                 <TouchableOpacity
                   style={[
                     styles.dropdownButton,
@@ -1015,7 +1019,7 @@ export default function EventsScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Fund Category *</Text>
-              <View style={{ position: 'relative' }}>
+              <View style={{ position: 'relative', overflow: 'visible', zIndex: 1000 }}>
                 <TouchableOpacity
                   style={[
                     styles.dropdownButton,
@@ -1079,7 +1083,7 @@ export default function EventsScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Category *</Text>
-              <View style={{ position: 'relative' }}>
+              <View style={{ position: 'relative', overflow: 'visible', zIndex: 1000 }}>
                 <TouchableOpacity
                   style={[
                     styles.dropdownButton,
@@ -1146,7 +1150,7 @@ export default function EventsScreen() {
               <Text style={[styles.inputSubLabel, { color: isDarkMode ? '#ccc' : '#666' }]}>
                 Select the types of expenses for this event
               </Text>
-              <View style={{ position: 'relative' }}>
+              <View style={{ position: 'relative', overflow: 'visible', zIndex: 1000 }}>
                 <TouchableOpacity
                   style={[
                     styles.dropdownButton,
