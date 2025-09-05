@@ -218,16 +218,31 @@ export default function EventsScreen() {
     }
 
     try {
+      console.log('Saving event with data:', eventForm);
+      
       const eventData = {
-        ...eventForm,
-        budget: parseFloat(eventForm.budget)
+        name: eventForm.name,
+        date: eventForm.date,
+        location: eventForm.location,
+        budget: parseFloat(eventForm.budget) || 0,
+        description: eventForm.description || '',
+        category: eventForm.category || '',
+        fundingStatus: eventForm.fundingStatus || 'Not Started',
+        totalFunding: parseFloat(eventForm.totalFunding) || 0,
+        receivedFunding: parseFloat(eventForm.receivedFunding) || 0,
+        pendingFunding: parseFloat(eventForm.pendingFunding) || 0
       };
 
+      console.log('Processed event data:', eventData);
+
       if (editingEvent) {
+        console.log('Updating event with ID:', editingEvent.id);
         await updateEvent(editingEvent.id, eventData);
         Alert.alert('Success', 'Event updated successfully!');
       } else {
-        await addEvent(eventData);
+        console.log('Adding new event');
+        const result = await addEvent(eventData);
+        console.log('Event added with ID:', result);
         Alert.alert('Success', 'Event added successfully!');
       }
 
@@ -235,7 +250,9 @@ export default function EventsScreen() {
       await loadEvents();
     } catch (error) {
       console.error('Error saving event:', error);
-      Alert.alert('Error', 'Failed to save event. Please try again.');
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+      Alert.alert('Error', `Failed to save event: ${error.message}`);
     }
   };
 

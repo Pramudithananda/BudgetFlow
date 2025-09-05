@@ -58,11 +58,31 @@ const initDatabase = async () => {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
       
+      CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        date TEXT,
+        budget REAL,
+        location TEXT,
+        category TEXT,
+        fundingStatus TEXT DEFAULT 'Not Started',
+        totalFunding REAL DEFAULT 0,
+        receivedFunding REAL DEFAULT 0,
+        pendingFunding REAL DEFAULT 0,
+        fundCategoryId INTEGER,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+      
       CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id);
       CREATE INDEX IF NOT EXISTS idx_expenses_funder_id ON expenses(funder_id);
       CREATE INDEX IF NOT EXISTS idx_expenses_event_id ON expenses(event_id);
       CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
       CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
+      
+      CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(createdAt);
+      CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);
+      CREATE INDEX IF NOT EXISTS idx_events_funding_status ON events(fundingStatus);
       
       -- Insert default budget record if not exists
       INSERT OR IGNORE INTO budget (id, total_budget, received_fund, people_over_fund, remaining_fund)
