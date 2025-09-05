@@ -26,12 +26,22 @@ export default function CategoryDetailScreen() {
         getExpenses(id)
       ]);
       
-      const foundCategory = categoriesData.find(cat => cat.id === id);
+      console.log('Looking for category with ID:', id);
+      console.log('Available categories:', categoriesData);
+      
+      const foundCategory = categoriesData.find(cat => {
+        console.log('Comparing:', cat.id, 'with', id, 'Type:', typeof cat.id, typeof id);
+        return String(cat.id) === String(id);
+      });
+      
       if (!foundCategory) {
-        Alert.alert('Error', 'Category not found');
+        console.error('Category not found for ID:', id);
+        Alert.alert('Error', `Category not found for ID: ${id}`);
         router.back();
         return;
       }
+      
+      console.log('Found category:', foundCategory);
       
       // Calculate total amount from expenses
       const totalAmount = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);

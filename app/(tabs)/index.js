@@ -139,6 +139,9 @@ export default function HomeScreen() {
       setStatusTotals(totals);
       
       // Calculate totals for each category
+      console.log('Categories data from database:', categoriesData);
+      console.log('Expenses data from database:', expensesData);
+      
       const categoriesWithTotals = categoriesData.map(category => {
         const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
         const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
@@ -151,6 +154,7 @@ export default function HomeScreen() {
         };
       });
       
+      console.log('Categories with totals:', categoriesWithTotals);
       setCategories(categoriesWithTotals);
       setRecentExpenses(expensesData.slice(0, 5)); // Get only 5 most recent expenses
     } catch (error) {
@@ -225,10 +229,25 @@ export default function HomeScreen() {
     });
     // Listen for category additions/updates
     const unsubscribeCategories = listenCategories((catsLive) => {
-      setCategories(prev => {
-        // Merge updated categories while preserving computed totals (will be recomputed below anyway)
-        return catsLive.map(c => prev.find(p=>p.id===c.id) ? { ...c, ...prev.find(p=>p.id===c.id) } : { ...c, totalAmount:0, expenseCount:0 });
-      });
+      console.log('Categories updated in real-time on home screen:', catsLive);
+      if (catsLive && catsLive.length > 0) {
+        // Recalculate totals for each category
+        getExpenses().then(expensesData => {
+          const categoriesWithTotals = catsLive.map(category => {
+            const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
+            const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+            const expenseCount = categoryExpenses.length;
+            
+            return {
+              ...category,
+              totalAmount,
+              expenseCount
+            };
+          });
+          console.log('Updated categories with totals:', categoriesWithTotals);
+          setCategories(categoriesWithTotals);
+        }).catch(err => console.error('Error updating categories on home screen:', err));
+      }
     });
     return () => {
       unsubscribeExpenses && unsubscribeExpenses();
