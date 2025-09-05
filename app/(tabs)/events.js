@@ -78,10 +78,13 @@ export default function EventsScreen() {
     try {
       setLoadingCategories(true);
       const categoriesData = await getCategories();
-      setCategories(categoriesData || []);
+      // Add hardcoded categories as fallback
+      const hardcodedCategories = ['Conference', 'Workshop', 'Seminar', 'Training', 'Meeting', 'Event'];
+      setCategories(categoriesData && categoriesData.length > 0 ? categoriesData : hardcodedCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
-      setCategories([]);
+      // Use hardcoded categories if database fails
+      setCategories(['Conference', 'Workshop', 'Seminar', 'Training', 'Meeting', 'Event']);
     } finally {
       setLoadingCategories(false);
     }
@@ -91,10 +94,13 @@ export default function EventsScreen() {
     try {
       setLoadingFunders(true);
       const fundersData = await getFunders();
-      setFunders(fundersData || []);
+      // Add hardcoded funders as fallback
+      const hardcodedFunders = ['Government', 'Private Sector', 'NGO', 'International', 'Local', 'Corporate'];
+      setFunders(fundersData && fundersData.length > 0 ? fundersData : hardcodedFunders);
     } catch (error) {
       console.error('Error loading funders:', error);
-      setFunders([]);
+      // Use hardcoded funders if database fails
+      setFunders(['Government', 'Private Sector', 'NGO', 'International', 'Local', 'Corporate']);
     } finally {
       setLoadingFunders(false);
     }
@@ -577,18 +583,39 @@ export default function EventsScreen() {
                 <TouchableOpacity
                   style={styles.dropdownButton}
                   onPress={() => {
-                    if (categories.length === 0) {
-                      Alert.alert('No Categories', 'No categories available. Please add categories first.');
-                      return;
+                    try {
+                      if (loadingCategories) {
+                        Alert.alert('Loading', 'Categories are still loading. Please wait a moment.');
+                        return;
+                      }
+                      
+                      if (!categories || categories.length === 0) {
+                        Alert.alert('No Categories', 'No categories available. Please add categories first.');
+                        return;
+                      }
+                      
+                      const categoryButtons = categories.map((category) => ({
+                        text: String(category),
+                        onPress: () => {
+                          try {
+                            setEventForm({...eventForm, category: String(category)});
+                          } catch (error) {
+                            console.error('Error setting category:', error);
+                          }
+                        }
+                      }));
+                      
+                      categoryButtons.push({ text: 'Cancel', style: 'cancel' });
+                      
+                      Alert.alert(
+                        'Select Category',
+                        'Choose a category:',
+                        categoryButtons
+                      );
+                    } catch (error) {
+                      console.error('Error in category selection:', error);
+                      Alert.alert('Error', 'Failed to open category selection. Please try again.');
                     }
-                    Alert.alert(
-                      'Select Category',
-                      'Choose a category:',
-                      categories.map((category) => ({
-                        text: category,
-                        onPress: () => setEventForm({...eventForm, category: category})
-                      })).concat([{ text: 'Cancel', style: 'cancel' }])
-                    );
                   }}
                 >
                   <Text style={styles.dropdownButtonText}>
@@ -652,18 +679,39 @@ export default function EventsScreen() {
                 <TouchableOpacity
                   style={styles.dropdownButton}
                   onPress={() => {
-                    if (funders.length === 0) {
-                      Alert.alert('No Funders', 'No funders available. Please add funders first.');
-                      return;
+                    try {
+                      if (loadingFunders) {
+                        Alert.alert('Loading', 'Funders are still loading. Please wait a moment.');
+                        return;
+                      }
+                      
+                      if (!funders || funders.length === 0) {
+                        Alert.alert('No Funders', 'No funders available. Please add funders first.');
+                        return;
+                      }
+                      
+                      const funderButtons = funders.map((funder) => ({
+                        text: String(funder),
+                        onPress: () => {
+                          try {
+                            setFundForm({...fundForm, funder: String(funder)});
+                          } catch (error) {
+                            console.error('Error setting funder:', error);
+                          }
+                        }
+                      }));
+                      
+                      funderButtons.push({ text: 'Cancel', style: 'cancel' });
+                      
+                      Alert.alert(
+                        'Select Funder',
+                        'Choose a funder:',
+                        funderButtons
+                      );
+                    } catch (error) {
+                      console.error('Error in funder selection:', error);
+                      Alert.alert('Error', 'Failed to open funder selection. Please try again.');
                     }
-                    Alert.alert(
-                      'Select Funder',
-                      'Choose a funder:',
-                      funders.map((funder) => ({
-                        text: funder,
-                        onPress: () => setFundForm({...fundForm, funder: funder})
-                      })).concat([{ text: 'Cancel', style: 'cancel' }])
-                    );
                   }}
                 >
                   <Text style={styles.dropdownButtonText}>
@@ -720,18 +768,39 @@ export default function EventsScreen() {
                 <TouchableOpacity
                   style={styles.dropdownButton}
                   onPress={() => {
-                    if (categories.length === 0) {
-                      Alert.alert('No Categories', 'No categories available. Please add categories first.');
-                      return;
+                    try {
+                      if (loadingCategories) {
+                        Alert.alert('Loading', 'Categories are still loading. Please wait a moment.');
+                        return;
+                      }
+                      
+                      if (!categories || categories.length === 0) {
+                        Alert.alert('No Categories', 'No categories available. Please add categories first.');
+                        return;
+                      }
+                      
+                      const categoryButtons = categories.map((category) => ({
+                        text: String(category),
+                        onPress: () => {
+                          try {
+                            setFundForm({...fundForm, category: String(category)});
+                          } catch (error) {
+                            console.error('Error setting expense category:', error);
+                          }
+                        }
+                      }));
+                      
+                      categoryButtons.push({ text: 'Cancel', style: 'cancel' });
+                      
+                      Alert.alert(
+                        'Select Expense Category',
+                        'Choose expense category:',
+                        categoryButtons
+                      );
+                    } catch (error) {
+                      console.error('Error in expense category selection:', error);
+                      Alert.alert('Error', 'Failed to open expense category selection. Please try again.');
                     }
-                    Alert.alert(
-                      'Select Expense Category',
-                      'Choose expense category:',
-                      categories.map((category) => ({
-                        text: category,
-                        onPress: () => setFundForm({...fundForm, category: category})
-                      })).concat([{ text: 'Cancel', style: 'cancel' }])
-                    );
                   }}
                 >
                   <Text style={styles.dropdownButtonText}>
