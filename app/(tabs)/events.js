@@ -252,7 +252,15 @@ export default function EventsScreen() {
       console.error('Error saving event:', error);
       console.error('Error details:', error.message);
       console.error('Error stack:', error.stack);
-      Alert.alert('Error', `Failed to save event: ${error.message}`);
+      
+      let errorMessage = 'Failed to save event. Please try again.';
+      if (error && error.message) {
+        errorMessage = `Failed to save event: ${error.message}`;
+      } else if (error && typeof error === 'string') {
+        errorMessage = `Failed to save event: ${error}`;
+      }
+      
+      Alert.alert('Error', errorMessage);
     }
   };
 

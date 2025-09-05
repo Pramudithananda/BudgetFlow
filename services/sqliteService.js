@@ -104,19 +104,22 @@ const initDatabase = async () => {
     });
     
     // Lightweight migration: ensure event_id and date columns exist on expenses
-    try {
-      const cols = await db.getAllAsync("PRAGMA table_info('expenses')");
-      const colNames = new Set(cols.map(c => c.name));
-      if (!colNames.has('event_id')) {
-        await db.execAsync("ALTER TABLE expenses ADD COLUMN event_id INTEGER;");
-        await db.execAsync("CREATE INDEX IF NOT EXISTS idx_expenses_event_id ON expenses(event_id);");
-      }
-      if (!colNames.has('date')) {
-        await db.execAsync("ALTER TABLE expenses ADD COLUMN date TEXT;");
-      }
-    } catch (migErr) {
-      console.warn('Expense table migration check failed (safe to ignore if fresh DB):', migErr);
-    }
+    db.transaction(tx => {
+      tx.executeSql("PRAGMA table_info('expenses')", [], (_, result) => {
+        const colNames = new Set();
+        for (let i = 0; i < result.rows.length; i++) {
+          colNames.add(result.rows.item(i).name);
+        }
+        
+        if (!colNames.has('event_id')) {
+          tx.executeSql("ALTER TABLE expenses ADD COLUMN event_id INTEGER;");
+          tx.executeSql("CREATE INDEX IF NOT EXISTS idx_expenses_event_id ON expenses(event_id);");
+        }
+        if (!colNames.has('date')) {
+          tx.executeSql("ALTER TABLE expenses ADD COLUMN date TEXT;");
+        }
+      });
+    });
 
     console.log('Database initialized successfully');
     return db;
@@ -721,11 +724,13 @@ export const deleteEvent = (eventId) => {
 
 // Initialize database when module loads
 let initPromise = null;
-const ensureDatabase = async () => {
-  if (!initPromise) {
-    initPromise = initDatabase();
-  }
-  return initPromise;
+const ensureDatabase = () => {
+  return new Promise((resolve, reject) => {
+    if (!initPromise) {
+      initPromise = initDatabase();
+    }
+    initPromise.then(resolve).catch(reject);
+  });
 };
 
 // Initialize database when module loads
