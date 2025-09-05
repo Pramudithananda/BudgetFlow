@@ -123,6 +123,23 @@ const initDatabase = async () => {
       });
     });
 
+    // Migration: ensure phone and email columns exist on funders
+    db.transaction(tx => {
+      tx.executeSql("PRAGMA table_info('funders')", [], (_, result) => {
+        const colNames = new Set();
+        for (let i = 0; i < result.rows.length; i++) {
+          colNames.add(result.rows.item(i).name);
+        }
+        
+        if (!colNames.has('phone')) {
+          tx.executeSql("ALTER TABLE funders ADD COLUMN phone TEXT;");
+        }
+        if (!colNames.has('email')) {
+          tx.executeSql("ALTER TABLE funders ADD COLUMN email TEXT;");
+        }
+      });
+    });
+
     console.log('Database initialized successfully');
     return db;
   } catch (error) {
