@@ -44,11 +44,19 @@ export default function FundersScreen() {
     }
 
     try {
-      await addFunder({
+      console.log('Adding funder with data:', {
         name: newFunderName.trim(),
         phone: newFunderPhone.trim(),
         email: newFunderEmail.trim(),
       });
+      
+      const result = await addFunder({
+        name: newFunderName.trim(),
+        phone: newFunderPhone.trim(),
+        email: newFunderEmail.trim(),
+      });
+      
+      console.log('Funder added successfully:', result);
       
       setNewFunderName('');
       setNewFunderPhone('');
@@ -58,7 +66,17 @@ export default function FundersScreen() {
       Alert.alert('Success', 'Funder added successfully');
     } catch (error) {
       console.error('Error adding funder:', error);
-      Alert.alert('Error', 'Could not add funder. Please try again.');
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      let errorMessage = 'Could not add funder. Please try again.';
+      if (error && error.message) {
+        errorMessage = `Could not add funder: ${error.message}`;
+      } else if (error && typeof error === 'string') {
+        errorMessage = `Could not add funder: ${error}`;
+      }
+      
+      Alert.alert('Error', errorMessage);
     }
   };
 

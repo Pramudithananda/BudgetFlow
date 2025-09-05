@@ -65,6 +65,8 @@ const initDatabase = async () => {
         CREATE TABLE IF NOT EXISTS funders (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
+          phone TEXT,
+          email TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -537,40 +539,59 @@ export const addHelper = async (helperData) => {
 };
 
 // Funder Operations
-export const getFunders = async () => {
-  try {
-    const database = await getDatabase();
-    const result = await database.getAllAsync('SELECT * FROM funders ORDER BY name');
-    return result.map(convertRow);
-  } catch (error) {
-    console.error('Error getting funders:', error);
-    throw error;
-  }
+export const getFunders = () => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM funders ORDER BY name',
+          [],
+          (_, result) => {
+            const funders = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              funders.push(result.rows.item(i));
+            }
+            console.log('Retrieved funders:', funders);
+            resolve(funders);
+          },
+          (_, error) => {
+            console.error('Error getting funders:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
-export const addFunder = async (funderData) => {
-  try {
-    const database = await getDatabase();
-    const result = await database.runAsync(
-      'INSERT INTO funders (name) VALUES (?)',
-      [funderData.name]
-    );
-    
-    const newFunder = {
-      id: result.lastInsertRowId,
-      name: funderData.name,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Notify listeners
-    notifyListeners('funders');
-    
-    return newFunder;
-  } catch (error) {
-    console.error('Error adding funder:', error);
-    throw error;
-  }
+export const addFunder = (funderData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'INSERT INTO funders (name, phone, email) VALUES (?, ?, ?)',
+          [funderData.name, funderData.phone || '', funderData.email || ''],
+          (_, result) => {
+            const newFunder = {
+              id: result.insertId,
+              name: funderData.name,
+              phone: funderData.phone || '',
+              email: funderData.email || '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            
+            console.log('Funder added successfully with ID:', result.insertId);
+            resolve(newFunder);
+          },
+          (_, error) => {
+            console.error('Error adding funder:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
 export const updateFunder = async (funderId, funderData) => {
