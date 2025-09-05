@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, TextInput
 import { Text } from '../../components/Themed';
 import { useTheme } from '../../context/theme';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { getFunders, addFunder, getCategories, getEvents, addEvent, updateEvent, deleteEvent } from '../../services/sqliteService';
+import { getFunders, addFunder, getCategories, getEvents, addEvent, updateEvent, deleteEvent, listenCategories, listenFunders } from '../../services/sqliteService';
 
 export default function EventsScreen() {
   const { isDarkMode } = useTheme();
@@ -46,6 +46,29 @@ export default function EventsScreen() {
   // Load data on component mount
   useEffect(() => {
     loadData();
+    
+    // Set up real-time listeners for categories and funders
+    const unsubscribeCategories = listenCategories((categoriesData) => {
+      console.log('Categories updated in real-time:', categoriesData);
+      if (categoriesData && categoriesData.length > 0) {
+        const categoryNames = categoriesData.map(cat => cat.name || cat);
+        setCategories(categoryNames);
+      }
+    });
+    
+    const unsubscribeFunders = listenFunders((fundersData) => {
+      console.log('Funders updated in real-time:', fundersData);
+      if (fundersData && fundersData.length > 0) {
+        const funderNames = fundersData.map(funder => funder.name || funder);
+        setFunders(funderNames);
+      }
+    });
+    
+    // Cleanup listeners on unmount
+    return () => {
+      if (unsubscribeCategories) unsubscribeCategories();
+      if (unsubscribeFunders) unsubscribeFunders();
+    };
   }, []);
 
   const loadData = async () => {
@@ -78,13 +101,25 @@ export default function EventsScreen() {
     try {
       setLoadingCategories(true);
       const categoriesData = await getCategories();
-      // Add hardcoded categories as fallback
-      const hardcodedCategories = ['Conference', 'Workshop', 'Seminar', 'Training', 'Meeting', 'Event'];
-      setCategories(categoriesData && categoriesData.length > 0 ? categoriesData : hardcodedCategories);
+      console.log('Loaded categories from database:', categoriesData);
+      
+      if (categoriesData && categoriesData.length > 0) {
+        // Extract category names from database objects
+        const categoryNames = categoriesData.map(cat => cat.name || cat);
+        console.log('Category names extracted:', categoryNames);
+        setCategories(categoryNames);
+      } else {
+        // Add hardcoded categories as fallback
+        const hardcodedCategories = ['Conference', 'Workshop', 'Seminar', 'Training', 'Meeting', 'Event'];
+        console.log('Using hardcoded categories:', hardcodedCategories);
+        setCategories(hardcodedCategories);
+      }
     } catch (error) {
       console.error('Error loading categories:', error);
       // Use hardcoded categories if database fails
-      setCategories(['Conference', 'Workshop', 'Seminar', 'Training', 'Meeting', 'Event']);
+      const hardcodedCategories = ['Conference', 'Workshop', 'Seminar', 'Training', 'Meeting', 'Event'];
+      console.log('Error fallback - using hardcoded categories:', hardcodedCategories);
+      setCategories(hardcodedCategories);
     } finally {
       setLoadingCategories(false);
     }
@@ -94,13 +129,25 @@ export default function EventsScreen() {
     try {
       setLoadingFunders(true);
       const fundersData = await getFunders();
-      // Add hardcoded funders as fallback
-      const hardcodedFunders = ['Government', 'Private Sector', 'NGO', 'International', 'Local', 'Corporate'];
-      setFunders(fundersData && fundersData.length > 0 ? fundersData : hardcodedFunders);
+      console.log('Loaded funders from database:', fundersData);
+      
+      if (fundersData && fundersData.length > 0) {
+        // Extract funder names from database objects
+        const funderNames = fundersData.map(funder => funder.name || funder);
+        console.log('Funder names extracted:', funderNames);
+        setFunders(funderNames);
+      } else {
+        // Add hardcoded funders as fallback
+        const hardcodedFunders = ['Government', 'Private Sector', 'NGO', 'International', 'Local', 'Corporate'];
+        console.log('Using hardcoded funders:', hardcodedFunders);
+        setFunders(hardcodedFunders);
+      }
     } catch (error) {
       console.error('Error loading funders:', error);
       // Use hardcoded funders if database fails
-      setFunders(['Government', 'Private Sector', 'NGO', 'International', 'Local', 'Corporate']);
+      const hardcodedFunders = ['Government', 'Private Sector', 'NGO', 'International', 'Local', 'Corporate'];
+      console.log('Error fallback - using hardcoded funders:', hardcodedFunders);
+      setFunders(hardcodedFunders);
     } finally {
       setLoadingFunders(false);
     }
