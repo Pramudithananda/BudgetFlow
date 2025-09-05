@@ -8,7 +8,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
 import ExpenseItem from '../../components/ExpenseItem';
-import { getCategories, getExpenses, getBudgetSummary, listenExpenses, listenCategories } from '../../services/sqliteService';
+import { getCategories, getExpenses, getBudgetSummary, listenExpenses, listenCategories, getEvents, getEventFundingSummary } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function HomeScreen() {
@@ -17,65 +17,18 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState([]);
   const [recentExpenses, setRecentExpenses] = useState([]);
+  const [events, setEvents] = useState([]);
   const [budgetSummary, setBudgetSummary] = useState({
     totalBudget: 0,
     receivedFund: 0,
   });
   const [statusTotals, setStatusTotals] = useState({
-    remaining: 0,
-    pending: 0,
-    received: 0,
-    spent: 0,
+    Pending: 0,
+    Spent: 0,
+    Available: 0,
+    Outstanding: 0,
   });
   
-  // Events state with expense breakdown
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      name: 'Annual Conference 2024',
-      date: '2024-03-15',
-      location: 'Colombo Convention Centre',
-      budget: 500000,
-      spent: 450000,
-      description: 'Annual company conference with keynote speakers',
-      expenses: {
-        outstanding: 50000,
-        pending: 75000,
-        available: 200000,
-        spent: 175000
-      }
-    },
-    {
-      id: 2,
-      name: 'Team Building Workshop',
-      date: '2024-02-20',
-      location: 'Mount Lavinia Hotel',
-      budget: 150000,
-      spent: 120000,
-      description: 'Team building activities and workshops',
-      expenses: {
-        outstanding: 20000,
-        pending: 10000,
-        available: 50000,
-        spent: 70000
-      }
-    },
-    {
-      id: 3,
-      name: 'Product Launch',
-      date: '2024-01-10',
-      location: 'Cinnamon Grand',
-      budget: 300000,
-      spent: 280000,
-      description: 'New product launch event',
-      expenses: {
-        outstanding: 30000,
-        pending: 25000,
-        available: 100000,
-        spent: 145000
-      }
-    }
-  ]);
   
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
@@ -88,7 +41,7 @@ export default function HomeScreen() {
       // Ensure database is initialized before fetching data
       const database = await import('../../services/sqliteService');
       
-      const [budgetData, expensesData, categoriesData] = await Promise.all([
+      const [budgetData, expensesData, categoriesData, eventsData] = await Promise.all([
         database.getBudgetSummary().catch(err => {
           console.warn('Budget fetch failed, using defaults:', err);
           return { totalBudget: 0, receivedFund: 0 };
@@ -99,6 +52,10 @@ export default function HomeScreen() {
         }),
         database.getCategories().catch(err => {
           console.warn('Categories fetch failed, using empty array:', err);
+          return [];
+        }),
+        database.getEvents().catch(err => {
+          console.warn('Events fetch failed, using empty array:', err);
           return [];
         })
       ]);
@@ -116,7 +73,33 @@ export default function HomeScreen() {
         receivedFund,
       });
       
-      // Calculate totals for each status
+      // Set events data
+      setEvents(eventsData);
+      
+      // Calculate funding totals from all events
+      const fundingTotals = {
+        Pending: 0,
+        Spent: 0,
+        Available: 0,
+        Outstanding: 0,
+      };
+      
+      // Get funding summary for each event
+      for (const event of eventsData) {
+        try {
+          const eventFunding = await database.getEventFundingSummary(event.id);
+          fundingTotals.Pending += eventFunding.Pending || 0;
+          fundingTotals.Spent += eventFunding.Spent || 0;
+          fundingTotals.Available += eventFunding.Available || 0;
+          fundingTotals.Outstanding += eventFunding.Outstanding || 0;
+        } catch (err) {
+          console.warn(`Failed to get funding for event ${event.id}:`, err);
+        }
+      }
+      
+      setStatusTotals(fundingTotals);
+      
+      // Calculate totals for each status (legacy for expenses)
       const totals = {
         remaining: 0,
         pending: 0,

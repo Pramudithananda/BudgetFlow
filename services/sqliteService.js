@@ -81,12 +81,23 @@ const initDatabase = async () => {
           budget REAL,
           location TEXT,
           category TEXT,
-          fundingStatus TEXT DEFAULT 'Not Started',
-          totalFunding REAL DEFAULT 0,
-          receivedFunding REAL DEFAULT 0,
-          pendingFunding REAL DEFAULT 0,
-          fundCategoryId INTEGER,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      
+      tx.executeSql(`
+        CREATE TABLE IF NOT EXISTS event_funding (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_id INTEGER NOT NULL,
+          funder_id INTEGER NOT NULL,
+          amount REAL NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('Pending', 'Spent', 'Available', 'Outstanding')),
+          description TEXT,
+          transfer_date TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+          FOREIGN KEY (funder_id) REFERENCES funders (id) ON DELETE CASCADE
         );
       `);
       
@@ -97,7 +108,9 @@ const initDatabase = async () => {
       tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);`);
       tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(createdAt);`);
       tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);`);
-      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_events_funding_status ON events(fundingStatus);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_event_funding_event_id ON event_funding(event_id);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_event_funding_funder_id ON event_funding(funder_id);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_event_funding_status ON event_funding(status);`);
       
       tx.executeSql(`
         INSERT OR IGNORE INTO budget (id, total_budget, received_fund, people_over_fund, remaining_fund)
@@ -650,19 +663,15 @@ export const addEvent = (eventData) => {
     ensureDatabase().then(() => {
       db.transaction(tx => {
         tx.executeSql(
-          `INSERT INTO events (name, description, date, budget, location, category, fundingStatus, totalFunding, receivedFunding, pendingFunding) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO events (name, description, date, budget, location, category) 
+           VALUES (?, ?, ?, ?, ?, ?)`,
           [
             eventData.name,
             eventData.description || '',
             eventData.date || '',
             eventData.budget || 0,
             eventData.location || '',
-            eventData.category || '',
-            eventData.fundingStatus || 'Not Started',
-            parseFloat(eventData.totalFunding) || 0,
-            parseFloat(eventData.receivedFunding) || 0,
-            parseFloat(eventData.pendingFunding) || 0
+            eventData.category || ''
           ],
           (_, result) => {
             console.log('Event added successfully with ID:', result.insertId);
@@ -709,8 +718,7 @@ export const updateEvent = (eventId, eventData) => {
       db.transaction(tx => {
         tx.executeSql(
           `UPDATE events SET 
-           name = ?, description = ?, date = ?, budget = ?, location = ?, category = ?, 
-           fundingStatus = ?, totalFunding = ?, receivedFunding = ?, pendingFunding = ?
+           name = ?, description = ?, date = ?, budget = ?, location = ?, category = ?
            WHERE id = ?`,
           [
             eventData.name,
@@ -719,10 +727,6 @@ export const updateEvent = (eventId, eventData) => {
             eventData.budget || 0,
             eventData.location || '',
             eventData.category || '',
-            eventData.fundingStatus || 'Not Started',
-            parseFloat(eventData.totalFunding) || 0,
-            parseFloat(eventData.receivedFunding) || 0,
-            parseFloat(eventData.pendingFunding) || 0,
             eventId
           ],
           (_, result) => {
@@ -752,6 +756,154 @@ export const deleteEvent = (eventId) => {
           },
           (_, error) => {
             console.error('Error deleting event:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+// Event Funding functions
+export const addEventFunding = (fundingData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `INSERT INTO event_funding (event_id, funder_id, amount, status, description, transfer_date) 
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            fundingData.eventId,
+            fundingData.funderId,
+            parseFloat(fundingData.amount) || 0,
+            fundingData.status,
+            fundingData.description || '',
+            fundingData.transferDate || new Date().toISOString().slice(0, 10)
+          ],
+          (_, result) => {
+            console.log('Event funding added successfully with ID:', result.insertId);
+            resolve(result.insertId);
+          },
+          (_, error) => {
+            console.error('Error adding event funding:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const getEventFunding = (eventId) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT ef.*, f.name as funder_name 
+           FROM event_funding ef 
+           JOIN funders f ON ef.funder_id = f.id 
+           WHERE ef.event_id = ? 
+           ORDER BY ef.created_at DESC`,
+          [eventId],
+          (_, result) => {
+            const funding = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              funding.push(result.rows.item(i));
+            }
+            console.log('Retrieved event funding:', funding);
+            resolve(funding);
+          },
+          (_, error) => {
+            console.error('Error getting event funding:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const updateEventFunding = (fundingId, fundingData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `UPDATE event_funding SET 
+           amount = ?, status = ?, description = ?, transfer_date = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [
+            parseFloat(fundingData.amount) || 0,
+            fundingData.status,
+            fundingData.description || '',
+            fundingData.transferDate || new Date().toISOString().slice(0, 10),
+            fundingId
+          ],
+          (_, result) => {
+            console.log('Event funding updated successfully');
+            resolve(result);
+          },
+          (_, error) => {
+            console.error('Error updating event funding:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const deleteEventFunding = (fundingId) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM event_funding WHERE id = ?',
+          [fundingId],
+          (_, result) => {
+            console.log('Event funding deleted successfully');
+            resolve(result);
+          },
+          (_, error) => {
+            console.error('Error deleting event funding:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const getEventFundingSummary = (eventId) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT 
+             status,
+             SUM(amount) as total_amount,
+             COUNT(*) as count
+           FROM event_funding 
+           WHERE event_id = ? 
+           GROUP BY status`,
+          [eventId],
+          (_, result) => {
+            const summary = {
+              Pending: 0,
+              Spent: 0,
+              Available: 0,
+              Outstanding: 0
+            };
+            
+            for (let i = 0; i < result.rows.length; i++) {
+              const row = result.rows.item(i);
+              summary[row.status] = parseFloat(row.total_amount) || 0;
+            }
+            
+            console.log('Event funding summary:', summary);
+            resolve(summary);
+          },
+          (_, error) => {
+            console.error('Error getting event funding summary:', error);
             reject(error);
           }
         );
