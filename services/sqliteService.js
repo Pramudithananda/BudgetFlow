@@ -180,73 +180,99 @@ const convertRow = (row) => {
 };
 
 // Category Operations
-export const getCategories = async () => {
-  try {
-    const database = await getDatabase();
-    const result = await database.getAllAsync('SELECT * FROM categories ORDER BY name');
-    return result.map(convertRow);
-  } catch (error) {
-    console.error('Error getting categories:', error);
-    throw error;
-  }
+export const getCategories = () => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM categories ORDER BY name',
+          [],
+          (_, result) => {
+            const categories = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              categories.push(result.rows.item(i));
+            }
+            console.log('Retrieved categories:', categories);
+            resolve(categories);
+          },
+          (_, error) => {
+            console.error('Error getting categories:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
-export const addCategory = async (categoryData) => {
-  try {
-    const database = await getDatabase();
-    const result = await database.runAsync(
-      'INSERT INTO categories (name) VALUES (?)',
-      [categoryData.name]
-    );
-    
-    const newCategory = {
-      id: result.lastInsertRowId,
-      name: categoryData.name,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Notify listeners
-    notifyListeners('categories');
-    
-    return newCategory;
-  } catch (error) {
-    console.error('Error adding category:', error);
-    throw error;
-  }
+export const addCategory = (categoryData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'INSERT INTO categories (name) VALUES (?)',
+          [categoryData.name],
+          (_, result) => {
+            const newCategory = {
+              id: result.insertId,
+              name: categoryData.name,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            
+            console.log('Category added successfully with ID:', result.insertId);
+            resolve(newCategory);
+          },
+          (_, error) => {
+            console.error('Error adding category:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
-export const updateCategory = async (categoryId, categoryData) => {
-  try {
-    const database = await getDatabase();
-    await database.runAsync(
-      'UPDATE categories SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [categoryData.name, categoryId]
-    );
-    
-    // Notify listeners
-    notifyListeners('categories');
-    
-    return { id: categoryId, ...categoryData };
-  } catch (error) {
-    console.error('Error updating category:', error);
-    throw error;
-  }
+export const updateCategory = (categoryId, categoryData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'UPDATE categories SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [categoryData.name, categoryId],
+          (_, result) => {
+            console.log('Category updated successfully');
+            resolve({ id: categoryId, ...categoryData });
+          },
+          (_, error) => {
+            console.error('Error updating category:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
-export const deleteCategory = async (categoryId) => {
-  try {
-    const database = await getDatabase();
-    await database.runAsync('DELETE FROM categories WHERE id = ?', [categoryId]);
-    
-    // Notify listeners
-    notifyListeners('categories');
-    
-    return categoryId;
-  } catch (error) {
-    console.error('Error deleting category:', error);
-    throw error;
-  }
+export const deleteCategory = (categoryId) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM categories WHERE id = ?',
+          [categoryId],
+          (_, result) => {
+            console.log('Category deleted successfully');
+            resolve(categoryId);
+          },
+          (_, error) => {
+            console.error('Error deleting category:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
 // Expense Operations
