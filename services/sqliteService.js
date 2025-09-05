@@ -7,87 +7,101 @@ const initDatabase = async () => {
   if (db) return db;
   
   try {
-    db = await SQLite.openDatabaseAsync('budgetflow.db');
+    db = SQLite.openDatabase('budgetflow.db');
     
-    // Create tables
-    await db.execAsync(`
-      PRAGMA journal_mode = WAL;
+    // Create tables using transaction
+    db.transaction(tx => {
+      tx.executeSql(`
+        PRAGMA journal_mode = WAL;
+      `);
       
-      CREATE TABLE IF NOT EXISTS categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+      tx.executeSql(`
+        CREATE TABLE IF NOT EXISTS categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
       
-      CREATE TABLE IF NOT EXISTS expenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        amount REAL NOT NULL DEFAULT 0,
-        status TEXT NOT NULL DEFAULT 'Outstanding',
-        category_id INTEGER,
-        funder_id INTEGER,
-        event_id INTEGER,
-        date TEXT,
-        assigned_to TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
-        FOREIGN KEY (funder_id) REFERENCES funders (id) ON DELETE SET NULL
-      );
+      tx.executeSql(`
+        CREATE TABLE IF NOT EXISTS expenses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          amount REAL NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'Outstanding',
+          category_id INTEGER,
+          funder_id INTEGER,
+          event_id INTEGER,
+          date TEXT,
+          assigned_to TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
+          FOREIGN KEY (funder_id) REFERENCES funders (id) ON DELETE SET NULL
+        );
+      `);
       
-      CREATE TABLE IF NOT EXISTS budget (
-        id INTEGER PRIMARY KEY DEFAULT 1,
-        total_budget REAL DEFAULT 0,
-        received_fund REAL DEFAULT 0,
-        people_over_fund REAL DEFAULT 0,
-        remaining_fund REAL DEFAULT 0,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+      tx.executeSql(`
+        CREATE TABLE IF NOT EXISTS budget (
+          id INTEGER PRIMARY KEY DEFAULT 1,
+          total_budget REAL DEFAULT 0,
+          received_fund REAL DEFAULT 0,
+          people_over_fund REAL DEFAULT 0,
+          remaining_fund REAL DEFAULT 0,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
       
-      CREATE TABLE IF NOT EXISTS helpers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+      tx.executeSql(`
+        CREATE TABLE IF NOT EXISTS helpers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
       
-      CREATE TABLE IF NOT EXISTS funders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+      tx.executeSql(`
+        CREATE TABLE IF NOT EXISTS funders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
       
-      CREATE TABLE IF NOT EXISTS events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT,
-        date TEXT,
-        budget REAL,
-        location TEXT,
-        category TEXT,
-        fundingStatus TEXT DEFAULT 'Not Started',
-        totalFunding REAL DEFAULT 0,
-        receivedFunding REAL DEFAULT 0,
-        pendingFunding REAL DEFAULT 0,
-        fundCategoryId INTEGER,
-        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-      );
+      tx.executeSql(`
+        CREATE TABLE IF NOT EXISTS events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          date TEXT,
+          budget REAL,
+          location TEXT,
+          category TEXT,
+          fundingStatus TEXT DEFAULT 'Not Started',
+          totalFunding REAL DEFAULT 0,
+          receivedFunding REAL DEFAULT 0,
+          pendingFunding REAL DEFAULT 0,
+          fundCategoryId INTEGER,
+          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
       
-      CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id);
-      CREATE INDEX IF NOT EXISTS idx_expenses_funder_id ON expenses(funder_id);
-      CREATE INDEX IF NOT EXISTS idx_expenses_event_id ON expenses(event_id);
-      CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);
-      CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_expenses_funder_id ON expenses(funder_id);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_expenses_event_id ON expenses(event_id);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_expenses_status ON expenses(status);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(createdAt);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);`);
+      tx.executeSql(`CREATE INDEX IF NOT EXISTS idx_events_funding_status ON events(fundingStatus);`);
       
-      CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(createdAt);
-      CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);
-      CREATE INDEX IF NOT EXISTS idx_events_funding_status ON events(fundingStatus);
-      
-      -- Insert default budget record if not exists
-      INSERT OR IGNORE INTO budget (id, total_budget, received_fund, people_over_fund, remaining_fund)
-      VALUES (1, 0, 0, 0, 0);
-    `);
+      tx.executeSql(`
+        INSERT OR IGNORE INTO budget (id, total_budget, received_fund, people_over_fund, remaining_fund)
+        VALUES (1, 0, 0, 0, 0);
+      `);
+    });
     
     // Lightweight migration: ensure event_id and date columns exist on expenses
     try {
@@ -590,79 +604,119 @@ export const deleteFunder = async (funderId) => {
 };
 
 // Events functions
-export const addEvent = async (eventData) => {
-  try {
-    await ensureDatabase();
-    const result = await db.runAsync(
-      `INSERT INTO events (name, description, date, budget, location, category, fundingStatus, totalFunding, receivedFunding, pendingFunding) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        eventData.name,
-        eventData.description || '',
-        eventData.date || '',
-        eventData.budget || 0,
-        eventData.location || '',
-        eventData.category || '',
-        eventData.fundingStatus || 'Not Started',
-        parseFloat(eventData.totalFunding) || 0,
-        parseFloat(eventData.receivedFunding) || 0,
-        parseFloat(eventData.pendingFunding) || 0
-      ]
-    );
-    return result.lastInsertRowId;
-  } catch (error) {
-    console.error('Error adding event:', error);
-    throw error;
-  }
+export const addEvent = (eventData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `INSERT INTO events (name, description, date, budget, location, category, fundingStatus, totalFunding, receivedFunding, pendingFunding) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            eventData.name,
+            eventData.description || '',
+            eventData.date || '',
+            eventData.budget || 0,
+            eventData.location || '',
+            eventData.category || '',
+            eventData.fundingStatus || 'Not Started',
+            parseFloat(eventData.totalFunding) || 0,
+            parseFloat(eventData.receivedFunding) || 0,
+            parseFloat(eventData.pendingFunding) || 0
+          ],
+          (_, result) => {
+            console.log('Event added successfully with ID:', result.insertId);
+            resolve(result.insertId);
+          },
+          (_, error) => {
+            console.error('Error adding event:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
-export const getEvents = async () => {
-  try {
-    await ensureDatabase();
-    const result = await db.getAllAsync('SELECT * FROM events ORDER BY createdAt DESC');
-    return result;
-  } catch (error) {
-    console.error('Error getting events:', error);
-    throw error;
-  }
+export const getEvents = () => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM events ORDER BY createdAt DESC',
+          [],
+          (_, result) => {
+            const events = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              events.push(result.rows.item(i));
+            }
+            console.log('Retrieved events:', events);
+            resolve(events);
+          },
+          (_, error) => {
+            console.error('Error getting events:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
-export const updateEvent = async (eventId, eventData) => {
-  try {
-    await ensureDatabase();
-    await db.runAsync(
-      `UPDATE events SET 
-       name = ?, description = ?, date = ?, budget = ?, location = ?, category = ?, 
-       fundingStatus = ?, totalFunding = ?, receivedFunding = ?, pendingFunding = ?
-       WHERE id = ?`,
-      [
-        eventData.name,
-        eventData.description || '',
-        eventData.date || '',
-        eventData.budget || 0,
-        eventData.location || '',
-        eventData.category || '',
-        eventData.fundingStatus || 'Not Started',
-        parseFloat(eventData.totalFunding) || 0,
-        parseFloat(eventData.receivedFunding) || 0,
-        parseFloat(eventData.pendingFunding) || 0,
-        eventId
-      ]
-    );
-  } catch (error) {
-    console.error('Error updating event:', error);
-    throw error;
-  }
+export const updateEvent = (eventId, eventData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `UPDATE events SET 
+           name = ?, description = ?, date = ?, budget = ?, location = ?, category = ?, 
+           fundingStatus = ?, totalFunding = ?, receivedFunding = ?, pendingFunding = ?
+           WHERE id = ?`,
+          [
+            eventData.name,
+            eventData.description || '',
+            eventData.date || '',
+            eventData.budget || 0,
+            eventData.location || '',
+            eventData.category || '',
+            eventData.fundingStatus || 'Not Started',
+            parseFloat(eventData.totalFunding) || 0,
+            parseFloat(eventData.receivedFunding) || 0,
+            parseFloat(eventData.pendingFunding) || 0,
+            eventId
+          ],
+          (_, result) => {
+            console.log('Event updated successfully');
+            resolve(result);
+          },
+          (_, error) => {
+            console.error('Error updating event:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
-export const deleteEvent = async (eventId) => {
-  try {
-    await ensureDatabase();
-    await db.runAsync('DELETE FROM events WHERE id = ?', [eventId]);
-  } catch (error) {
-    console.error('Error deleting event:', error);
-    throw error;
-  }
+export const deleteEvent = (eventId) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM events WHERE id = ?',
+          [eventId],
+          (_, result) => {
+            console.log('Event deleted successfully');
+            resolve(result);
+          },
+          (_, error) => {
+            console.error('Error deleting event:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
 };
 
 // Initialize database when module loads
