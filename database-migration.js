@@ -15,11 +15,14 @@ export const runDatabaseMigration = () => {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           description TEXT,
-          startDate TEXT,
-          endDate TEXT,
+          date TEXT,
           budget REAL,
           location TEXT,
-          status TEXT DEFAULT 'planned',
+          category TEXT,
+          fundingStatus TEXT DEFAULT 'Not Started',
+          totalFunding REAL DEFAULT 0,
+          receivedFunding REAL DEFAULT 0,
+          pendingFunding REAL DEFAULT 0,
           fundCategoryId INTEGER,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );`,
@@ -196,11 +199,35 @@ export const runDatabaseMigration = () => {
         );
       });
 
+      // Add new columns to events table if they don't exist
+      const newColumns = [
+        { name: 'date', type: 'TEXT' },
+        { name: 'category', type: 'TEXT' },
+        { name: 'fundingStatus', type: 'TEXT DEFAULT "Not Started"' },
+        { name: 'totalFunding', type: 'REAL DEFAULT 0' },
+        { name: 'receivedFunding', type: 'REAL DEFAULT 0' },
+        { name: 'pendingFunding', type: 'REAL DEFAULT 0' }
+      ];
+
+      newColumns.forEach(column => {
+        tx.executeSql(
+          `ALTER TABLE events ADD COLUMN ${column.name} ${column.type};`,
+          [],
+          () => {
+            console.log(`DatabaseMigration: Added column ${column.name} to events table`);
+          },
+          (_, error) => {
+            // Column might already exist, which is fine
+            console.log(`DatabaseMigration: Column ${column.name} might already exist:`, error.message);
+          }
+        );
+      });
+
       // Insert sample event for testing
       tx.executeSql(
-        `INSERT OR IGNORE INTO events (name, description, startDate, endDate, budget, location, status) 
+        `INSERT OR IGNORE INTO events (name, description, date, budget, location, category, fundingStatus) 
          VALUES (?, ?, ?, ?, ?, ?, ?);`,
-        ['Sample Event', 'This is a sample event for testing', '2025-01-01', '2025-01-31', 1000.00, 'Sample Location', 'planned'],
+        ['Sample Event', 'This is a sample event for testing', '2025-01-01', 1000.00, 'Sample Location', 'Conference', 'Not Started'],
         () => {
           console.log('DatabaseMigration: Sample event inserted');
         },

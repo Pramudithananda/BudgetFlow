@@ -569,6 +569,82 @@ export const deleteFunder = async (funderId) => {
   }
 };
 
+// Events functions
+export const addEvent = async (eventData) => {
+  try {
+    await ensureDatabase();
+    const result = await db.runAsync(
+      `INSERT INTO events (name, description, date, budget, location, category, fundingStatus, totalFunding, receivedFunding, pendingFunding) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        eventData.name,
+        eventData.description || '',
+        eventData.date || '',
+        eventData.budget || 0,
+        eventData.location || '',
+        eventData.category || '',
+        eventData.fundingStatus || 'Not Started',
+        parseFloat(eventData.totalFunding) || 0,
+        parseFloat(eventData.receivedFunding) || 0,
+        parseFloat(eventData.pendingFunding) || 0
+      ]
+    );
+    return result.lastInsertRowId;
+  } catch (error) {
+    console.error('Error adding event:', error);
+    throw error;
+  }
+};
+
+export const getEvents = async () => {
+  try {
+    await ensureDatabase();
+    const result = await db.getAllAsync('SELECT * FROM events ORDER BY createdAt DESC');
+    return result;
+  } catch (error) {
+    console.error('Error getting events:', error);
+    throw error;
+  }
+};
+
+export const updateEvent = async (eventId, eventData) => {
+  try {
+    await ensureDatabase();
+    await db.runAsync(
+      `UPDATE events SET 
+       name = ?, description = ?, date = ?, budget = ?, location = ?, category = ?, 
+       fundingStatus = ?, totalFunding = ?, receivedFunding = ?, pendingFunding = ?
+       WHERE id = ?`,
+      [
+        eventData.name,
+        eventData.description || '',
+        eventData.date || '',
+        eventData.budget || 0,
+        eventData.location || '',
+        eventData.category || '',
+        eventData.fundingStatus || 'Not Started',
+        parseFloat(eventData.totalFunding) || 0,
+        parseFloat(eventData.receivedFunding) || 0,
+        parseFloat(eventData.pendingFunding) || 0,
+        eventId
+      ]
+    );
+  } catch (error) {
+    console.error('Error updating event:', error);
+    throw error;
+  }
+};
+
+export const deleteEvent = async (eventId) => {
+  try {
+    await ensureDatabase();
+    await db.runAsync('DELETE FROM events WHERE id = ?', [eventId]);
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    throw error;
+  }
+};
+
 // Initialize database when module loads
 let initPromise = null;
 const ensureDatabase = async () => {
