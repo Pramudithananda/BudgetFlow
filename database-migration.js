@@ -136,16 +136,16 @@ export const runDatabaseMigration = () => {
 
       // Insert default expense categories if they don't exist
       const defaultCategories = [
-        { name: 'Venue & Facilities', color: '#FF6B6B', description: 'Conference halls, meeting rooms, venues' },
-        { name: 'Catering & Food', color: '#4ECDC4', description: 'Meals, snacks, beverages for events' },
-        { name: 'Transportation', color: '#45B7D1', description: 'Travel, transport, logistics' },
-        { name: 'Marketing & Promotion', color: '#96CEB4', description: 'Advertising, flyers, social media' },
-        { name: 'Equipment & Technology', color: '#FFEAA7', description: 'AV equipment, laptops, projectors' },
-        { name: 'Speakers & Training', color: '#DDA0DD', description: 'Speaker fees, training materials' },
-        { name: 'Accommodation', color: '#F8BBD9', description: 'Hotel bookings, guest accommodation' },
-        { name: 'Materials & Supplies', color: '#A8E6CF', description: 'Stationery, printing, supplies' },
-        { name: 'Security & Safety', color: '#FFB6C1', description: 'Security services, safety equipment' },
-        { name: 'Administrative', color: '#D3D3D3', description: 'Office supplies, admin costs' }
+        { name: 'Food & Catering', color: '#FF6B6B', description: 'Food and catering expenses - Rs. 60,000' },
+        { name: 'Decorations', color: '#4ECDC4', description: 'Party decorations and setup - Rs. 20,000' },
+        { name: 'Transportation', color: '#45B7D1', description: 'Transportation costs - Rs. 10,000' },
+        { name: 'Other Expenses', color: '#96CEB4', description: 'Other miscellaneous expenses' },
+        { name: 'Venue & Facilities', color: '#FFEAA7', description: 'Party hall and venue costs' },
+        { name: 'Entertainment', color: '#DDA0DD', description: 'Music, entertainment, activities' },
+        { name: 'Photography', color: '#F8BBD9', description: 'Photography and videography' },
+        { name: 'Gifts & Prizes', color: '#A8E6CF', description: 'Birthday gifts and prizes' },
+        { name: 'Administrative', color: '#FFB6C1', description: 'Administrative and planning costs' },
+        { name: 'Emergency Fund', color: '#D3D3D3', description: 'Emergency and contingency fund' }
       ];
 
       defaultCategories.forEach(category => {
@@ -188,27 +188,20 @@ export const runDatabaseMigration = () => {
 
       // Insert sample funders if they don't exist
       const sampleFunders = [
-        { name: 'ABC Foundation', contact: 'info@abcfoundation.org', categoryId: 3 },
-        { name: 'XYZ Corporation', contact: 'grants@xyzcorp.com', categoryId: 4 },
-        { name: 'DEF Trust', contact: 'contact@deftrust.org', categoryId: 3 },
-        { name: 'GHI Fund', contact: 'funding@ghifund.org', categoryId: 3 },
-        { name: 'JKL Organization', contact: 'support@jklorg.org', categoryId: 6 },
-        { name: 'Ministry of Education', contact: 'grants@moe.gov.lk', categoryId: 1 },
-        { name: 'World Bank', contact: 'info@worldbank.org', categoryId: 2 },
-        { name: 'UNICEF', contact: 'srilanka@unicef.org', categoryId: 2 },
-        { name: 'Red Cross', contact: 'srilanka@redcross.org', categoryId: 6 },
-        { name: 'Local Business Association', contact: 'info@lba.lk', categoryId: 7 },
-        { name: 'European Union', contact: 'delegation-srilanka@eeas.europa.eu', categoryId: 2 },
-        { name: 'USAID', contact: 'colombo@usaid.gov', categoryId: 2 },
-        { name: 'Australian Aid', contact: 'colombo@dfat.gov.au', categoryId: 2 },
-        { name: 'Japanese Embassy', contact: 'cultural@colombo.emb-japan.go.jp', categoryId: 5 },
-        { name: 'British Council', contact: 'info@britishcouncil.lk', categoryId: 5 }
+        { name: 'Sujith', phone: '0771234567', email: 'sujith@email.com' },
+        { name: 'Nirvan', phone: '0777654321', email: 'nirvan@email.com' },
+        { name: 'Welfare Funding', phone: '0112345678', email: 'welfare@funding.lk' },
+        { name: 'ABC Foundation', phone: '0111111111', email: 'info@abcfoundation.org' },
+        { name: 'XYZ Corporation', phone: '0112222222', email: 'grants@xyzcorp.com' },
+        { name: 'Ministry of Education', phone: '0113333333', email: 'grants@moe.gov.lk' },
+        { name: 'World Bank', phone: '0114444444', email: 'info@worldbank.org' },
+        { name: 'UNICEF', phone: '0115555555', email: 'srilanka@unicef.org' }
       ];
 
       sampleFunders.forEach(funder => {
         tx.executeSql(
-          'INSERT OR IGNORE INTO funders (name, contact, fundCategoryId) VALUES (?, ?, ?);',
-          [funder.name, funder.contact, funder.categoryId],
+          'INSERT OR IGNORE INTO funders (name, phone, email) VALUES (?, ?, ?);',
+          [funder.name, funder.phone, funder.email],
           () => {
             console.log(`DatabaseMigration: Sample funder ${funder.name} inserted`);
           },
@@ -218,43 +211,84 @@ export const runDatabaseMigration = () => {
         );
       });
 
-      // Insert sample event for testing
+      // Insert sample event for testing - Birthday Celebration
       tx.executeSql(
         `INSERT OR IGNORE INTO events (name, description, date, budget, location, category) 
          VALUES (?, ?, ?, ?, ?, ?);`,
         [
-          'Sample Conference 2024',
-          'Annual technology conference',
-          '2024-06-15',
-          500000,
-          'Colombo Convention Centre',
-          'Technology'
+          'Birthday Celebration',
+          'Birthday party celebration with food, decorations, transportation and other expenses',
+          '2024-10-01',
+          100000,
+          'Party Hall',
+          'Celebration'
         ],
         () => {
-          console.log('DatabaseMigration: Sample event inserted');
+          console.log('DatabaseMigration: Birthday event inserted');
         },
         (_, error) => {
-          console.error('DatabaseMigration: Error inserting sample event:', error);
+          console.error('DatabaseMigration: Error inserting birthday event:', error);
         }
       );
 
-      // Insert sample event funding for testing
+      // Insert sample event funding for testing - Birthday Celebration
+      // Sujith's contribution - Rs. 25,000 (Spent)
       tx.executeSql(
         `INSERT OR IGNORE INTO event_funding (event_id, funder_id, amount, status, description, transfer_date) 
          VALUES (?, ?, ?, ?, ?, ?);`,
         [
           1, // event_id
-          1, // funder_id (assuming first funder exists)
-          100000,
-          'Pending',
-          'Initial funding commitment',
-          '2024-01-15'
+          1, // funder_id (Sujith)
+          25000,
+          'Spent',
+          'Sujith provided funds for birthday celebration expenses',
+          '2024-09-15'
         ],
         () => {
-          console.log('DatabaseMigration: Sample event funding inserted');
+          console.log('DatabaseMigration: Sujith funding inserted');
         },
         (_, error) => {
-          console.error('DatabaseMigration: Error inserting sample event funding:', error);
+          console.error('DatabaseMigration: Error inserting Sujith funding:', error);
+        }
+      );
+
+      // Nirvan's contribution - Rs. 10,000 (Available)
+      tx.executeSql(
+        `INSERT OR IGNORE INTO event_funding (event_id, funder_id, amount, status, description, transfer_date) 
+         VALUES (?, ?, ?, ?, ?, ?);`,
+        [
+          1, // event_id
+          2, // funder_id (Nirvan)
+          10000,
+          'Available',
+          'Nirvan provided funds for remaining expenses',
+          '2024-09-20'
+        ],
+        () => {
+          console.log('DatabaseMigration: Nirvan funding inserted');
+        },
+        (_, error) => {
+          console.error('DatabaseMigration: Error inserting Nirvan funding:', error);
+        }
+      );
+
+      // Welfare Funding - Rs. 40,000 (Pending)
+      tx.executeSql(
+        `INSERT OR IGNORE INTO event_funding (event_id, funder_id, amount, status, description, transfer_date) 
+         VALUES (?, ?, ?, ?, ?, ?);`,
+        [
+          1, // event_id
+          3, // funder_id (Welfare Funding)
+          40000,
+          'Pending',
+          'Welfare funding expected for birthday celebration',
+          '2024-10-01'
+        ],
+        () => {
+          console.log('DatabaseMigration: Welfare funding inserted');
+        },
+        (_, error) => {
+          console.error('DatabaseMigration: Error inserting Welfare funding:', error);
         }
       );
 
