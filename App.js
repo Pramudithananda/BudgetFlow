@@ -10,13 +10,17 @@ import { useEffect } from 'react';
 export default function App() {
   useEffect(() => {
     // Run database migration on app start
-    runDatabaseMigration()
-      .then(() => {
+    const initializeDatabase = async () => {
+      try {
+        console.log('Starting database initialization...');
+        await runDatabaseMigration();
         console.log('Database migration completed successfully');
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Database migration failed:', error);
-      });
+      }
+    };
+    
+    initializeDatabase();
   }, []);
 
   return (
