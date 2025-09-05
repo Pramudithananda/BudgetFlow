@@ -19,11 +19,6 @@ export const runDatabaseMigration = () => {
           budget REAL,
           location TEXT,
           category TEXT,
-          fundingStatus TEXT DEFAULT 'Not Started',
-          totalFunding REAL DEFAULT 0,
-          receivedFunding REAL DEFAULT 0,
-          pendingFunding REAL DEFAULT 0,
-          fundCategoryId INTEGER,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );`,
         [],
@@ -58,10 +53,10 @@ export const runDatabaseMigration = () => {
         `CREATE TABLE IF NOT EXISTS funders (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
-          contact TEXT,
-          amount REAL DEFAULT 0,
-          fundCategoryId INTEGER,
-          createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+          phone TEXT,
+          email TEXT,
+          createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );`,
         [],
         () => {
@@ -69,6 +64,30 @@ export const runDatabaseMigration = () => {
         },
         (_, error) => {
           console.error('DatabaseMigration: Error creating funders table:', error);
+        }
+      );
+
+      // Create event_funding table if it doesn't exist
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS event_funding (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_id INTEGER NOT NULL,
+          funder_id INTEGER NOT NULL,
+          amount REAL NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('Pending', 'Spent', 'Available', 'Outstanding')),
+          description TEXT,
+          transfer_date TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+          FOREIGN KEY (funder_id) REFERENCES funders (id) ON DELETE CASCADE
+        );`,
+        [],
+        () => {
+          console.log('DatabaseMigration: Event funding table created successfully');
+        },
+        (_, error) => {
+          console.error('DatabaseMigration: Error creating event funding table:', error);
         }
       );
 
@@ -199,35 +218,18 @@ export const runDatabaseMigration = () => {
         );
       });
 
-      // Add new columns to events table if they don't exist
-      const newColumns = [
-        { name: 'date', type: 'TEXT' },
-        { name: 'category', type: 'TEXT' },
-        { name: 'fundingStatus', type: 'TEXT DEFAULT "Not Started"' },
-        { name: 'totalFunding', type: 'REAL DEFAULT 0' },
-        { name: 'receivedFunding', type: 'REAL DEFAULT 0' },
-        { name: 'pendingFunding', type: 'REAL DEFAULT 0' }
-      ];
-
-      newColumns.forEach(column => {
-        tx.executeSql(
-          `ALTER TABLE events ADD COLUMN ${column.name} ${column.type};`,
-          [],
-          () => {
-            console.log(`DatabaseMigration: Added column ${column.name} to events table`);
-          },
-          (_, error) => {
-            // Column might already exist, which is fine
-            console.log(`DatabaseMigration: Column ${column.name} might already exist:`, error.message);
-          }
-        );
-      });
-
       // Insert sample event for testing
       tx.executeSql(
-        `INSERT OR IGNORE INTO events (name, description, date, budget, location, category, fundingStatus) 
-         VALUES (?, ?, ?, ?, ?, ?, ?);`,
-        ['Sample Event', 'This is a sample event for testing', '2025-01-01', 1000.00, 'Sample Location', 'Conference', 'Not Started'],
+        `INSERT OR IGNORE INTO events (name, description, date, budget, location, category) 
+         VALUES (?, ?, ?, ?, ?, ?);`,
+        [
+          'Sample Conference 2024',
+          'Annual technology conference',
+          '2024-06-15',
+          500000,
+          'Colombo Convention Centre',
+          'Technology'
+        ],
         () => {
           console.log('DatabaseMigration: Sample event inserted');
         },
@@ -235,6 +237,27 @@ export const runDatabaseMigration = () => {
           console.error('DatabaseMigration: Error inserting sample event:', error);
         }
       );
+
+      // Insert sample event funding for testing
+      tx.executeSql(
+        `INSERT OR IGNORE INTO event_funding (event_id, funder_id, amount, status, description, transfer_date) 
+         VALUES (?, ?, ?, ?, ?, ?);`,
+        [
+          1, // event_id
+          1, // funder_id (assuming first funder exists)
+          100000,
+          'Pending',
+          'Initial funding commitment',
+          '2024-01-15'
+        ],
+        () => {
+          console.log('DatabaseMigration: Sample event funding inserted');
+        },
+        (_, error) => {
+          console.error('DatabaseMigration: Error inserting sample event funding:', error);
+        }
+      );
+
 
     }, 
     (error) => {
