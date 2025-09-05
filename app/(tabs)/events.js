@@ -22,7 +22,11 @@ export default function EventsScreen() {
     location: '',
     budget: '',
     description: '',
-    category: ''
+    category: '',
+    fundingStatus: 'Not Started',
+    totalFunding: '',
+    receivedFunding: '',
+    pendingFunding: ''
   });
   
   // Fund modal states
@@ -35,7 +39,9 @@ export default function EventsScreen() {
     category: ''
   });
   
-  // Dropdown states removed - using Alert.alert instead
+  // Dropdown states
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showFundingStatusDropdown, setShowFundingStatusDropdown] = useState(false);
   
   // Data states
   const [categories, setCategories] = useState([]);
@@ -168,7 +174,11 @@ export default function EventsScreen() {
       location: '',
       budget: '',
       description: '',
-      category: ''
+      category: '',
+      fundingStatus: 'Not Started',
+      totalFunding: '',
+      receivedFunding: '',
+      pendingFunding: ''
     });
     setEventModalVisible(true);
   };
@@ -181,7 +191,11 @@ export default function EventsScreen() {
       location: event.location || '',
       budget: event.budget?.toString() || '',
       description: event.description || '',
-      category: event.category || ''
+      category: event.category || '',
+      fundingStatus: event.fundingStatus || 'Not Started',
+      totalFunding: event.totalFunding?.toString() || '',
+      receivedFunding: event.receivedFunding?.toString() || '',
+      pendingFunding: event.pendingFunding?.toString() || ''
     });
     setEventModalVisible(true);
   };
@@ -283,7 +297,7 @@ export default function EventsScreen() {
     },
     header: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      justifyContent: 'center',
       alignItems: 'center',
       padding: 20,
       backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
@@ -420,7 +434,45 @@ export default function EventsScreen() {
       fontSize: 16,
       color: isDarkMode ? '#fff' : '#333',
     },
-    // Dropdown styles removed - using Alert.alert instead
+    dropdownList: {
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      right: 0,
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+      borderWidth: 1,
+      borderColor: isDarkMode ? '#555' : '#e0e0e0',
+      borderRadius: 8,
+      marginTop: 4,
+      maxHeight: 200,
+      zIndex: 1000,
+      elevation: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+    },
+    dropdownItem: {
+      padding: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: isDarkMode ? '#444' : '#f0f0f0',
+    },
+    dropdownItemText: {
+      fontSize: 16,
+      color: isDarkMode ? '#fff' : '#333',
+    },
+    sectionHeader: {
+      marginTop: 20,
+      marginBottom: 10,
+      paddingBottom: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: isDarkMode ? '#444' : '#e0e0e0',
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#333',
+    },
     modalActions: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -627,53 +679,60 @@ export default function EventsScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Category</Text>
-                <TouchableOpacity
-                  style={styles.dropdownButton}
-                  onPress={() => {
-                    try {
-                      if (loadingCategories) {
-                        Alert.alert('Loading', 'Categories are still loading. Please wait a moment.');
-                        return;
-                      }
-                      
-                      if (!categories || categories.length === 0) {
-                        Alert.alert('No Categories', 'No categories available. Please add categories first.');
-                        return;
-                      }
-                      
-                      const categoryButtons = categories.map((category) => ({
-                        text: String(category),
-                        onPress: () => {
-                          try {
-                            setEventForm({...eventForm, category: String(category)});
-                          } catch (error) {
-                            console.error('Error setting category:', error);
-                          }
-                        }
-                      }));
-                      
-                      categoryButtons.push({ text: 'Cancel', style: 'cancel' });
-                      
-                      Alert.alert(
-                        'Select Category',
-                        'Choose a category:',
-                        categoryButtons
-                      );
-                    } catch (error) {
-                      console.error('Error in category selection:', error);
-                      Alert.alert('Error', 'Failed to open category selection. Please try again.');
-                    }
-                  }}
-                >
-                  <Text style={styles.dropdownButtonText}>
-                    {eventForm.category || 'Select Category'}
-                  </Text>
-                  <FontAwesome5 
-                    name="chevron-down" 
-                    size={16} 
-                    color={isDarkMode ? '#fff' : '#333'} 
-                  />
-                </TouchableOpacity>
+                <View style={{ position: 'relative', zIndex: 1000 }}>
+                  <TouchableOpacity
+                    style={styles.dropdownButton}
+                    onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                  >
+                    <Text style={styles.dropdownButtonText}>
+                      {eventForm.category || 'Select Category'}
+                    </Text>
+                    <FontAwesome5 
+                      name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color={isDarkMode ? '#fff' : '#333'} 
+                    />
+                  </TouchableOpacity>
+                  
+                  {showCategoryDropdown && (
+                    <ScrollView 
+                      style={styles.dropdownList}
+                      showsVerticalScrollIndicator={true}
+                      nestedScrollEnabled={true}
+                    >
+                      {loadingCategories ? (
+                        <View style={styles.dropdownItem}>
+                          <Text style={styles.dropdownItemText}>Loading categories...</Text>
+                        </View>
+                      ) : categories.length === 0 ? (
+                        <View style={styles.dropdownItem}>
+                          <Text style={styles.dropdownItemText}>No categories available</Text>
+                        </View>
+                      ) : (
+                        categories.map((category, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.dropdownItem,
+                              eventForm.category === category && { backgroundColor: isDarkMode ? '#444' : '#f0f8ff' }
+                            ]}
+                            onPress={() => {
+                              setEventForm({...eventForm, category: category});
+                              setShowCategoryDropdown(false);
+                            }}
+                          >
+                            <Text style={[
+                              styles.dropdownItemText,
+                              eventForm.category === category && { color: '#64a12d', fontWeight: 'bold' }
+                            ]}>
+                              {category}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </ScrollView>
+                  )}
+                </View>
               </View>
 
               <View style={styles.inputGroup}>
@@ -685,6 +744,95 @@ export default function EventsScreen() {
                   placeholder="Enter event description"
                   placeholderTextColor={isDarkMode ? '#666' : '#999'}
                   multiline
+                />
+              </View>
+
+              {/* Funding Status Section */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Funding Status</Text>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Funding Status</Text>
+                <View style={{ position: 'relative', zIndex: 1000 }}>
+                  <TouchableOpacity
+                    style={styles.dropdownButton}
+                    onPress={() => setShowFundingStatusDropdown(!showFundingStatusDropdown)}
+                  >
+                    <Text style={styles.dropdownButtonText}>
+                      {eventForm.fundingStatus || 'Select Funding Status'}
+                    </Text>
+                    <FontAwesome5 
+                      name={showFundingStatusDropdown ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color={isDarkMode ? '#fff' : '#333'} 
+                    />
+                  </TouchableOpacity>
+                  
+                  {showFundingStatusDropdown && (
+                    <ScrollView 
+                      style={styles.dropdownList}
+                      showsVerticalScrollIndicator={true}
+                      nestedScrollEnabled={true}
+                    >
+                      {['Not Started', 'In Progress', 'Partially Funded', 'Fully Funded', 'Over Funded'].map((status, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={[
+                            styles.dropdownItem,
+                            eventForm.fundingStatus === status && { backgroundColor: isDarkMode ? '#444' : '#f0f8ff' }
+                          ]}
+                          onPress={() => {
+                            setEventForm({...eventForm, fundingStatus: status});
+                            setShowFundingStatusDropdown(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.dropdownItemText,
+                            eventForm.fundingStatus === status && { color: '#64a12d', fontWeight: 'bold' }
+                          ]}>
+                            {status}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Total Funding Required (LKR)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={eventForm.totalFunding}
+                  onChangeText={(text) => setEventForm({...eventForm, totalFunding: text})}
+                  placeholder="Enter total funding required"
+                  placeholderTextColor={isDarkMode ? '#666' : '#999'}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Received Funding (LKR)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={eventForm.receivedFunding}
+                  onChangeText={(text) => setEventForm({...eventForm, receivedFunding: text})}
+                  placeholder="Enter received funding amount"
+                  placeholderTextColor={isDarkMode ? '#666' : '#999'}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Pending Funding (LKR)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={eventForm.pendingFunding}
+                  onChangeText={(text) => setEventForm({...eventForm, pendingFunding: text})}
+                  placeholder="Enter pending funding amount"
+                  placeholderTextColor={isDarkMode ? '#666' : '#999'}
+                  keyboardType="numeric"
                 />
               </View>
             </ScrollView>
