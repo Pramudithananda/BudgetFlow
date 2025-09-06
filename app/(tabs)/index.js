@@ -160,7 +160,9 @@ export default function HomeScreen() {
           {categories.map((category) => (
             <CategoryItem
               key={category.id}
-              category={category}
+              name={category.name}
+              totalAmount={category.totalAmount}
+              totalExpenses={category.expenseCount}
               onPress={() => router.push(`/category/${category.id}`)}
             />
           ))}
@@ -179,7 +181,10 @@ export default function HomeScreen() {
           {recentExpenses.map((expense) => (
             <ExpenseItem
               key={expense.id}
-              expense={expense}
+              title={expense.title}
+              amount={expense.amount}
+              status={expense.status}
+              assignedTo={expense.assignedTo}
               onPress={() => {}}
             />
           ))}
