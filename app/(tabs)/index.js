@@ -12,20 +12,32 @@ import { useTheme } from '../../context/theme';
 
 export default function HomeScreen() {
   const { colors, isDarkMode } = useTheme();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to prevent white screen
   const [refreshing, setRefreshing] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [recentExpenses, setRecentExpenses] = useState([]);
-  const [events, setEvents] = useState([]);
+  const [categories, setCategories] = useState([
+    { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
+    { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
+    { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
+    { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
+  ]);
+  const [recentExpenses, setRecentExpenses] = useState([
+    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, date: '2024-01-15' },
+    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, date: '2024-01-16' },
+    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, date: '2024-01-17' },
+    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, date: '2024-01-18' }
+  ]);
+  const [events, setEvents] = useState([
+    { id: 1, name: 'Birthday Celebration', date: '2024-10-01', category: 'Conference', totalFunding: 100000, receivedFunding: 25000, pendingFunding: 75000 }
+  ]);
   const [budgetSummary, setBudgetSummary] = useState({
-    totalBudget: 0,
-    receivedFund: 0,
+    totalBudget: 100000,
+    receivedFund: 25000,
   });
   const [statusTotals, setStatusTotals] = useState({
-    Pending: 0,
-    Spent: 0,
-    Available: 0,
-    Outstanding: 0,
+    Pending: 10000,
+    Spent: 60000,
+    Available: 20000,
+    Outstanding: 10000,
   });
   
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -33,45 +45,8 @@ export default function HomeScreen() {
   const [showEventDropdown, setShowEventDropdown] = useState(false);
 
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Static data for demonstration
-      const budgetData = { totalBudget: 100000, receivedFund: 25000 };
-      const expensesData = [
-        { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, date: '2024-01-15' },
-        { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, date: '2024-01-16' },
-        { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, date: '2024-01-17' },
-        { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, date: '2024-01-18' }
-      ];
-      const categoriesData = [
-        { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
-        { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
-        { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
-        { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
-      ];
-      const eventsData = [
-        { id: 1, name: 'Birthday Celebration', date: '2024-10-01', category: 'Conference', totalFunding: 100000, receivedFunding: 25000, pendingFunding: 75000 }
-      ];
-      
-      setBudgetSummary(budgetData);
-      setEvents(eventsData);
-      setStatusTotals({
-        Pending: 10000,
-        Spent: 60000,
-        Available: 20000,
-        Outstanding: 10000,
-      });
-      setCategories(categoriesData);
-      setRecentExpenses(expensesData.slice(0, 5));
-    } catch (error) {
-      console.error('Error in fetchData:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Data is already set in initial state, no need to fetch
+    console.log('Data already loaded in initial state');
   };
 
   const onRefresh = async () => {
@@ -95,18 +70,8 @@ export default function HomeScreen() {
     });
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []); // Empty dependency array to run only once
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading BudgetFlow...</Text>
-      </View>
-    );
-  }
+  // No useEffect needed - data is already in initial state
+  // No loading screen needed - data is immediately available
 
   return (
     <>
