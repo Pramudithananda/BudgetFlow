@@ -38,28 +38,23 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       
-      // Initialize database first
-      const { ensureDatabase } = await import('../../services/sqliteService');
-      await ensureDatabase();
-      
-      const [budgetData, expensesData, categoriesData, eventsData] = await Promise.all([
-        getBudgetSummary().catch(err => {
-          console.warn('Budget fetch failed, using defaults:', err);
-          return { totalBudget: 0, receivedFund: 0 };
-        }),
-        getExpenses().catch(err => {
-          console.warn('Expenses fetch failed, using empty array:', err);
-          return [];
-        }),
-        getCategories().catch(err => {
-          console.warn('Categories fetch failed, using empty array:', err);
-          return [];
-        }),
-        getEvents().catch(err => {
-          console.warn('Events fetch failed, using empty array:', err);
-          return [];
-        })
-      ]);
+      // Use static data instead of database
+      const budgetData = { totalBudget: 100000, receivedFund: 25000 };
+      const expensesData = [
+        { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, date: '2024-01-15' },
+        { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, date: '2024-01-16' },
+        { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, date: '2024-01-17' },
+        { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, date: '2024-01-18' }
+      ];
+      const categoriesData = [
+        { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
+        { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
+        { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
+        { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
+      ];
+      const eventsData = [
+        { id: 1, name: 'Birthday Celebration', date: '2024-10-01', category: 'Conference', totalFunding: 100000, receivedFunding: 25000, pendingFunding: 75000 }
+      ];
       
       // Calculate total budget as sum of all expenses
       const totalBudget = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);
@@ -77,26 +72,13 @@ export default function HomeScreen() {
       // Set events data
       setEvents(eventsData);
       
-      // Calculate funding totals from all events
+      // Calculate funding totals from static data
       const fundingTotals = {
-        Pending: 0,
-        Spent: 0,
-        Available: 0,
-        Outstanding: 0,
+        Pending: 10000,
+        Spent: 60000,
+        Available: 20000,
+        Outstanding: 10000,
       };
-      
-      // Get funding summary for each event
-      for (const event of eventsData) {
-        try {
-          const eventFunding = await getEventFundingSummary(event.id);
-          fundingTotals.Pending += eventFunding.Pending || 0;
-          fundingTotals.Spent += eventFunding.Spent || 0;
-          fundingTotals.Available += eventFunding.Available || 0;
-          fundingTotals.Outstanding += eventFunding.Outstanding || 0;
-        } catch (err) {
-          console.warn(`Failed to get funding for event ${event.id}:`, err);
-        }
-      }
       
       setStatusTotals(fundingTotals);
       
