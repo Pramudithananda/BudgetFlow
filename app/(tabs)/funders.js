@@ -38,6 +38,11 @@ export default function FundersScreen() {
     }
   }, [error]);
 
+  // Force re-render when funders change
+  useEffect(() => {
+    console.log('Funders changed:', funders.length);
+  }, [funders]);
+
   const handleAddFunder = () => {
     router.push('/new-funder');
   };
@@ -106,38 +111,46 @@ export default function FundersScreen() {
       <Card style={styles.card}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>All Funders</Text>
         
+        {/* Debug Info */}
+        <Text style={[styles.debugText, { color: colors.text }]}>
+          Debug: {funders.length} funders loaded
+        </Text>
+        
         {funders.length > 0 ? (
-          funders.map((funder) => (
-            <RNView key={funder.id} style={[styles.funderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <RNView style={styles.funderContent}>
-                <RNView style={styles.funderInfo}>
-                  <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
-                  <Text style={[styles.funderPhone, { color: colors.text, opacity: 0.7 }]}>
-                    {formatPhone(funder.phone)}
-                  </Text>
-                  {funder.email && (
-                    <Text style={[styles.funderEmail, { color: colors.text, opacity: 0.7 }]}>
-                      {funder.email}
+          funders.map((funder, index) => {
+            console.log(`Rendering funder ${index}:`, funder);
+            return (
+              <RNView key={`funder-${funder.id}-${Date.now()}`} style={[styles.funderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <RNView style={styles.funderContent}>
+                  <RNView style={styles.funderInfo}>
+                    <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
+                    <Text style={[styles.funderPhone, { color: colors.text, opacity: 0.7 }]}>
+                      {formatPhone(funder.phone)}
                     </Text>
-                  )}
-                </RNView>
-                <RNView style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: '#64a12d' }]}
-                    onPress={() => Alert.alert('Edit Funder', 'Edit functionality coming soon!')}
-                  >
-                    <FontAwesome5 name="edit" size={14} color="#fff" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: '#e74c3c' }]}
-                    onPress={() => handleDeleteFunder(funder.id, funder.name)}
-                  >
-                    <FontAwesome5 name="trash" size={14} color="#fff" />
-                  </TouchableOpacity>
+                    {funder.email && (
+                      <Text style={[styles.funderEmail, { color: colors.text, opacity: 0.7 }]}>
+                        {funder.email}
+                      </Text>
+                    )}
+                  </RNView>
+                  <RNView style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, { backgroundColor: '#64a12d' }]}
+                      onPress={() => Alert.alert('Edit Funder', 'Edit functionality coming soon!')}
+                    >
+                      <FontAwesome5 name="edit" size={14} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionButton, { backgroundColor: '#e74c3c' }]}
+                      onPress={() => handleDeleteFunder(funder.id, funder.name)}
+                    >
+                      <FontAwesome5 name="trash" size={14} color="#fff" />
+                    </TouchableOpacity>
+                  </RNView>
                 </RNView>
               </RNView>
-            </RNView>
-          ))
+            );
+          })
         ) : (
           <RNView style={styles.emptyContainer}>
             <FontAwesome5 name="users" size={48} color={colors.text} style={styles.emptyIcon} />
@@ -250,5 +263,10 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  debugText: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginBottom: 8,
   },
 });

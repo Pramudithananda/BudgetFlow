@@ -178,7 +178,13 @@ export const DataProvider = ({ children }) => {
         updated_at: new Date().toISOString()
       };
       
-      setFunders(prev => [...prev, newFunder]);
+      console.log('Current funders before add:', funders.length);
+      setFunders(prev => {
+        const updated = [...prev, newFunder];
+        console.log('Funders after add:', updated.length);
+        return updated;
+      });
+      
       console.log('Funder added successfully:', newFunder);
       return newFunder;
     } catch (error) {

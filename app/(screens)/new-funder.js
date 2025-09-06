@@ -30,9 +30,16 @@ export default function NewFunderScreen() {
         email: email.trim()
       };
       
-      await addFunder(funderData);
+      console.log('Saving funder data:', funderData);
+      const result = await addFunder(funderData);
+      console.log('Funder save result:', result);
+      
       Alert.alert('Success', 'Funder added successfully!', [
-        { text: 'OK', onPress: () => router.back() }
+        { text: 'OK', onPress: () => {
+          console.log('Navigating back to funders tab');
+          // Force navigation to funders tab
+          router.replace('/(tabs)/funders');
+        }}
       ]);
     } catch (error) {
       console.error('Error adding funder:', error);
