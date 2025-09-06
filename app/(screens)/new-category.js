@@ -37,7 +37,10 @@ export default function NewCategoryScreen() {
         color: selectedColor
       };
       
-      await addCategory(categoryData);
+      console.log('Saving category data:', categoryData);
+      const result = await addCategory(categoryData);
+      console.log('Category save result:', result);
+      
       Alert.alert('Success', 'Category added successfully!', [
         { text: 'OK', onPress: () => router.back() }
       ]);

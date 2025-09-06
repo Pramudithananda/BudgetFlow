@@ -100,8 +100,14 @@ export default function CategoriesScreen() {
       <Card style={styles.card}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>All Categories</Text>
         
+        {/* Debug Info */}
+        <Text style={[styles.debugText, { color: colors.text }]}>
+          Debug: {categories.length} categories loaded
+        </Text>
+        
         {categories.length > 0 ? (
           categories.map((category) => {
+            console.log('Rendering category:', category);
             const categoryExpenses = getExpensesByCategory(category.id);
             const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
             
@@ -188,5 +194,10 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  debugText: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginBottom: 8,
   },
 });

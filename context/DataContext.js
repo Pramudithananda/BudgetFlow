@@ -54,25 +54,40 @@ export const DataProvider = ({ children }) => {
     setError(null);
     
     try {
-      console.log('Loading data from database...');
+      console.log('Loading static data...');
       
-      // Load categories
-      const categoriesData = await SQLiteService.getCategories();
+      // Use static data for now
+      const categoriesData = [
+        { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+        { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+        { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+        { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
+      ];
       setCategories(categoriesData);
       console.log('Categories loaded:', categoriesData.length);
       
-      // Load funders
-      const fundersData = await SQLiteService.getFunders();
+      const fundersData = [
+        { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
+        { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
+        { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
+      ];
       setFunders(fundersData);
       console.log('Funders loaded:', fundersData.length);
       
-      // Load events
-      const eventsData = await SQLiteService.getEvents();
+      const eventsData = [
+        { 
+          id: 1, 
+          name: 'Birthday Celebration', 
+          date: '2024-10-01', 
+          category: 'Conference',
+          budget: 100000,
+          description: 'Annual birthday celebration event',
+          location: 'Colombo'
+        }
+      ];
       setEvents(eventsData);
       console.log('Events loaded:', eventsData.length);
       
-      // Load expenses (we'll need to add this function)
-      // For now, we'll use static data for expenses
       const expensesData = [
         { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
         { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
