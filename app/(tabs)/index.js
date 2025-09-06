@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert, StatusBar, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, StatusBar, TouchableOpacity, Modal } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -8,7 +8,6 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
 import ExpenseItem from '../../components/ExpenseItem';
-import { getCategories, getExpenses, getBudgetSummary, listenExpenses, listenCategories, getEvents, getEventFundingSummary } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function HomeScreen() {
@@ -29,113 +28,43 @@ export default function HomeScreen() {
     Outstanding: 0,
   });
   
-  
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
 
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Use static data instead of database
-      const budgetData = { totalBudget: 100000, receivedFund: 25000 };
-      const expensesData = [
-        { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, date: '2024-01-15' },
-        { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, date: '2024-01-16' },
-        { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, date: '2024-01-17' },
-        { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, date: '2024-01-18' }
-      ];
-      const categoriesData = [
-        { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
-        { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
-        { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
-        { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
-      ];
-      const eventsData = [
-        { id: 1, name: 'Birthday Celebration', date: '2024-10-01', category: 'Conference', totalFunding: 100000, receivedFunding: 25000, pendingFunding: 75000 }
-      ];
-      
-      // Calculate total budget as sum of all expenses
-      const totalBudget = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-      
-      // Calculate received fund as sum of expenses with status "Received"
-      const receivedFund = expensesData
-        .filter(expense => expense.status === 'Received')
-        .reduce((sum, expense) => sum + (expense.amount || 0), 0);
-      
-      setBudgetSummary({
-        totalBudget,
-        receivedFund,
-      });
-      
-      // Set events data
-      setEvents(eventsData);
-      
-      // Calculate funding totals from static data
-      const fundingTotals = {
-        Pending: 10000,
-        Spent: 60000,
-        Available: 20000,
-        Outstanding: 10000,
-      };
-      
-      setStatusTotals(fundingTotals);
-      
-      // Calculate totals for each status (legacy for expenses)
-      const totals = {
-        remaining: 0,
-        pending: 0,
-        received: 0,
-        spent: 0,
-      };
-      
-      expensesData.forEach(expense => {
-        if (expense.status === 'Outstanding') {
-          totals.remaining += expense.amount;
-        } else if (expense.status === 'Pending') {
-          totals.pending += expense.amount;
-        } else if (expense.status === 'Received') {
-          totals.received += expense.amount;
-        } else if (expense.status === 'Spent') {
-          totals.spent += expense.amount;
-        }
-      });
-      
-      setStatusTotals(totals);
-      
-      // Calculate totals for each category
-      console.log('Categories data from database:', categoriesData);
-      console.log('Expenses data from database:', expensesData);
-      
-      const categoriesWithTotals = categoriesData.map(category => {
-        const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
-        const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-        const expenseCount = categoryExpenses.length;
-        
-        return {
-          ...category,
-          totalAmount,
-          expenseCount
-        };
-      });
-      
-      console.log('Categories with totals:', categoriesWithTotals);
-      setCategories(categoriesWithTotals);
-      setRecentExpenses(expensesData.slice(0, 5)); // Get only 5 most recent expenses
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      // Don't show alert for database initialization errors, just log and continue
-      console.warn('Continuing with default data due to error:', error);
-      // Set default data to prevent white screen
-      setCategories([]);
-      setRecentExpenses([]);
-      setEvents([]);
-      setBudgetSummary({ totalBudget: 0, receivedFund: 0 });
-      setStatusTotals({ Pending: 0, Spent: 0, Available: 0, Outstanding: 0 });
-    } finally {
-      setLoading(false);
-    }
+    // Simulate loading delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Static data for demonstration
+    const budgetData = { totalBudget: 100000, receivedFund: 25000 };
+    const expensesData = [
+      { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, date: '2024-01-15' },
+      { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, date: '2024-01-16' },
+      { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, date: '2024-01-17' },
+      { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, date: '2024-01-18' }
+    ];
+    const categoriesData = [
+      { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
+      { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
+      { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
+      { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
+    ];
+    const eventsData = [
+      { id: 1, name: 'Birthday Celebration', date: '2024-10-01', category: 'Conference', totalFunding: 100000, receivedFunding: 25000, pendingFunding: 75000 }
+    ];
+    
+    setBudgetSummary(budgetData);
+    setEvents(eventsData);
+    setStatusTotals({
+      Pending: 10000,
+      Spent: 60000,
+      Available: 20000,
+      Outstanding: 10000,
+    });
+    setCategories(categoriesData);
+    setRecentExpenses(expensesData.slice(0, 5));
+    setLoading(false);
   };
 
   const onRefresh = async () => {
@@ -151,21 +80,8 @@ export default function HomeScreen() {
     setShowEventDropdown(false);
   };
 
-  const closeEventModal = () => {
-    setShowEventModal(false);
-    setSelectedEvent(null);
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-LK', {
-      style: 'currency',
-      currency: 'LKR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-LK', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -173,73 +89,14 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    // Set a timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Loading timeout reached, setting loading to false');
-        setLoading(false);
-      }
-    }, 5000); // 5 second timeout
-
     fetchData();
-  const unsubscribeExpenses = listenExpenses(null, (expensesLive) => {
-      const expensesData = expensesLive.map(exp => ({
-        ...exp,
-        createdAt: exp.createdAt?.toDate ? exp.createdAt.toDate().toISOString() : exp.createdAt,
-      }));
-      // Recompute budget & status totals
-      const totalBudget = expensesData.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const receivedFund = expensesData.filter(e=> e.status==='Received').reduce((s,e)=> s + (e.amount||0),0);
-      setBudgetSummary(prev => ({ ...prev, totalBudget, receivedFund }));
-      const totals = { remaining:0,pending:0,received:0,spent:0 };
-      expensesData.forEach(e=>{
-        if(e.status==='Outstanding') totals.remaining += e.amount||0;
-        else if(e.status==='Pending') totals.pending += e.amount||0;
-        else if(e.status==='Received') totals.received += e.amount||0;
-        else if(e.status==='Spent') totals.spent += e.amount||0;
-      });
-      setStatusTotals(totals);
-      // Update categories amounts (requires categories state)
-      setCategories(prevCats => prevCats.map(cat => {
-        const catExpenses = expensesData.filter(e=> e.categoryId===cat.id);
-        const totalAmount = catExpenses.reduce((s,e)=> s + (e.amount||0),0);
-        return { ...cat, totalAmount, expenseCount: catExpenses.length };
-      }));
-      setRecentExpenses(expensesData.slice(0,5));
-    });
-    // Listen for category additions/updates
-    const unsubscribeCategories = listenCategories((catsLive) => {
-      console.log('Categories updated in real-time on home screen:', catsLive);
-      if (catsLive && catsLive.length > 0) {
-        // Recalculate totals for each category
-        getExpenses().then(expensesData => {
-          const categoriesWithTotals = catsLive.map(category => {
-            const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
-            const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-            const expenseCount = categoryExpenses.length;
-            
-            return {
-              ...category,
-              totalAmount,
-              expenseCount
-            };
-          });
-          console.log('Updated categories with totals:', categoriesWithTotals);
-          setCategories(categoriesWithTotals);
-        }).catch(err => console.error('Error updating categories on home screen:', err));
-      }
-    });
-    return () => {
-      clearTimeout(loadingTimeout);
-      unsubscribeExpenses && unsubscribeExpenses();
-      unsubscribeCategories && unsubscribeCategories();
-    };
   }, []);
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading BudgetFlow...</Text>
       </View>
     );
   }
@@ -257,338 +114,152 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <BudgetSummary
+        {/* Budget Summary */}
+        <BudgetSummary 
           totalBudget={budgetSummary.totalBudget}
           receivedFund={budgetSummary.receivedFund}
-          spent={statusTotals.spent}
         />
-        
-        {/* Events Dropdown Section */}
-        <Card style={styles.sectionCard}>
-          <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Events Overview</Text>
-            <TouchableOpacity 
-              style={styles.eventsDropdownButton}
-              onPress={() => setShowEventDropdown(!showEventDropdown)}
-            >
-              <Text style={styles.eventsDropdownText}>
-                {showEventDropdown ? 'Hide Events' : 'View Events'}
-              </Text>
-              <FontAwesome5 
-                name={showEventDropdown ? 'chevron-up' : 'chevron-down'} 
-                size={16} 
-                color={colors.primary} 
-              />
-            </TouchableOpacity>
+
+        {/* Funding Status Summary */}
+        <Card style={styles.card}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Funding Status</Text>
+          <RNView style={styles.statusGrid}>
+            <RNView style={styles.statusItem}>
+              <Text style={[styles.statusLabel, { color: colors.text }]}>Pending</Text>
+              <Text style={[styles.statusAmount, { color: '#ff6b6b' }]}>Rs. {statusTotals.Pending.toLocaleString()}</Text>
+            </RNView>
+            <RNView style={styles.statusItem}>
+              <Text style={[styles.statusLabel, { color: colors.text }]}>Spent</Text>
+              <Text style={[styles.statusAmount, { color: '#ff4757' }]}>Rs. {statusTotals.Spent.toLocaleString()}</Text>
+            </RNView>
+            <RNView style={styles.statusItem}>
+              <Text style={[styles.statusLabel, { color: colors.text }]}>Available</Text>
+              <Text style={[styles.statusAmount, { color: '#2ed573' }]}>Rs. {statusTotals.Available.toLocaleString()}</Text>
+            </RNView>
+            <RNView style={styles.statusItem}>
+              <Text style={[styles.statusLabel, { color: colors.text }]}>Outstanding</Text>
+              <Text style={[styles.statusAmount, { color: '#ffa502' }]}>Rs. {statusTotals.Outstanding.toLocaleString()}</Text>
+            </RNView>
           </RNView>
+        </Card>
+
+        {/* Event Selection */}
+        <Card style={styles.card}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Select Event</Text>
+          <TouchableOpacity 
+            style={[styles.dropdownButton, { borderColor: colors.border }]}
+            onPress={() => setShowEventDropdown(!showEventDropdown)}
+          >
+            <Text style={[styles.dropdownText, { color: colors.text }]}>
+              {selectedEvent ? selectedEvent.name : 'Select an event'}
+            </Text>
+            <FontAwesome5 
+              name={showEventDropdown ? 'chevron-up' : 'chevron-down'} 
+              size={16} 
+              color={colors.text} 
+            />
+          </TouchableOpacity>
           
           {showEventDropdown && (
-            <RNView style={styles.eventsList}>
+            <RNView style={[styles.dropdown, { backgroundColor: colors.background, borderColor: colors.border }]}>
               {events.map((event) => (
                 <TouchableOpacity
                   key={event.id}
-                  style={[styles.eventItem, { backgroundColor: isDarkMode ? '#333' : '#f8f9fa' }]}
+                  style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
                   onPress={() => handleEventSelect(event)}
                 >
-                  <RNView style={styles.eventHeader}>
-                    <Text style={[styles.eventName, { color: colors.text }]}>{event.name}</Text>
-                    <FontAwesome5 name="chevron-right" size={14} color={colors.text} />
-                  </RNView>
-                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                    {formatDate(event.date)}
-                  </Text>
-                  <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>
-                    📍 {event.location}
-                  </Text>
-                  <RNView style={styles.eventBudget}>
-                    <Text style={[styles.eventBudgetText, { color: colors.text }]}>
-                      Budget: {formatCurrency(event.budget)} | Spent: {formatCurrency(event.spent)}
-                    </Text>
-                  </RNView>
+                  <Text style={[styles.dropdownItemText, { color: colors.text }]}>{event.name}</Text>
+                  <Text style={[styles.dropdownItemDate, { color: colors.text }]}>{formatDate(event.date)}</Text>
                 </TouchableOpacity>
               ))}
             </RNView>
           )}
         </Card>
-        
-        <Card style={styles.sectionCard}>
-          <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Expense Status by Events</Text>
-          </RNView>
-          
-          {/* Overall Summary */}
-          <RNView style={styles.overallSummary}>
-            <Text style={[styles.summaryTitle, { color: colors.text }]}>Overall Summary</Text>
-            <RNView style={styles.statusCardsContainer}>
-              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 39, 39, 0.73)' : '#FFCCCC' }]}>
-                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.outstanding, 0).toLocaleString()}</Text>
-                <Text style={styles.statusLabel}>Outstanding</Text>
-              </RNView>
-              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 148, 33, 0.7)' : '#ffe0b2ff' }]}>
-                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.pending, 0).toLocaleString()}</Text>
-                <Text style={styles.statusLabel}>Pending</Text>
-              </RNView>
-              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(51, 125, 254, 0.57)' : '#c4d9ffff' }]}>
-                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.available, 0).toLocaleString()}</Text>
-                <Text style={styles.statusLabel}>Available</Text>
-              </RNView>
-              <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(83, 255, 49, 0.5)' : '#3ee14977' }]}>
-                <Text style={styles.statusAmount}>Rs. {events.reduce((sum, event) => sum + event.expenses.spent, 0).toLocaleString()}</Text>
-                <Text style={styles.statusLabel}>Spent</Text>
-              </RNView>
-            </RNView>
-          </RNView>
 
-          {/* Event-wise Breakdown */}
-          <RNView style={styles.eventBreakdown}>
-            <Text style={[styles.breakdownTitle, { color: colors.text }]}>Event-wise Breakdown</Text>
-            {events.map((event) => (
-              <RNView key={event.id} style={[styles.eventStatusCard, { backgroundColor: isDarkMode ? '#333' : '#f8f9fa' }]}>
-                <Text style={[styles.eventStatusName, { color: colors.text }]}>{event.name}</Text>
-                <RNView style={styles.eventStatusGrid}>
-                  <RNView style={styles.eventStatusItem}>
-                    <Text style={[styles.eventStatusAmount, { color: '#f44336' }]}>
-                      Rs. {event.expenses.outstanding.toLocaleString()}
-                    </Text>
-                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Outstanding</Text>
-                  </RNView>
-                  <RNView style={styles.eventStatusItem}>
-                    <Text style={[styles.eventStatusAmount, { color: '#ff9800' }]}>
-                      Rs. {event.expenses.pending.toLocaleString()}
-                    </Text>
-                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Pending</Text>
-                  </RNView>
-                  <RNView style={styles.eventStatusItem}>
-                    <Text style={[styles.eventStatusAmount, { color: '#2196F3' }]}>
-                      Rs. {event.expenses.available.toLocaleString()}
-                    </Text>
-                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Available</Text>
-                  </RNView>
-                  <RNView style={styles.eventStatusItem}>
-                    <Text style={[styles.eventStatusAmount, { color: '#4caf50' }]}>
-                      Rs. {event.expenses.spent.toLocaleString()}
-                    </Text>
-                    <Text style={[styles.eventStatusLabel, { color: colors.textSecondary }]}>Spent</Text>
-                  </RNView>
-                </RNView>
-              </RNView>
-            ))}
-          </RNView>
-        </Card>
-        
-        <Card style={styles.sectionCard}>
-          <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Categories</Text>
-            <Button 
-              title="Add Category" 
+        {/* Categories */}
+        <Card style={styles.card}>
+          <RNView style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Categories</Text>
+            <Button
+              title="Add Category"
               onPress={() => router.push('/new-category')}
-              variant="outline"
               style={styles.addButton}
             />
           </RNView>
-          
-          {categories.length === 0 ? (
-            <RNView style={styles.emptyState}>
-              <FontAwesome5 name="list" size={24} color={colors.text} />
-              <Text style={styles.emptyText}>No categories yet</Text>
-              <Text style={styles.emptySubtext}>Add categories to organize your expenses</Text>
-            </RNView>
-          ) : (
-            categories.slice(0, 3).map((category) => (
+          {categories.length > 0 ? (
+            categories.map((category) => (
               <CategoryItem
                 key={category.id}
-                name={category.name}
-                totalExpenses={category.expenseCount || 0}
-                totalAmount={category.totalAmount || 0}
+                category={category}
                 onPress={() => router.push(`/category/${category.id}`)}
               />
             ))
-          )}
-          
-          {categories.length > 3 && (
-            <Button
-              title="View All Categories"
-              onPress={() => router.push('/category')}
-              variant="outline"
-              style={styles.viewAllButton}
-            />
+          ) : (
+            <Text style={[styles.emptyText, { color: colors.text }]}>No categories yet</Text>
           )}
         </Card>
-        
-        <Card style={styles.sectionCard}>
-          <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Expenses</Text>
-            <Button 
-              title="Add Expense" 
+
+        {/* Recent Expenses */}
+        <Card style={styles.card}>
+          <RNView style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Recent Expenses</Text>
+            <Button
+              title="Add Expense"
               onPress={() => router.push('/new-expense')}
-              variant="outline"
               style={styles.addButton}
             />
           </RNView>
-          
-          {recentExpenses.length === 0 ? (
-            <RNView style={styles.emptyState}>
-              <FontAwesome5 name="receipt" size={24} color={colors.text} />
-              <Text style={styles.emptyText}>No expenses yet</Text>
-              <Text style={styles.emptySubtext}>Add your first expense to get started</Text>
-            </RNView>
-          ) : (
+          {recentExpenses.length > 0 ? (
             recentExpenses.map((expense) => (
               <ExpenseItem
                 key={expense.id}
-                title={expense.title}
-                amount={expense.amount}
-                status={expense.status}
-                assignedTo={expense.assignedTo}
-                onPress={() => router.push(`/expense/${expense.id}`)}
+                expense={expense}
+                onPress={() => {}}
               />
             ))
-          )}
-          
-          {recentExpenses.length > 0 && (
-            <Button
-              title="View All Expenses"
-              onPress={() => router.push('/all-expenses')}
-              variant="outline"
-              style={styles.viewAllButton}
-            />
+          ) : (
+            <Text style={[styles.emptyText, { color: colors.text }]}>No expenses yet</Text>
           )}
         </Card>
       </ScrollView>
 
-      {/* Individual Event Modal */}
+      {/* Event Details Modal */}
       <Modal
         visible={showEventModal}
-        transparent={true}
         animationType="slide"
-        onRequestClose={closeEventModal}
+        presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-            {selectedEvent && (
-              <>
-                <View style={styles.modalHeader}>
-                  <Text style={[styles.modalTitle, { color: colors.text }]}>
-                    {selectedEvent.name}
-                  </Text>
-                  <TouchableOpacity onPress={closeEventModal} style={styles.closeButton}>
-                    <FontAwesome5 name="times" size={20} color={colors.text} />
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView style={styles.modalBody}>
-                  <View style={styles.eventDetailSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date</Text>
-                    <Text style={[styles.detailValue, { color: colors.text }]}>
-                      {formatDate(selectedEvent.date)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.eventDetailSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Location</Text>
-                    <Text style={[styles.detailValue, { color: colors.text }]}>
-                      📍 {selectedEvent.location}
-                    </Text>
-                  </View>
-
-                  <View style={styles.eventDetailSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Budget</Text>
-                    <Text style={[styles.detailValue, { color: '#64a12d', fontWeight: 'bold' }]}>
-                      {formatCurrency(selectedEvent.budget)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.eventDetailSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Spent</Text>
-                    <Text style={[styles.detailValue, { color: '#f44336', fontWeight: 'bold' }]}>
-                      {formatCurrency(selectedEvent.spent)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.eventDetailSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Remaining</Text>
-                    <Text style={[styles.detailValue, { color: '#2196F3', fontWeight: 'bold' }]}>
-                      {formatCurrency(selectedEvent.budget - selectedEvent.spent)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.eventDetailSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Utilization</Text>
-                    <Text style={[styles.detailValue, { color: colors.text }]}>
-                      {((selectedEvent.spent / selectedEvent.budget) * 100).toFixed(1)}%
-                    </Text>
-                  </View>
-
-                  {selectedEvent.description && (
-                    <View style={styles.eventDetailSection}>
-                      <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Description</Text>
-                      <Text style={[styles.detailValue, { color: colors.text }]}>
-                        {selectedEvent.description}
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={styles.progressSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Budget Progress</Text>
-                    <View style={[styles.progressBar, { backgroundColor: isDarkMode ? '#333' : '#e0e0e0' }]}>
-                      <View 
-                        style={[
-                          styles.progressFill, 
-                          { 
-                            width: `${(selectedEvent.spent / selectedEvent.budget) * 100}%`,
-                            backgroundColor: selectedEvent.spent > selectedEvent.budget ? '#f44336' : '#64a12d'
-                          }
-                        ]} 
-                      />
-                    </View>
-                    <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-                      {formatCurrency(selectedEvent.spent)} of {formatCurrency(selectedEvent.budget)}
-                    </Text>
-                  </View>
-
-                  {/* Expense Status Breakdown */}
-                  <View style={styles.expenseBreakdownSection}>
-                    <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Expense Status Breakdown</Text>
-                    <View style={styles.expenseBreakdownGrid}>
-                      <View style={styles.expenseBreakdownItem}>
-                        <Text style={[styles.expenseBreakdownAmount, { color: '#f44336' }]}>
-                          {formatCurrency(selectedEvent.expenses.outstanding)}
-                        </Text>
-                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Outstanding</Text>
-                      </View>
-                      <View style={styles.expenseBreakdownItem}>
-                        <Text style={[styles.expenseBreakdownAmount, { color: '#ff9800' }]}>
-                          {formatCurrency(selectedEvent.expenses.pending)}
-                        </Text>
-                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Pending</Text>
-                      </View>
-                      <View style={styles.expenseBreakdownItem}>
-                        <Text style={[styles.expenseBreakdownAmount, { color: '#2196F3' }]}>
-                          {formatCurrency(selectedEvent.expenses.available)}
-                        </Text>
-                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Available</Text>
-                      </View>
-                      <View style={styles.expenseBreakdownItem}>
-                        <Text style={[styles.expenseBreakdownAmount, { color: '#4caf50' }]}>
-                          {formatCurrency(selectedEvent.expenses.spent)}
-                        </Text>
-                        <Text style={[styles.expenseBreakdownLabel, { color: colors.textSecondary }]}>Spent</Text>
-                      </View>
-                    </View>
-                  </View>
-                </ScrollView>
-
-                <View style={styles.modalActions}>
-                  <TouchableOpacity 
-                    style={[styles.modalButton, styles.closeModalButton]}
-                    onPress={closeEventModal}
-                  >
-                    <Text style={styles.modalButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <RNView style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Event Details</Text>
+            <TouchableOpacity onPress={() => setShowEventModal(false)}>
+              <FontAwesome5 name="times" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </RNView>
+          
+          {selectedEvent && (
+            <ScrollView style={styles.modalContent}>
+              <Text style={[styles.eventName, { color: colors.text }]}>{selectedEvent.name}</Text>
+              <Text style={[styles.eventDate, { color: colors.text }]}>{formatDate(selectedEvent.date)}</Text>
+              <Text style={[styles.eventCategory, { color: colors.text }]}>Category: {selectedEvent.category}</Text>
+              
+              <Card style={styles.modalCard}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Funding Summary</Text>
+                <RNView style={styles.fundingRow}>
+                  <Text style={[styles.fundingLabel, { color: colors.text }]}>Total Funding:</Text>
+                  <Text style={[styles.fundingAmount, { color: colors.text }]}>Rs. {selectedEvent.totalFunding.toLocaleString()}</Text>
+                </RNView>
+                <RNView style={styles.fundingRow}>
+                  <Text style={[styles.fundingLabel, { color: colors.text }]}>Received:</Text>
+                  <Text style={[styles.fundingAmount, { color: '#2ed573' }]}>Rs. {selectedEvent.receivedFunding.toLocaleString()}</Text>
+                </RNView>
+                <RNView style={styles.fundingRow}>
+                  <Text style={[styles.fundingLabel, { color: colors.text }]}>Pending:</Text>
+                  <Text style={[styles.fundingAmount, { color: '#ff6b6b' }]}>Rs. {selectedEvent.pendingFunding.toLocaleString()}</Text>
+                </RNView>
+              </Card>
+            </ScrollView>
+          )}
         </View>
       </Modal>
     </>
@@ -598,283 +269,138 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
-  sectionCard: {
+  loadingText: {
     marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
   },
-  sectionHeader: {
+  card: {
+    marginBottom: 16,
+    padding: 16,
+  },
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  sectionTitle: {
+  cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  statusCardsContainer: {
+  addButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  statusGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  statusCard: {
+  statusItem: {
     width: '48%',
-    padding: 12,
-    borderRadius: 8,
     marginBottom: 12,
+  },
+  statusLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
   },
   statusAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
   },
-  statusLabel: {
-    fontSize: 14,
-  },
-  addButton: {
-    width: 150,
-  },
-  viewAllButton: {
-    marginTop: 16,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  
-  // Events dropdown styles
-  eventsDropdownButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#64a12d',
-  },
-  eventsDropdownText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64a12d',
-    marginRight: 8,
-  },
-  eventsList: {
-    marginTop: 12,
-  },
-  eventItem: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  eventHeader: {
+  dropdownButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 8,
     marginBottom: 8,
   },
-  eventName: {
+  dropdownText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    flex: 1,
   },
-  eventDate: {
-    fontSize: 14,
-    marginBottom: 4,
+  dropdown: {
+    borderWidth: 1,
+    borderRadius: 8,
+    maxHeight: 200,
   },
-  eventLocation: {
-    fontSize: 14,
-    marginBottom: 8,
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
   },
-  eventBudget: {
-    marginTop: 8,
-  },
-  eventBudgetText: {
-    fontSize: 14,
+  dropdownItemText: {
+    fontSize: 16,
     fontWeight: '500',
   },
-  
-  // Modal styles
+  dropdownItemDate: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginTop: 2,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 16,
+    opacity: 0.7,
+    marginVertical: 20,
+  },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '90%',
-    maxHeight: '80%',
-    borderRadius: 16,
-    padding: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    padding: 20,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    marginBottom: 20,
+    paddingTop: 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+  },
+  modalContent: {
     flex: 1,
   },
-  closeButton: {
-    padding: 8,
+  eventName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-  modalBody: {
-    padding: 20,
-    maxHeight: 400,
-  },
-  eventDetailSection: {
-    marginBottom: 16,
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+  eventDate: {
+    fontSize: 16,
+    opacity: 0.7,
     marginBottom: 4,
   },
-  detailValue: {
+  eventCategory: {
     fontSize: 16,
-  },
-  progressSection: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  progressBar: {
-    height: 8,
-    borderRadius: 4,
-    marginVertical: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  modalButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 100,
-  },
-  closeModalButton: {
-    backgroundColor: '#64a12d',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  
-  // Expense breakdown styles
-  overallSummary: {
+    opacity: 0.7,
     marginBottom: 20,
   },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
+  modalCard: {
+    marginBottom: 16,
   },
-  eventBreakdown: {
-    marginTop: 20,
-  },
-  breakdownTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  eventStatusCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  eventStatusName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  eventStatusGrid: {
+  fundingRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-  },
-  eventStatusItem: {
-    width: '48%',
     alignItems: 'center',
     marginBottom: 8,
   },
-  eventStatusAmount: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 2,
+  fundingLabel: {
+    fontSize: 16,
   },
-  eventStatusLabel: {
-    fontSize: 12,
-  },
-  
-  // Modal expense breakdown styles
-  expenseBreakdownSection: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  expenseBreakdownGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  expenseBreakdownItem: {
-    width: '48%',
-    alignItems: 'center',
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-  },
-  expenseBreakdownAmount: {
+  fundingAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
   },
-  expenseBreakdownLabel: {
-    fontSize: 12,
-  },
-}); 
+});
