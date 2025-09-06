@@ -131,7 +131,24 @@ export default function HomeScreen() {
                 }
               };
 
+              // Get status-specific background colors
+              const getStatusBackgroundColor = (status) => {
+                switch (status) {
+                  case 'Outstanding':
+                    return isDarkMode ? 'rgba(255, 107, 107, 0.15)' : 'rgba(231, 76, 60, 0.1)';
+                  case 'Pending':
+                    return isDarkMode ? 'rgba(243, 156, 18, 0.15)' : 'rgba(243, 156, 18, 0.1)';
+                  case 'Available':
+                    return isDarkMode ? 'rgba(52, 152, 219, 0.15)' : 'rgba(52, 152, 219, 0.1)';
+                  case 'Spent':
+                    return isDarkMode ? 'rgba(46, 204, 113, 0.15)' : 'rgba(39, 174, 96, 0.1)';
+                  default:
+                    return isDarkMode ? 'rgba(255,255,255,0.1)' : '#f8f9fa';
+                }
+              };
+
               const statusColor = getStatusColor(status);
+              const statusBackgroundColor = getStatusBackgroundColor(status);
               
               return (
                 <RNView 
@@ -139,9 +156,9 @@ export default function HomeScreen() {
                   style={[
                     styles.statusItem, 
                     { 
-                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f8f9fa',
+                      backgroundColor: statusBackgroundColor,
                       borderColor: statusColor,
-                      borderWidth: 1
+                      borderWidth: 2
                     }
                   ]}
                 >
@@ -322,25 +339,25 @@ const styles = StyleSheet.create({
   },
   statusItem: {
     width: '48%',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statusLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 6,
   },
   statusValue: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
   },
   dropdownButton: {
     flexDirection: 'row',
