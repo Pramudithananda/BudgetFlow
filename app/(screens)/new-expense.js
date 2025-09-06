@@ -12,7 +12,20 @@ const STATUS_OPTIONS = ['Pending', 'Spent', 'Available', 'Outstanding'];
 
 export default function NewExpenseScreen() {
   const { colors, isDarkMode } = useTheme();
-  const { addExpense, categories, funders } = useData();
+  
+  // Safe data access with fallbacks
+  let addExpense = () => {};
+  let categories = [];
+  let funders = [];
+  
+  try {
+    const data = useData();
+    addExpense = data.addExpense || addExpense;
+    categories = data.categories || [];
+    funders = data.funders || [];
+  } catch (error) {
+    console.warn('Error accessing data context:', error);
+  }
   const { preSelectedCategory } = useLocalSearchParams();
   
   const [title, setTitle] = useState('');

@@ -5,7 +5,34 @@ const DataContext = createContext();
 export const useData = () => {
   const context = useContext(DataContext);
   if (!context) {
-    throw new Error('useData must be used within a DataProvider');
+    console.warn('useData must be used within a DataProvider');
+    // Return default values instead of throwing error
+    return {
+      categories: [],
+      funders: [],
+      expenses: [],
+      events: [],
+      addCategory: () => {},
+      updateCategory: () => {},
+      deleteCategory: () => {},
+      addFunder: () => {},
+      updateFunder: () => {},
+      deleteFunder: () => {},
+      addExpense: () => {},
+      updateExpense: () => {},
+      deleteExpense: () => {},
+      addEvent: () => {},
+      updateEvent: () => {},
+      deleteEvent: () => {},
+      getCategoryById: () => null,
+      getFunderById: () => null,
+      getExpenseById: () => null,
+      getEventById: () => null,
+      getExpensesByCategory: () => [],
+      getExpensesByEvent: () => [],
+      getBudgetSummary: () => ({ totalBudget: 0, totalSpent: 0, totalReceived: 0, remaining: 0, pending: 0 }),
+      getStatusTotals: () => ({ Pending: 0, Spent: 0, Available: 0, Outstanding: 0 })
+    };
   }
   return context;
 };

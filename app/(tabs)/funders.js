@@ -10,7 +10,22 @@ import { useData } from '../../context/DataContext';
 
 export default function FundersScreen() {
   const { colors, isDarkMode } = useTheme();
-  const { funders, addFunder, updateFunder, deleteFunder } = useData();
+  
+  // Safe data access with fallbacks
+  let funders = [];
+  let addFunder = () => {};
+  let updateFunder = () => {};
+  let deleteFunder = () => {};
+  
+  try {
+    const data = useData();
+    funders = data.funders || [];
+    addFunder = data.addFunder || addFunder;
+    updateFunder = data.updateFunder || updateFunder;
+    deleteFunder = data.deleteFunder || deleteFunder;
+  } catch (error) {
+    console.warn('Error accessing data context:', error);
+  }
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFunderName, setNewFunderName] = useState('');

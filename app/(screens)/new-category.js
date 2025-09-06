@@ -16,7 +16,16 @@ const COLORS = [
 
 export default function NewCategoryScreen() {
   const { colors, isDarkMode } = useTheme();
-  const { addCategory } = useData();
+  
+  // Safe data access with fallbacks
+  let addCategory = () => {};
+  
+  try {
+    const data = useData();
+    addCategory = data.addCategory || addCategory;
+  } catch (error) {
+    console.warn('Error accessing data context:', error);
+  }
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');

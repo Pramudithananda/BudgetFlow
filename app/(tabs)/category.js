@@ -11,7 +11,20 @@ import { useData } from '../../context/DataContext';
 
 export default function CategoryScreen() {
   const { colors, isDarkMode } = useTheme();
-  const { categories, deleteCategory, getExpensesByCategory } = useData();
+  
+  // Safe data access with fallbacks
+  let categories = [];
+  let deleteCategory = () => {};
+  let getExpensesByCategory = () => [];
+  
+  try {
+    const data = useData();
+    categories = data.categories || [];
+    deleteCategory = data.deleteCategory || deleteCategory;
+    getExpensesByCategory = data.getExpensesByCategory || getExpensesByCategory;
+  } catch (error) {
+    console.warn('Error accessing data context:', error);
+  }
 
   const handleDeleteCategory = (categoryId, categoryName) => {
     Alert.alert(

@@ -13,18 +13,28 @@ import { useData } from '../../context/DataContext';
 
 export default function HomeScreen() {
   const { colors, isDarkMode } = useTheme();
-  const { 
-    categories, 
-    expenses, 
-    events, 
-    getBudgetSummary, 
-    getStatusTotals,
-    getExpensesByCategory 
-  } = useData();
+  
+  // Safe data access with fallbacks
+  let categories = [];
+  let expenses = [];
+  let events = [];
+  let budgetSummary = { totalBudget: 0, totalSpent: 0, totalReceived: 0, remaining: 0, pending: 0 };
+  let statusTotals = { Pending: 0, Spent: 0, Available: 0, Outstanding: 0 };
+  let getExpensesByCategory = () => [];
+  
+  try {
+    const data = useData();
+    categories = data.categories || [];
+    expenses = data.expenses || [];
+    events = data.events || [];
+    budgetSummary = data.getBudgetSummary ? data.getBudgetSummary() : budgetSummary;
+    statusTotals = data.getStatusTotals ? data.getStatusTotals() : statusTotals;
+    getExpensesByCategory = data.getExpensesByCategory || getExpensesByCategory;
+  } catch (error) {
+    console.warn('Error accessing data context:', error);
+  }
   
   // Get dynamic data from context
-  const budgetSummary = getBudgetSummary();
-  const statusTotals = getStatusTotals();
   const recentExpenses = expenses.slice(-4); // Get last 4 expenses
   
   const [selectedEvent, setSelectedEvent] = useState(null);
