@@ -41,74 +41,49 @@ export const useData = () => {
 };
 
 export const DataProvider = ({ children }) => {
-  const [categories, setCategories] = useState([]);
-  const [funders, setFunders] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [events, setEvents] = useState([]);
+  // Initialize with static data directly
+  const [categories, setCategories] = useState([
+    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
+  ]);
+  
+  const [funders, setFunders] = useState([
+    { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
+    { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
+    { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
+  ]);
+  
+  const [events, setEvents] = useState([
+    { 
+      id: 1, 
+      name: 'Birthday Celebration', 
+      date: '2024-10-01', 
+      category: 'Conference',
+      budget: 100000,
+      description: 'Annual birthday celebration event',
+      location: 'Colombo'
+    }
+  ]);
+  
+  const [expenses, setExpenses] = useState([
+    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+  ]);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load all data from database
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Loading static data...');
-      
-      // Use static data for now
-      const categoriesData = [
-        { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
-        { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
-        { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
-        { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
-      ];
-      setCategories(categoriesData);
-      console.log('Categories loaded:', categoriesData.length);
-      
-      const fundersData = [
-        { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
-        { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
-        { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
-      ];
-      setFunders(fundersData);
-      console.log('Funders loaded:', fundersData.length);
-      
-      const eventsData = [
-        { 
-          id: 1, 
-          name: 'Birthday Celebration', 
-          date: '2024-10-01', 
-          category: 'Conference',
-          budget: 100000,
-          description: 'Annual birthday celebration event',
-          location: 'Colombo'
-        }
-      ];
-      setEvents(eventsData);
-      console.log('Events loaded:', eventsData.length);
-      
-      const expensesData = [
-        { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
-        { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
-        { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
-        { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
-      ];
-      setExpenses(expensesData);
-      
-      console.log('All data loaded successfully');
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load data on mount
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Data is already initialized in useState
+  console.log('DataContext initialized with:', {
+    categories: categories.length,
+    funders: funders.length,
+    events: events.length,
+    expenses: expenses.length
+  });
 
   // Category CRUD operations
   const addCategory = async (categoryData) => {
@@ -352,7 +327,8 @@ export const DataProvider = ({ children }) => {
   };
 
   const refreshData = () => {
-    loadData();
+    console.log('Refresh data called - data already loaded');
+    return Promise.resolve();
   };
 
   const contextValue = {
