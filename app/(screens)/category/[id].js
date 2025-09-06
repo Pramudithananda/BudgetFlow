@@ -1,102 +1,62 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, ScrollView, View as RNView } from 'react-native';
 import { Text, View } from '../../../components/Themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import ExpenseItem from '../../../components/ExpenseItem';
-import { getExpenses, getCategories, deleteCategory } from '../../../services/sqliteService';
 import { useTheme } from '../../../context/theme';
 
 export default function CategoryDetailScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [category, setCategory] = useState(null);
-  const [expenses, setExpenses] = useState([]);
+  
+  // Static sample data for categories
+  const categoriesData = [
+    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
+  ];
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      const [categoriesData, expensesData] = await Promise.all([
-        getCategories(),
-        getExpenses(id)
-      ]);
-      
-      console.log('Looking for category with ID:', id);
-      console.log('Available categories:', categoriesData);
-      
-      const foundCategory = categoriesData.find(cat => {
-        console.log('Comparing:', cat.id, 'with', id, 'Type:', typeof cat.id, typeof id);
-        return String(cat.id) === String(id);
-      });
-      
-      if (!foundCategory) {
-        console.error('Category not found for ID:', id);
-        Alert.alert('Error', `Category not found for ID: ${id}`);
-        router.back();
-        return;
-      }
-      
-      console.log('Found category:', foundCategory);
-      
-      // Calculate total amount from expenses
-      const totalAmount = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-      
-      setCategory({
-        ...foundCategory,
-        totalAmount: totalAmount
-      });
-      setExpenses(expensesData);
-    } catch (error) {
-      console.error('Error fetching category data:', error);
-      Alert.alert('Error', 'Could not load category data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Static sample data for expenses
+  const expensesData = [
+    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15' },
+    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16' },
+    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17' },
+    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18' }
+  ];
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
-  };
+  // Find the category by ID
+  const category = categoriesData.find(cat => String(cat.id) === String(id));
+  
+  // Get expenses for this category
+  const expenses = expensesData.filter(expense => String(expense.categoryId) === String(id));
+  
+  // Calculate total amount
+  const totalAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
 
   const handleDeleteCategory = () => {
-    Alert.alert(
-      'Delete Category',
-      'Are you sure you want to delete this category? All associated expenses will be orphaned.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteCategory(id);
-              Alert.alert('Success', 'Category deleted successfully');
-              router.back();
-            } catch (error) {
-              console.error('Error deleting category:', error);
-              Alert.alert('Error', 'Could not delete category. Please try again.');
-            }
-          }
-        }
-      ]
-    );
+    // Show info message since this is static data
+    alert('Delete Category feature coming soon!');
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
+  const handleEditCategory = () => {
+    // Show info message since this is static data
+    alert('Edit Category feature coming soon!');
+  };
 
-  if (loading) {
+  if (!category) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.errorContainer}>
+        <FontAwesome5 name="exclamation-triangle" size={48} color={colors.text} />
+        <Text style={[styles.errorText, { color: colors.text }]}>Category not found</Text>
+        <Button
+          title="Go Back"
+          onPress={() => router.back()}
+          style={styles.backButton}
+        />
       </View>
     );
   }
@@ -104,23 +64,20 @@ export default function CategoryDetailScreen() {
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
       <Card style={styles.headerCard}>
-        <Text style={styles.categoryName}>{category?.name}</Text>
-        {category?.description && (
-          <Text style={styles.categoryDescription}>{category.description}</Text>
+        <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
+        {category.description && (
+          <Text style={[styles.categoryDescription, { color: colors.text }]}>{category.description}</Text>
         )}
         <RNView style={styles.statsRow}>
           <RNView style={styles.statItem}>
             <Text style={[styles.statNumber, { color: colors.primary }]}>{expenses.length}</Text>
-            <Text style={styles.statLabel}>Expenses</Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>Expenses</Text>
           </RNView>
           <RNView style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: colors.primary }]}>Rs. {(category?.totalAmount || 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+            <Text style={[styles.statNumber, { color: colors.primary }]}>Rs. {totalAmount.toLocaleString()}</Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>Total</Text>
           </RNView>
         </RNView>
         <RNView style={styles.buttonRow}>
@@ -134,7 +91,7 @@ export default function CategoryDetailScreen() {
           />
           <Button
             title="Edit"
-            onPress={() => router.push(`/edit-category/${id}`)}
+            onPress={handleEditCategory}
             variant="outline"
             style={styles.actionButton}
           />
@@ -147,15 +104,15 @@ export default function CategoryDetailScreen() {
         </RNView>
       </Card>
 
-      <Text style={styles.sectionTitle}>Expenses</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Expenses</Text>
 
       {expenses.length === 0 ? (
         <Card style={styles.emptyCard}>
           <RNView style={styles.emptyState}>
             <FontAwesome5 name="receipt" size={36} color={colors.text} />
-            <Text style={styles.emptyText}>No expenses yet</Text>
-            <Text style={styles.emptySubtext}>
-              Add expenses to this category to track your sremaining
+            <Text style={[styles.emptyText, { color: colors.text }]}>No expenses yet</Text>
+            <Text style={[styles.emptySubtext, { color: colors.text }]}>
+              Add expenses to this category to track your spending
             </Text>
             <Button 
               title="Add Your First Expense" 
@@ -175,7 +132,7 @@ export default function CategoryDetailScreen() {
             amount={expense.amount}
             status={expense.status}
             assignedTo={expense.assignedTo}
-            onPress={() => router.push(`/expense/${expense.id}`)}
+            onPress={() => alert('Expense details coming soon!')}
             style={styles.expenseItem}
           />
         ))
@@ -188,10 +145,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
+  errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 20,
+  },
+  backButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   headerCard: {
     margin: 16,
@@ -204,6 +172,7 @@ const styles = StyleSheet.create({
   categoryDescription: {
     fontSize: 16,
     marginBottom: 16,
+    opacity: 0.8,
   },
   statsRow: {
     flexDirection: 'row',
@@ -219,6 +188,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
+    opacity: 0.8,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -257,6 +227,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 24,
+    opacity: 0.8,
   },
   firstButton: {
     width: '100%',
@@ -265,4 +236,4 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 8,
   },
-}); 
+});
