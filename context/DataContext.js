@@ -324,7 +324,15 @@ export const DataProvider = ({ children }) => {
   const getExpenseById = (id) => expenses.find(exp => String(exp.id) === String(id));
   const getEventById = (id) => events.find(event => String(event.id) === String(id));
 
-  const getExpensesByCategory = (categoryId) => expenses.filter(exp => String(exp.categoryId) === String(categoryId));
+  const getExpensesByCategory = (categoryId) => {
+    const filtered = expenses.filter(exp => String(exp.categoryId) === String(categoryId));
+    console.log(`getExpensesByCategory(${categoryId}):`, {
+      totalExpenses: expenses.length,
+      filteredExpenses: filtered.length,
+      expenses: filtered
+    });
+    return filtered;
+  };
   const getExpensesByEvent = (eventId) => {
     const event = getEventById(eventId);
     if (!event || !event.expenses) return [];

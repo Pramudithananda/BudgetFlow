@@ -7,35 +7,27 @@ import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import ExpenseItem from '../../../components/ExpenseItem';
 import { useTheme } from '../../../context/theme';
+import { useData } from '../../../context/DataContext';
 
 export default function CategoryDetailScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
+  const { getCategoryById, getExpensesByCategory } = useData();
   
-  // Static sample data for categories
-  const categoriesData = [
-    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
-    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
-    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
-  ];
-
-  // Static sample data for expenses
-  const expensesData = [
-    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15' },
-    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16' },
-    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17' },
-    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18' }
-  ];
-
-  // Find the category by ID
-  const category = categoriesData.find(cat => String(cat.id) === String(id));
-  
-  // Get expenses for this category
-  const expenses = expensesData.filter(expense => String(expense.categoryId) === String(id));
+  // Get category and expenses from DataContext
+  const category = getCategoryById(id);
+  const expenses = getExpensesByCategory(id);
   
   // Calculate total amount
   const totalAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+
+  // Debug logging
+  console.log('CategoryDetailScreen:', {
+    categoryId: id,
+    category: category,
+    expenses: expenses,
+    totalAmount: totalAmount
+  });
 
   const handleDeleteCategory = () => {
     // Show info message since this is static data

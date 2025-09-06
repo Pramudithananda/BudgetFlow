@@ -115,11 +115,17 @@ export default function CategoriesScreen() {
           categories.map((category, index) => {
             console.log(`Rendering category ${index}:`, category);
             const categoryExpenses = getExpensesByCategory(category.id);
-            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+            
+            console.log(`Category ${category.name} (ID: ${category.id}):`, {
+              categoryExpenses: categoryExpenses.length,
+              totalAmount: totalAmount,
+              expenses: categoryExpenses
+            });
             
             return (
               <CategoryItem
-                key={`category-${category.id}-${Date.now()}`}
+                key={`category-${category.id}-${index}`}
                 name={category.name}
                 totalAmount={totalAmount}
                 totalExpenses={categoryExpenses.length}
