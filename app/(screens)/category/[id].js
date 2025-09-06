@@ -16,7 +16,7 @@ export default function CategoryDetailScreen() {
   
   // Get category and expenses from DataContext
   const category = getCategoryById(id) || categories.find(cat => String(cat.id) === String(id));
-  const expenses = getExpensesByCategory(id) || (allExpenses ? allExpenses.filter(exp => String(exp.categoryId) === String(id)) : []);
+  const expenses = allExpenses ? allExpenses.filter(exp => String(exp.categoryId) === String(id)) : [];
   
   // Calculate total amount
   const totalAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);

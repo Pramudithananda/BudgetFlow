@@ -131,7 +131,9 @@ export default function CategoriesScreen() {
               categoryExpenses: categoryExpenses.length,
               totalAmount: totalAmount,
               expenses: categoryExpenses,
-              allExpenses: expenses
+              allExpenses: expenses,
+              categoryId: category.id,
+              categoryIdType: typeof category.id
             });
             
             return (
