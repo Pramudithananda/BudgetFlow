@@ -99,9 +99,17 @@ export const DataProvider = ({ children }) => {
   const addCategory = async (categoryData) => {
     try {
       console.log('Adding category:', categoryData);
-      const newCategory = await SQLiteService.addCategory(categoryData);
+      const newCategory = {
+        id: Date.now(),
+        name: categoryData.name,
+        color: categoryData.color || '#64a12d',
+        description: categoryData.description || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setCategories(prev => [...prev, newCategory]);
       console.log('Category added successfully:', newCategory);
-      await loadData(); // Reload data
       return newCategory;
     } catch (error) {
       console.error('Error adding category:', error);
@@ -138,9 +146,17 @@ export const DataProvider = ({ children }) => {
   const addFunder = async (funderData) => {
     try {
       console.log('Adding funder:', funderData);
-      const newFunder = await SQLiteService.addFunder(funderData);
+      const newFunder = {
+        id: Date.now(),
+        name: funderData.name,
+        phone: funderData.phone || '',
+        email: funderData.email || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setFunders(prev => [...prev, newFunder]);
       console.log('Funder added successfully:', newFunder);
-      await loadData(); // Reload data
       return newFunder;
     } catch (error) {
       console.error('Error adding funder:', error);
@@ -177,8 +193,22 @@ export const DataProvider = ({ children }) => {
   const addExpense = async (expenseData) => {
     try {
       console.log('Adding expense:', expenseData);
-      // We'll need to add addExpense to SQLiteService
-      await loadData(); // Reload data
+      const newExpense = {
+        id: Date.now(),
+        title: expenseData.title,
+        amount: expenseData.amount,
+        status: expenseData.status,
+        categoryId: expenseData.categoryId,
+        assignedTo: expenseData.assignedTo || '',
+        date: expenseData.date || new Date().toISOString().split('T')[0],
+        description: expenseData.description || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setExpenses(prev => [...prev, newExpense]);
+      console.log('Expense added successfully:', newExpense);
+      return newExpense;
     } catch (error) {
       console.error('Error adding expense:', error);
       setError(error.message);
@@ -214,10 +244,20 @@ export const DataProvider = ({ children }) => {
   const addEvent = async (eventData) => {
     try {
       console.log('Adding event:', eventData);
-      const newEventId = await SQLiteService.addEvent(eventData);
-      console.log('Event added successfully with ID:', newEventId);
-      await loadData(); // Reload data
-      return newEventId;
+      const newEvent = {
+        id: Date.now(),
+        name: eventData.name,
+        description: eventData.description || '',
+        date: eventData.date || '',
+        budget: eventData.budget || 0,
+        location: eventData.location || '',
+        category: eventData.category || '',
+        createdAt: new Date().toISOString()
+      };
+      
+      setEvents(prev => [...prev, newEvent]);
+      console.log('Event added successfully:', newEvent);
+      return newEvent.id;
     } catch (error) {
       console.error('Error adding event:', error);
       setError(error.message);
