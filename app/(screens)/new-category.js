@@ -37,17 +37,26 @@ export default function NewCategoryScreen() {
       return;
     }
 
+    console.log('Saving category with data:', {
+      name: name.trim(),
+      description: description.trim(),
+      color: selectedColor
+    });
+
     try {
-      addCategory({
+      const result = addCategory({
         name: name.trim(),
         description: description.trim(),
         color: selectedColor
       });
       
+      console.log('Category save result:', result);
+      
       Alert.alert('Success', 'Category added successfully!', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error) {
+      console.error('Error saving category:', error);
       Alert.alert('Error', 'Failed to add category. Please try again.');
     }
   };

@@ -98,12 +98,18 @@ export const DataProvider = ({ children }) => {
 
   // Category CRUD operations
   const addCategory = (categoryData) => {
+    console.log('Adding category:', categoryData);
     const newCategory = {
       id: Date.now(),
       ...categoryData,
       createdAt: new Date().toISOString()
     };
-    setCategories(prev => [...prev, newCategory]);
+    console.log('New category created:', newCategory);
+    setCategories(prev => {
+      const updated = [...prev, newCategory];
+      console.log('Categories updated:', updated);
+      return updated;
+    });
     return newCategory;
   };
 
@@ -121,12 +127,18 @@ export const DataProvider = ({ children }) => {
 
   // Funder CRUD operations
   const addFunder = (funderData) => {
+    console.log('Adding funder:', funderData);
     const newFunder = {
       id: Date.now(),
       ...funderData,
       createdAt: new Date().toISOString()
     };
-    setFunders(prev => [...prev, newFunder]);
+    console.log('New funder created:', newFunder);
+    setFunders(prev => {
+      const updated = [...prev, newFunder];
+      console.log('Funders updated:', updated);
+      return updated;
+    });
     return newFunder;
   };
 

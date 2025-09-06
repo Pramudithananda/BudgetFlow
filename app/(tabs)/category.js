@@ -22,6 +22,7 @@ export default function CategoryScreen() {
     categories = data.categories || [];
     deleteCategory = data.deleteCategory || deleteCategory;
     getExpensesByCategory = data.getExpensesByCategory || getExpensesByCategory;
+    console.log('Categories loaded in category tab:', categories);
   } catch (error) {
     console.warn('Error accessing data context:', error);
   }

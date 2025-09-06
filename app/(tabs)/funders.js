@@ -23,6 +23,7 @@ export default function FundersScreen() {
     addFunder = data.addFunder || addFunder;
     updateFunder = data.updateFunder || updateFunder;
     deleteFunder = data.deleteFunder || deleteFunder;
+    console.log('Funders loaded in funders tab:', funders);
   } catch (error) {
     console.warn('Error accessing data context:', error);
   }
@@ -38,8 +39,16 @@ export default function FundersScreen() {
       return;
     }
     
+    console.log('Saving funder with data:', {
+      name: newFunderName.trim(),
+      phone: newFunderPhone.trim(),
+      email: newFunderEmail.trim(),
+      totalAmount: 0,
+      status: 'Pending'
+    });
+    
     try {
-      addFunder({
+      const result = addFunder({
         name: newFunderName.trim(),
         phone: newFunderPhone.trim(),
         email: newFunderEmail.trim(),
@@ -47,12 +56,15 @@ export default function FundersScreen() {
         status: 'Pending'
       });
       
+      console.log('Funder save result:', result);
+      
       Alert.alert('Success', 'Funder added successfully!');
       setNewFunderName('');
       setNewFunderPhone('');
       setNewFunderEmail('');
       setShowAddForm(false);
     } catch (error) {
+      console.error('Error saving funder:', error);
       Alert.alert('Error', 'Failed to add funder. Please try again.');
     }
   };
