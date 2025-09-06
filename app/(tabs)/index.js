@@ -12,7 +12,7 @@ import { useTheme } from '../../context/theme';
 
 export default function HomeScreen() {
   const { colors, isDarkMode } = useTheme();
-  const [loading, setLoading] = useState(false); // Start with false to prevent white screen
+  const [loading, setLoading] = useState(true); // Start with true to show loading
   const [refreshing, setRefreshing] = useState(false);
   const [categories, setCategories] = useState([
     { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
@@ -70,8 +70,23 @@ export default function HomeScreen() {
     });
   };
 
-  // No useEffect needed - data is already in initial state
-  // No loading screen needed - data is immediately available
+  useEffect(() => {
+    // Simulate loading time
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500); // 1.5 seconds loading
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>Loading BudgetFlow...</Text>
+      </View>
+    );
+  }
 
   return (
     <>

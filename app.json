@@ -13,6 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#64a12d"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.budgetflow.app"
