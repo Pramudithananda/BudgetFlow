@@ -5,37 +5,30 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
-import { getExpense, deleteExpense } from '../../../services/sqliteService';
 import { useTheme } from '../../../context/theme';
+import { useData } from '../../../context/DataContext';
 
 export default function ExpenseDetailScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
+  const { getExpenseById, getCategoryById } = useData();
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [expense, setExpense] = useState(null);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const expenseData = await getExpense(id);
-      if (!expenseData) {
-        Alert.alert('Error', 'Expense not found');
-        router.back();
-        return;
-      }
-      setExpense(expenseData);
-    } catch (error) {
-      console.error('Error fetching expense data:', error);
-      Alert.alert('Error', 'Could not load expense data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Get expense data from DataContext
+  const expense = getExpenseById(id);
+  const category = expense ? getCategoryById(expense.categoryId) : null;
+
+  // Debug logging
+  console.log('ExpenseDetailScreen:', {
+    expenseId: id,
+    expense: expense,
+    category: category
+  });
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
+    // Data is already available from DataContext
     setRefreshing(false);
   };
 
@@ -63,14 +56,12 @@ export default function ExpenseDetailScreen() {
     );
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
-  if (loading) {
+  // Check if expense exists
+  if (!expense) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.errorText, { color: colors.text }]}>Expense not found</Text>
+        <Button title="Go Back" onPress={() => router.back()} />
       </View>
     );
   }
@@ -94,27 +85,41 @@ export default function ExpenseDetailScreen() {
       }
     >
       <Card style={styles.expenseCard}>
-        <Text style={styles.expenseTitle}>{expense?.title}</Text>
-        <Text style={[styles.expenseAmount, { color: colors.primary }]}>Rs. {expense?.amount?.toLocaleString()}</Text>
+        <Text style={styles.expenseTitle}>{expense.title}</Text>
+        <Text style={[styles.expenseAmount, { color: colors.primary }]}>Rs. {expense.amount?.toLocaleString()}</Text>
         
         <RNView style={styles.detailRow}>
           <Text style={styles.detailLabel}>Status:</Text>
-          <Text style={[styles.detailValue, { color: getStatusColor(expense?.status) }]}>
-            {expense?.status}
+          <Text style={[styles.detailValue, { color: getStatusColor(expense.status) }]}>
+            {expense.status}
           </Text>
         </RNView>
 
-        {expense?.assignedTo && (
+        {expense.assignedTo && (
           <RNView style={styles.detailRow}>
             <Text style={styles.detailLabel}>Assigned To:</Text>
             <Text style={styles.detailValue}>{expense.assignedTo}</Text>
           </RNView>
         )}
 
-        {expense?.notes && (
+        {category && (
+          <RNView style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Category:</Text>
+            <Text style={styles.detailValue}>{category.name}</Text>
+          </RNView>
+        )}
+
+        {expense.date && (
+          <RNView style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Date:</Text>
+            <Text style={styles.detailValue}>{expense.date}</Text>
+          </RNView>
+        )}
+
+        {expense.description && (
           <RNView style={styles.notesSection}>
-            <Text style={styles.detailLabel}>Notes:</Text>
-            <Text style={styles.notes}>{expense.notes}</Text>
+            <Text style={styles.detailLabel}>Description:</Text>
+            <Text style={styles.notes}>{expense.description}</Text>
           </RNView>
         )}
 
@@ -148,6 +153,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   expenseCard: {
     margin: 16,
