@@ -22,6 +22,14 @@ export default function CategoriesScreen() {
   
   const [refreshing, setRefreshing] = useState(false);
 
+  // Debug data access
+  console.log('CategoriesScreen - Data:', {
+    categories: categories?.length || 0,
+    expenses: expenses?.length || 0,
+    categoriesData: categories,
+    expensesData: expenses
+  });
+
   // Handle refresh
   const onRefresh = async () => {
     setRefreshing(true);
@@ -111,16 +119,19 @@ export default function CategoriesScreen() {
         </Text>
         
         {/* Categories List */}
-        {categories.length > 0 ? (
+        {categories && categories.length > 0 ? (
           categories.map((category, index) => {
             console.log(`Rendering category ${index}:`, category);
-            const categoryExpenses = getExpensesByCategory(category.id);
+            
+            // Get expenses for this category directly from expenses array
+            const categoryExpenses = expenses ? expenses.filter(exp => String(exp.categoryId) === String(category.id)) : [];
             const totalAmount = categoryExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
             
             console.log(`Category ${category.name} (ID: ${category.id}):`, {
               categoryExpenses: categoryExpenses.length,
               totalAmount: totalAmount,
-              expenses: categoryExpenses
+              expenses: categoryExpenses,
+              allExpenses: expenses
             });
             
             return (
