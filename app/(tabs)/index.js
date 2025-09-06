@@ -38,23 +38,24 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       
-      // Ensure database is initialized before fetching data
-      const database = await import('../../services/sqliteService');
+      // Initialize database first
+      const { ensureDatabase } = await import('../../services/sqliteService');
+      await ensureDatabase();
       
       const [budgetData, expensesData, categoriesData, eventsData] = await Promise.all([
-        database.getBudgetSummary().catch(err => {
+        getBudgetSummary().catch(err => {
           console.warn('Budget fetch failed, using defaults:', err);
           return { totalBudget: 0, receivedFund: 0 };
         }),
-        database.getExpenses().catch(err => {
+        getExpenses().catch(err => {
           console.warn('Expenses fetch failed, using empty array:', err);
           return [];
         }),
-        database.getCategories().catch(err => {
+        getCategories().catch(err => {
           console.warn('Categories fetch failed, using empty array:', err);
           return [];
         }),
-        database.getEvents().catch(err => {
+        getEvents().catch(err => {
           console.warn('Events fetch failed, using empty array:', err);
           return [];
         })
