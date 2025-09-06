@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, StatusBar, TouchableOpacity, Modal } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, ScrollView, View as RNView, StatusBar, TouchableOpacity, Modal } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -12,50 +12,55 @@ import { useTheme } from '../../context/theme';
 
 export default function HomeScreen() {
   const { colors, isDarkMode } = useTheme();
-  const [loading, setLoading] = useState(false); // Always false to prevent white screen
-  const [refreshing, setRefreshing] = useState(false);
-  const [categories, setCategories] = useState([
+  
+  // Sample data for Birthday Celebration
+  const [budgetSummary] = useState({
+    totalBudget: 100000,
+    receivedFund: 25000,
+  });
+  
+  const [statusTotals] = useState({
+    Pending: 35000,    // Welfare Funding
+    Spent: 25000,      // Sujith
+    Available: 40000,  // Nirvan
+    Outstanding: 0,
+  });
+  
+  const [categories] = useState([
     { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
     { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
     { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
     { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
   ]);
-  const [recentExpenses, setRecentExpenses] = useState([
+  
+  const [recentExpenses] = useState([
     { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, date: '2024-01-15' },
     { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, date: '2024-01-16' },
     { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, date: '2024-01-17' },
     { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, date: '2024-01-18' }
   ]);
-  const [events, setEvents] = useState([
-    { id: 1, name: 'Birthday Celebration', date: '2024-10-01', category: 'Conference', totalFunding: 100000, receivedFunding: 25000, pendingFunding: 75000 }
+  
+  const [events] = useState([
+    { 
+      id: 1, 
+      name: 'Birthday Celebration', 
+      date: '2024-10-01', 
+      category: 'Conference', 
+      totalFunding: 100000, 
+      receivedFunding: 25000, 
+      pendingFunding: 75000,
+      funders: [
+        { name: 'Sujith', amount: 25000, status: 'Spent' },
+        { name: 'Nirvan', amount: 40000, status: 'Available' },
+        { name: 'Welfare Funding', amount: 35000, status: 'Pending' }
+      ]
+    }
   ]);
-  const [budgetSummary, setBudgetSummary] = useState({
-    totalBudget: 100000,
-    receivedFund: 25000,
-  });
-  const [statusTotals, setStatusTotals] = useState({
-    Pending: 10000,
-    Spent: 60000,
-    Available: 20000,
-    Outstanding: 10000,
-  });
   
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
 
-  const fetchData = async () => {
-    // Data is already set in initial state, no need to fetch
-    console.log('Data already loaded in initial state');
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
-  };
-
-  // Event handling functions
   const handleEventSelect = (event) => {
     setSelectedEvent(event);
     setShowEventModal(true);
@@ -70,9 +75,6 @@ export default function HomeScreen() {
     });
   };
 
-  // No useEffect needed - data is immediately available
-  // No loading screen needed - data is immediately available
-
   return (
     <>
       <StatusBar
@@ -82,9 +84,6 @@ export default function HomeScreen() {
       />
       <ScrollView 
         style={[styles.container, { backgroundColor: colors.background }]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
       >
         {/* Budget Summary */}
         <BudgetSummary 
@@ -158,17 +157,13 @@ export default function HomeScreen() {
               style={styles.addButton}
             />
           </RNView>
-          {categories.length > 0 ? (
-            categories.map((category) => (
-              <CategoryItem
-                key={category.id}
-                category={category}
-                onPress={() => router.push(`/category/${category.id}`)}
-              />
-            ))
-          ) : (
-            <Text style={[styles.emptyText, { color: colors.text }]}>No categories yet</Text>
-          )}
+          {categories.map((category) => (
+            <CategoryItem
+              key={category.id}
+              category={category}
+              onPress={() => router.push(`/category/${category.id}`)}
+            />
+          ))}
         </Card>
 
         {/* Recent Expenses */}
@@ -181,17 +176,13 @@ export default function HomeScreen() {
               style={styles.addButton}
             />
           </RNView>
-          {recentExpenses.length > 0 ? (
-            recentExpenses.map((expense) => (
-              <ExpenseItem
-                key={expense.id}
-                expense={expense}
-                onPress={() => {}}
-              />
-            ))
-          ) : (
-            <Text style={[styles.emptyText, { color: colors.text }]}>No expenses yet</Text>
-          )}
+          {recentExpenses.map((expense) => (
+            <ExpenseItem
+              key={expense.id}
+              expense={expense}
+              onPress={() => {}}
+            />
+          ))}
         </Card>
       </ScrollView>
 
@@ -230,6 +221,20 @@ export default function HomeScreen() {
                   <Text style={[styles.fundingAmount, { color: '#ff6b6b' }]}>Rs. {selectedEvent.pendingFunding.toLocaleString()}</Text>
                 </RNView>
               </Card>
+
+              <Card style={styles.modalCard}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Funder Details</Text>
+                {selectedEvent.funders.map((funder, index) => (
+                  <RNView key={index} style={styles.funderRow}>
+                    <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
+                    <Text style={[styles.funderAmount, { color: colors.text }]}>Rs. {funder.amount.toLocaleString()}</Text>
+                    <Text style={[styles.funderStatus, { 
+                      color: funder.status === 'Spent' ? '#ff4757' : 
+                            funder.status === 'Available' ? '#2ed573' : '#ff6b6b'
+                    }]}>{funder.status}</Text>
+                  </RNView>
+                ))}
+              </Card>
             </ScrollView>
           )}
         </View>
@@ -242,17 +247,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '500',
   },
   card: {
     marginBottom: 16,
@@ -320,12 +314,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginTop: 2,
   },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: 16,
-    opacity: 0.7,
-    marginVertical: 20,
-  },
   modalContainer: {
     flex: 1,
     padding: 20,
@@ -374,5 +362,26 @@ const styles = StyleSheet.create({
   fundingAmount: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  funderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  funderName: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  funderAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 10,
+  },
+  funderStatus: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
