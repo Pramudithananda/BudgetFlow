@@ -41,6 +41,11 @@ export default function CategoriesScreen() {
     }
   }, [error]);
 
+  // Force re-render when categories change
+  useEffect(() => {
+    console.log('Categories changed:', categories.length);
+  }, [categories]);
+
   const handleDeleteCategory = (categoryId, categoryName) => {
     Alert.alert(
       'Delete Category',
@@ -105,24 +110,27 @@ export default function CategoriesScreen() {
           Debug: {categories.length} categories loaded
         </Text>
         
+        {/* Force re-render with key */}
         {categories.length > 0 ? (
-          categories.map((category) => {
-            console.log('Rendering category:', category);
-            const categoryExpenses = getExpensesByCategory(category.id);
-            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-            
-            return (
-              <CategoryItem
-                key={category.id}
-                name={category.name}
-                totalAmount={totalAmount}
-                totalExpenses={categoryExpenses.length}
-                color={category.color}
-                onPress={() => router.push(`/category/${category.id}`)}
-                style={styles.categoryItem}
-              />
-            );
-          })
+          <RNView key={`categories-${categories.length}`}>
+            {categories.map((category, index) => {
+              console.log(`Rendering category ${index}:`, category);
+              const categoryExpenses = getExpensesByCategory(category.id);
+              const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+              
+              return (
+                <CategoryItem
+                  key={`category-${category.id}-${index}`}
+                  name={category.name}
+                  totalAmount={totalAmount}
+                  totalExpenses={categoryExpenses.length}
+                  color={category.color}
+                  onPress={() => router.push(`/category/${category.id}`)}
+                  style={styles.categoryItem}
+                />
+              );
+            })}
+          </RNView>
         ) : (
           <RNView style={styles.emptyContainer}>
             <FontAwesome5 name="list" size={48} color={colors.text} style={styles.emptyIcon} />

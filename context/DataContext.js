@@ -123,7 +123,16 @@ export const DataProvider = ({ children }) => {
         updated_at: new Date().toISOString()
       };
       
-      setCategories(prev => [...prev, newCategory]);
+      console.log('Current categories before add:', categories.length);
+      setCategories(prev => {
+        const updated = [...prev, newCategory];
+        console.log('Categories after add:', updated.length);
+        return updated;
+      });
+      
+      // Force a small delay to ensure state update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       console.log('Category added successfully:', newCategory);
       return newCategory;
     } catch (error) {
@@ -370,6 +379,16 @@ export const DataProvider = ({ children }) => {
     getStatusTotals,
     refreshData
   };
+
+  // Debug context value
+  console.log('DataContext value:', {
+    categoriesCount: categories.length,
+    fundersCount: funders.length,
+    expensesCount: expenses.length,
+    eventsCount: events.length,
+    loading,
+    error
+  });
 
   return (
     <DataContext.Provider value={contextValue}>
