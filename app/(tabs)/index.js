@@ -112,14 +112,44 @@ export default function HomeScreen() {
 
         {/* Funding Status */}
         <Card style={styles.card}>
-          <Text style={styles.cardTitle}>Funding Status</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Funding Status</Text>
           <RNView style={styles.statusGrid}>
-            {Object.entries(statusTotals).map(([status, amount]) => (
-              <RNView key={status} style={styles.statusItem}>
-                <Text style={styles.statusLabel}>{status}</Text>
-                <Text style={styles.statusValue}>Rs. {amount.toLocaleString()}</Text>
-              </RNView>
-            ))}
+            {Object.entries(statusTotals).map(([status, amount]) => {
+              // Get status-specific colors
+              const getStatusColor = (status) => {
+                switch (status) {
+                  case 'Outstanding':
+                    return isDarkMode ? '#ff6b6b' : '#e74c3c';
+                  case 'Pending':
+                    return isDarkMode ? '#f39c12' : '#f39c12';
+                  case 'Available':
+                    return isDarkMode ? '#3498db' : '#3498db';
+                  case 'Spent':
+                    return isDarkMode ? '#2ecc71' : '#27ae60';
+                  default:
+                    return colors.primary;
+                }
+              };
+
+              const statusColor = getStatusColor(status);
+              
+              return (
+                <RNView 
+                  key={status} 
+                  style={[
+                    styles.statusItem, 
+                    { 
+                      backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f8f9fa',
+                      borderColor: statusColor,
+                      borderWidth: 1
+                    }
+                  ]}
+                >
+                  <Text style={[styles.statusLabel, { color: statusColor }]}>{status}</Text>
+                  <Text style={[styles.statusValue, { color: colors.text }]}>Rs. {amount.toLocaleString()}</Text>
+                </RNView>
+              );
+            })}
           </RNView>
         </Card>
 
@@ -292,10 +322,16 @@ const styles = StyleSheet.create({
   },
   statusItem: {
     width: '48%',
-    padding: 10,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 10,
     marginBottom: 10,
-    backgroundColor: '#f0f0f0',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   statusLabel: {
     fontSize: 14,
@@ -304,6 +340,7 @@ const styles = StyleSheet.create({
   },
   statusValue: {
     fontSize: 16,
+    fontWeight: '600',
   },
   dropdownButton: {
     flexDirection: 'row',
