@@ -165,7 +165,9 @@ export default function HomeScreen() {
                 name={category.name}
                 totalAmount={totalAmount}
                 totalExpenses={categoryExpenses.length}
+                color={category.color}
                 onPress={() => router.push(`/category/${category.id}`)}
+                style={styles.categoryItem}
               />
             );
           })}
@@ -262,6 +264,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
+  },
+  categoryItem: {
+    marginVertical: 2,
   },
   statusGrid: {
     flexDirection: 'row',

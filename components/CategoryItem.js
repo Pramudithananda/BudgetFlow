@@ -8,9 +8,20 @@ export default function CategoryItem({
   totalExpenses,
   totalAmount,
   onPress, 
-  style 
+  style,
+  color = '#64a12d'
 }) {
   const { colors, isDarkMode } = useTheme();
+  
+  const formatCurrency = (amount) => {
+    if (amount >= 100000) {
+      return `Rs. ${(amount / 100000).toFixed(1)}L`;
+    } else if (amount >= 1000) {
+      return `Rs. ${(amount / 1000).toFixed(1)}K`;
+    } else {
+      return `Rs. ${amount.toLocaleString()}`;
+    }
+  };
   
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
@@ -24,18 +35,18 @@ export default function CategoryItem({
         style
       ]}>
         <RNView style={styles.contentRow}>
-          <RNView style={[styles.iconContainer, { backgroundColor: isDarkMode ? 'rgba(15, 110, 102, 0.2)' : 'rgba(15, 110, 102, 0.1)' }]}>
-            <MaterialIcons name="category" size={24} color={colors.primary} />
+          <RNView style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+            <MaterialIcons name="category" size={20} color={color} />
           </RNView>
           <RNView style={styles.textContent}>
-            <Text style={styles.name}>{name}</Text>
-            <Text style={styles.expensesCount}>
+            <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
+            <Text style={[styles.expensesCount, { color: colors.text, opacity: 0.7 }]}>
               {totalExpenses} {totalExpenses === 1 ? 'expense' : 'expenses'}
             </Text>
           </RNView>
           <RNView style={styles.amountContainer}>
-            <Text style={styles.amount}>Rs. {totalAmount.toLocaleString()}</Text>
-            <MaterialIcons name="chevron-right" size={24} color={colors.text} />
+            <Text style={[styles.amount, { color: colors.primary }]}>{formatCurrency(totalAmount)}</Text>
+            <MaterialIcons name="chevron-right" size={20} color={colors.text} style={{ opacity: 0.5 }} />
           </RNView>
         </RNView>
       </View>
@@ -45,17 +56,17 @@ export default function CategoryItem({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 10,
-    padding: 16,
-    marginVertical: 8,
+    borderRadius: 12,
+    padding: 12,
+    marginVertical: 4,
     marginHorizontal: 16,
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.0,
-    elevation: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
     borderWidth: 1,
   },
   contentRow: {
@@ -63,9 +74,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -74,19 +85,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   expensesCount: {
-    fontSize: 14,
+    fontSize: 12,
   },
   amountContainer: {
     alignItems: 'flex-end',
   },
   amount: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-}); 
+});

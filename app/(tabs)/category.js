@@ -78,28 +78,15 @@ export default function CategoryScreen() {
             const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
             
             return (
-              <RNView key={category.id} style={styles.categoryContainer}>
-                <CategoryItem
-                  name={category.name}
-                  totalAmount={totalAmount}
-                  totalExpenses={categoryExpenses.length}
-                  onPress={() => router.push(`/category/${category.id}`)}
-                />
-                <RNView style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: '#64a12d' }]}
-                    onPress={() => handleEditCategory(category.id)}
-                  >
-                    <FontAwesome5 name="edit" size={16} color="#fff" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: '#e74c3c' }]}
-                    onPress={() => handleDeleteCategory(category.id, category.name)}
-                  >
-                    <FontAwesome5 name="trash" size={16} color="#fff" />
-                  </TouchableOpacity>
-                </RNView>
-              </RNView>
+              <CategoryItem
+                key={category.id}
+                name={category.name}
+                totalAmount={totalAmount}
+                totalExpenses={categoryExpenses.length}
+                color={category.color}
+                onPress={() => router.push(`/category/${category.id}`)}
+                style={styles.categoryItem}
+              />
             );
           })
         ) : (
@@ -144,22 +131,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  categoryContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    marginLeft: 10,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
+  categoryItem: {
+    marginVertical: 2,
   },
   emptyContainer: {
     alignItems: 'center',
