@@ -12,11 +12,11 @@ import { useData } from '../../../context/DataContext';
 export default function CategoryDetailScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
-  const { getCategoryById, getExpensesByCategory, categories } = useData();
+  const { getCategoryById, getExpensesByCategory, categories, expenses: allExpenses } = useData();
   
   // Get category and expenses from DataContext
   const category = getCategoryById(id) || categories.find(cat => String(cat.id) === String(id));
-  const expenses = getExpensesByCategory(id);
+  const expenses = getExpensesByCategory(id) || (allExpenses ? allExpenses.filter(exp => String(exp.categoryId) === String(id)) : []);
   
   // Calculate total amount
   const totalAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
@@ -29,7 +29,9 @@ export default function CategoryDetailScreen() {
     expenses: expenses,
     totalAmount: totalAmount,
     allCategories: categories,
-    categoryFound: !!category
+    allExpenses: allExpenses,
+    categoryFound: !!category,
+    expensesFound: expenses.length
   });
 
   const handleDeleteCategory = () => {
