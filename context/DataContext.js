@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 const DataContext = createContext();
 
@@ -97,7 +97,7 @@ export const DataProvider = ({ children }) => {
   ]);
 
   // Category CRUD operations
-  const addCategory = (categoryData) => {
+  const addCategory = useCallback((categoryData) => {
     console.log('Adding category:', categoryData);
     const newCategory = {
       id: Date.now(),
@@ -105,28 +105,30 @@ export const DataProvider = ({ children }) => {
       createdAt: new Date().toISOString()
     };
     console.log('New category created:', newCategory);
+    
     setCategories(prev => {
       const updated = [...prev, newCategory];
       console.log('Categories updated:', updated);
       return updated;
     });
+    
     return newCategory;
-  };
+  }, []);
 
-  const updateCategory = (id, categoryData) => {
+  const updateCategory = useCallback((id, categoryData) => {
     setCategories(prev => prev.map(cat => 
       cat.id === id ? { ...cat, ...categoryData, updatedAt: new Date().toISOString() } : cat
     ));
-  };
+  }, []);
 
-  const deleteCategory = (id) => {
+  const deleteCategory = useCallback((id) => {
     setCategories(prev => prev.filter(cat => cat.id !== id));
     // Also remove expenses in this category
     setExpenses(prev => prev.filter(exp => exp.categoryId !== id));
-  };
+  }, []);
 
   // Funder CRUD operations
-  const addFunder = (funderData) => {
+  const addFunder = useCallback((funderData) => {
     console.log('Adding funder:', funderData);
     const newFunder = {
       id: Date.now(),
@@ -134,26 +136,28 @@ export const DataProvider = ({ children }) => {
       createdAt: new Date().toISOString()
     };
     console.log('New funder created:', newFunder);
+    
     setFunders(prev => {
       const updated = [...prev, newFunder];
       console.log('Funders updated:', updated);
       return updated;
     });
+    
     return newFunder;
-  };
+  }, []);
 
-  const updateFunder = (id, funderData) => {
+  const updateFunder = useCallback((id, funderData) => {
     setFunders(prev => prev.map(funder => 
       funder.id === id ? { ...funder, ...funderData, updatedAt: new Date().toISOString() } : funder
     ));
-  };
+  }, []);
 
-  const deleteFunder = (id) => {
+  const deleteFunder = useCallback((id) => {
     setFunders(prev => prev.filter(funder => funder.id !== id));
-  };
+  }, []);
 
   // Expense CRUD operations
-  const addExpense = (expenseData) => {
+  const addExpense = useCallback((expenseData) => {
     const newExpense = {
       id: Date.now(),
       ...expenseData,
@@ -161,20 +165,20 @@ export const DataProvider = ({ children }) => {
     };
     setExpenses(prev => [...prev, newExpense]);
     return newExpense;
-  };
+  }, []);
 
-  const updateExpense = (id, expenseData) => {
+  const updateExpense = useCallback((id, expenseData) => {
     setExpenses(prev => prev.map(exp => 
       exp.id === id ? { ...exp, ...expenseData, updatedAt: new Date().toISOString() } : exp
     ));
-  };
+  }, []);
 
-  const deleteExpense = (id) => {
+  const deleteExpense = useCallback((id) => {
     setExpenses(prev => prev.filter(exp => exp.id !== id));
-  };
+  }, []);
 
   // Event CRUD operations
-  const addEvent = (eventData) => {
+  const addEvent = useCallback((eventData) => {
     const newEvent = {
       id: Date.now(),
       ...eventData,
@@ -182,32 +186,32 @@ export const DataProvider = ({ children }) => {
     };
     setEvents(prev => [...prev, newEvent]);
     return newEvent;
-  };
+  }, []);
 
-  const updateEvent = (id, eventData) => {
+  const updateEvent = useCallback((id, eventData) => {
     setEvents(prev => prev.map(event => 
       event.id === id ? { ...event, ...eventData, updatedAt: new Date().toISOString() } : event
     ));
-  };
+  }, []);
 
-  const deleteEvent = (id) => {
+  const deleteEvent = useCallback((id) => {
     setEvents(prev => prev.filter(event => event.id !== id));
-  };
+  }, []);
 
   // Helper functions
-  const getCategoryById = (id) => categories.find(cat => cat.id === id);
-  const getFunderById = (id) => funders.find(funder => funder.id === id);
-  const getExpenseById = (id) => expenses.find(exp => exp.id === id);
-  const getEventById = (id) => events.find(event => event.id === id);
+  const getCategoryById = useCallback((id) => categories.find(cat => cat.id === id), [categories]);
+  const getFunderById = useCallback((id) => funders.find(funder => funder.id === id), [funders]);
+  const getExpenseById = useCallback((id) => expenses.find(exp => exp.id === id), [expenses]);
+  const getEventById = useCallback((id) => events.find(event => event.id === id), [events]);
 
-  const getExpensesByCategory = (categoryId) => expenses.filter(exp => exp.categoryId === categoryId);
-  const getExpensesByEvent = (eventId) => {
+  const getExpensesByCategory = useCallback((categoryId) => expenses.filter(exp => exp.categoryId === categoryId), [expenses]);
+  const getExpensesByEvent = useCallback((eventId) => {
     const event = getEventById(eventId);
     if (!event) return [];
     return expenses.filter(exp => event.expenses.includes(exp.id));
-  };
+  }, [expenses, getEventById]);
 
-  const getBudgetSummary = () => {
+  const getBudgetSummary = useCallback(() => {
     const totalBudget = events.reduce((sum, event) => sum + event.totalFunding, 0);
     const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const totalReceived = events.reduce((sum, event) => sum + event.receivedFunding, 0);
@@ -219,9 +223,9 @@ export const DataProvider = ({ children }) => {
       remaining: totalBudget - totalSpent,
       pending: totalBudget - totalReceived
     };
-  };
+  }, [events, expenses]);
 
-  const getStatusTotals = () => {
+  const getStatusTotals = useCallback(() => {
     const statusTotals = {
       Pending: 0,
       Spent: 0,
@@ -236,7 +240,7 @@ export const DataProvider = ({ children }) => {
     });
     
     return statusTotals;
-  };
+  }, [expenses]);
 
   const value = {
     // Data
