@@ -1,225 +1,202 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, Alert, TextInput, TouchableOpacity, RefreshControl } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, ScrollView, View as RNView, Alert, TextInput, TouchableOpacity } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { getFunders, addFunder, updateFunder, deleteFunder } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function FundersScreen() {
   const { colors, isDarkMode } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [funders, setFunders] = useState([]);
+  
+  // Static sample data for funders
+  const [funders] = useState([
+    { 
+      id: 1, 
+      name: 'Sujith', 
+      phone: '+94 77 123 4567', 
+      email: 'sujith@example.com',
+      totalAmount: 25000,
+      status: 'Spent'
+    },
+    { 
+      id: 2, 
+      name: 'Nirvan', 
+      phone: '+94 78 234 5678', 
+      email: 'nirvan@example.com',
+      totalAmount: 40000,
+      status: 'Available'
+    },
+    { 
+      id: 3, 
+      name: 'Welfare Funding', 
+      phone: '+94 11 345 6789', 
+      email: 'welfare@funding.org',
+      totalAmount: 35000,
+      status: 'Pending'
+    }
+  ]);
+  
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFunderName, setNewFunderName] = useState('');
   const [newFunderPhone, setNewFunderPhone] = useState('');
   const [newFunderEmail, setNewFunderEmail] = useState('');
 
-  const fetchFunders = async () => {
-    try {
-      setLoading(true);
-      const fundersData = await getFunders();
-      setFunders(fundersData);
-    } catch (error) {
-      console.error('Error fetching funders:', error);
-      Alert.alert('Error', 'Could not load funders. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchFunders();
-    setRefreshing(false);
-  };
-
-  const handleAddFunder = async () => {
+  const handleAddFunder = () => {
     if (!newFunderName.trim()) {
       Alert.alert('Error', 'Please enter a funder name');
       return;
     }
+    
+    Alert.alert('Info', 'Add Funder feature coming soon!');
+    setNewFunderName('');
+    setNewFunderPhone('');
+    setNewFunderEmail('');
+    setShowAddForm(false);
+  };
 
-    try {
-      console.log('Adding funder with data:', {
-        name: newFunderName.trim(),
-        phone: newFunderPhone.trim(),
-        email: newFunderEmail.trim(),
-      });
-      
-      const result = await addFunder({
-        name: newFunderName.trim(),
-        phone: newFunderPhone.trim(),
-        email: newFunderEmail.trim(),
-      });
-      
-      console.log('Funder added successfully:', result);
-      
-      setNewFunderName('');
-      setNewFunderPhone('');
-      setNewFunderEmail('');
-      setShowAddForm(false);
-      await fetchFunders();
-      Alert.alert('Success', 'Funder added successfully');
-    } catch (error) {
-      console.error('Error adding funder:', error);
-      console.error('Error details:', error.message);
-      console.error('Error stack:', error.stack);
-      
-      let errorMessage = 'Could not add funder. Please try again.';
-      if (error && error.message) {
-        errorMessage = `Could not add funder: ${error.message}`;
-      } else if (error && typeof error === 'string') {
-        errorMessage = `Could not add funder: ${error}`;
-      }
-      
-      Alert.alert('Error', errorMessage);
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Spent': return '#ff4757';
+      case 'Available': return '#2ed573';
+      case 'Pending': return '#ff6b6b';
+      default: return colors.text;
     }
   };
-
-  const handleDeleteFunder = (funderId) => {
-    Alert.alert(
-      'Delete Funder',
-      'Are you sure you want to delete this funder?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteFunder(funderId);
-              await fetchFunders();
-              Alert.alert('Success', 'Funder deleted successfully');
-            } catch (error) {
-              console.error('Error deleting funder:', error);
-              Alert.alert('Error', 'Could not delete funder. Please try again.');
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  useEffect(() => {
-    fetchFunders();
-  }, []);
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
 
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
-      <Card style={styles.headerCard}>
-        <Text style={styles.title}>Funders</Text>
-        <Button
-          title={showAddForm ? "Cancel" : "+ Add Funder"}
-          onPress={() => setShowAddForm(!showAddForm)}
-          variant={showAddForm ? "outline" : "primary"}
-          style={styles.addButton}
-        />
-      </Card>
-
-      {showAddForm && (
-        <Card style={styles.formCard}>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              color: colors.text,
-            }]}
-            value={newFunderName}
-            onChangeText={setNewFunderName}
-            placeholder="Enter funder name"
-            placeholderTextColor={colors.text}
-          />
-
-          <Text style={styles.label}>Phone (Optional)</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              color: colors.text,
-            }]}
-            value={newFunderPhone}
-            onChangeText={setNewFunderPhone}
-            placeholder="Enter phone number"
-            placeholderTextColor={colors.text}
-            keyboardType="phone-pad"
-          />
-
-          <Text style={styles.label}>Email (Optional)</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              color: colors.text,
-            }]}
-            value={newFunderEmail}
-            onChangeText={setNewFunderEmail}
-            placeholder="Enter email address"
-            placeholderTextColor={colors.text}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
+      <Card style={styles.card}>
+        <RNView style={styles.cardHeader}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Funders</Text>
           <Button
             title="Add Funder"
-            onPress={handleAddFunder}
-            style={styles.submitButton}
+            onPress={() => setShowAddForm(!showAddForm)}
+            style={styles.addButton}
           />
-        </Card>
-      )}
+        </RNView>
 
-      {funders.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <RNView style={styles.emptyState}>
-            <FontAwesome5 name="users" size={36} color={colors.text} />
-            <Text style={styles.emptyText}>No funders yet</Text>
-            <Text style={styles.emptySubtext}>
-              Add funders to assign them to expenses
-            </Text>
-          </RNView>
-        </Card>
-      ) : (
-        funders.map((funder) => (
-          <Card key={funder.id} style={styles.funderCard}>
-            <RNView style={styles.funderHeader}>
-              <Text style={styles.funderName}>{funder.name}</Text>
-              <TouchableOpacity
-                onPress={() => handleDeleteFunder(funder.id)}
-                style={styles.deleteButton}
-              >
-                <FontAwesome5 name="trash" size={16} color={colors.error} />
-              </TouchableOpacity>
+        {/* Add Funder Form */}
+        {showAddForm && (
+          <Card style={[styles.formCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.formTitle, { color: colors.text }]}>Add New Funder</Text>
+            
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: colors.background, 
+                color: colors.text, 
+                borderColor: colors.border 
+              }]}
+              placeholder="Funder Name"
+              placeholderTextColor={colors.text + '80'}
+              value={newFunderName}
+              onChangeText={setNewFunderName}
+            />
+            
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: colors.background, 
+                color: colors.text, 
+                borderColor: colors.border 
+              }]}
+              placeholder="Phone (Optional)"
+              placeholderTextColor={colors.text + '80'}
+              value={newFunderPhone}
+              onChangeText={setNewFunderPhone}
+              keyboardType="phone-pad"
+            />
+            
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: colors.background, 
+                color: colors.text, 
+                borderColor: colors.border 
+              }]}
+              placeholder="Email (Optional)"
+              placeholderTextColor={colors.text + '80'}
+              value={newFunderEmail}
+              onChangeText={setNewFunderEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            
+            <RNView style={styles.formButtons}>
+              <Button
+                title="Cancel"
+                onPress={() => {
+                  setShowAddForm(false);
+                  setNewFunderName('');
+                  setNewFunderPhone('');
+                  setNewFunderEmail('');
+                }}
+                style={[styles.formButton, styles.cancelButton]}
+              />
+              <Button
+                title="Add Funder"
+                onPress={handleAddFunder}
+                style={[styles.formButton, styles.addButton]}
+              />
             </RNView>
-            {funder.phone && (
-              <Text style={styles.funderDetail}>
-                <FontAwesome5 name="phone" size={14} color={colors.text} /> {funder.phone}
-              </Text>
-            )}
-            {funder.email && (
-              <Text style={styles.funderDetail}>
-                <FontAwesome5 name="envelope" size={14} color={colors.text} /> {funder.email}
-              </Text>
-            )}
           </Card>
-        ))
-      )}
+        )}
+
+        {/* Funders List */}
+        {funders.length > 0 ? (
+          funders.map((funder) => (
+            <TouchableOpacity
+              key={funder.id}
+              style={[styles.funderItem, { 
+                backgroundColor: colors.card, 
+                borderColor: colors.border 
+              }]}
+            >
+              <RNView style={styles.funderHeader}>
+                <RNView style={styles.funderInfo}>
+                  <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
+                  <Text style={[styles.funderAmount, { color: colors.text }]}>
+                    Rs. {funder.totalAmount.toLocaleString()}
+                  </Text>
+                </RNView>
+                <RNView style={[styles.statusBadge, { backgroundColor: getStatusColor(funder.status) + '20' }]}>
+                  <Text style={[styles.statusText, { color: getStatusColor(funder.status) }]}>
+                    {funder.status}
+                  </Text>
+                </RNView>
+              </RNView>
+              
+              {funder.phone && (
+                <RNView style={styles.contactInfo}>
+                  <FontAwesome5 name="phone" size={12} color={colors.text} style={styles.contactIcon} />
+                  <Text style={[styles.contactText, { color: colors.text }]}>{funder.phone}</Text>
+                </RNView>
+              )}
+              
+              {funder.email && (
+                <RNView style={styles.contactInfo}>
+                  <FontAwesome5 name="envelope" size={12} color={colors.text} style={styles.contactIcon} />
+                  <Text style={[styles.contactText, { color: colors.text }]}>{funder.email}</Text>
+                </RNView>
+              )}
+            </TouchableOpacity>
+          ))
+        ) : (
+          <RNView style={styles.emptyContainer}>
+            <FontAwesome5 name="users" size={48} color={colors.text} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No funders yet</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.text }]}>
+              Add funders to track your funding sources
+            </Text>
+            <Button
+              title="Add Your First Funder"
+              onPress={() => setShowAddForm(true)}
+              style={styles.emptyButton}
+            />
+          </RNView>
+        )}
+      </Card>
     </ScrollView>
   );
 }
@@ -227,65 +204,59 @@ export default function FundersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  card: {
+    marginBottom: 16,
+    padding: 16,
   },
-  headerCard: {
-    margin: 16,
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  title: {
-    fontSize: 24,
+  cardTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
   },
   addButton: {
-    minWidth: 120,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   formCard: {
-    margin: 16,
-    marginTop: 0,
+    marginBottom: 16,
+    padding: 16,
   },
-  label: {
+  formTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
   input: {
+    borderWidth: 1,
     borderRadius: 8,
     padding: 12,
+    marginBottom: 12,
     fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
   },
-  submitButton: {
+  formButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 8,
   },
-  emptyCard: {
-    margin: 16,
+  formButton: {
+    flex: 1,
+    marginHorizontal: 4,
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
+  cancelButton: {
+    backgroundColor: '#6c757d',
   },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  funderCard: {
-    margin: 16,
-    marginTop: 0,
+  funderItem: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   funderHeader: {
     flexDirection: 'row',
@@ -293,15 +264,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  funderInfo: {
+    flex: 1,
+  },
   funderName: {
     fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  funderAmount: {
+    fontSize: 16,
     fontWeight: '600',
   },
-  deleteButton: {
-    padding: 8,
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  funderDetail: {
+  statusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  contactInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  contactIcon: {
+    marginRight: 8,
+    opacity: 0.7,
+  },
+  contactText: {
     fontSize: 14,
-    marginTop: 4,
+    opacity: 0.8,
   },
-}); 
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+    opacity: 0.5,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  emptyButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+});
