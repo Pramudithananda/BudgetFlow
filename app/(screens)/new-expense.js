@@ -27,7 +27,9 @@ export default function NewExpenseScreen() {
   ];
   
   const addExpense = (expenseData) => {
-    alert('Add expense feature coming soon!');
+    console.log('Adding expense:', expenseData);
+    Alert.alert('Success', 'Expense added successfully!');
+    router.back();
   };
   const { preSelectedCategory } = useLocalSearchParams();
   

@@ -69,7 +69,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="all-expenses"
+        name="expenses"
         options={{
           title: 'Expenses',
           tabBarIcon: ({ color }) => (
