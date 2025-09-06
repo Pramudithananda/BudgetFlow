@@ -88,7 +88,7 @@ export default function HomeScreen() {
       // Get funding summary for each event
       for (const event of eventsData) {
         try {
-          const eventFunding = await database.getEventFundingSummary(event.id);
+          const eventFunding = await getEventFundingSummary(event.id);
           fundingTotals.Pending += eventFunding.Pending || 0;
           fundingTotals.Spent += eventFunding.Spent || 0;
           fundingTotals.Available += eventFunding.Available || 0;
@@ -145,6 +145,12 @@ export default function HomeScreen() {
       console.error('Error fetching data:', error);
       // Don't show alert for database initialization errors, just log and continue
       console.warn('Continuing with default data due to error:', error);
+      // Set default data to prevent white screen
+      setCategories([]);
+      setRecentExpenses([]);
+      setEvents([]);
+      setBudgetSummary({ totalBudget: 0, receivedFund: 0 });
+      setStatusTotals({ Pending: 0, Spent: 0, Available: 0, Outstanding: 0 });
     } finally {
       setLoading(false);
     }
@@ -185,6 +191,14 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    // Set a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Loading timeout reached, setting loading to false');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     fetchData();
   const unsubscribeExpenses = listenExpenses(null, (expensesLive) => {
       const expensesData = expensesLive.map(exp => ({
@@ -234,6 +248,7 @@ export default function HomeScreen() {
       }
     });
     return () => {
+      clearTimeout(loadingTimeout);
       unsubscribeExpenses && unsubscribeExpenses();
       unsubscribeCategories && unsubscribeCategories();
     };
