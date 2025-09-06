@@ -13,19 +13,22 @@ const STATUS_OPTIONS = ['Pending', 'Spent', 'Available', 'Outstanding'];
 export default function NewExpenseScreen() {
   const { colors, isDarkMode } = useTheme();
   
-  // Safe data access with fallbacks
-  let addExpense = () => {};
-  let categories = [];
-  let funders = [];
+  const categories = [
+    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
+  ];
   
-  try {
-    const data = useData();
-    addExpense = data.addExpense || addExpense;
-    categories = data.categories || [];
-    funders = data.funders || [];
-  } catch (error) {
-    console.warn('Error accessing data context:', error);
-  }
+  const funders = [
+    { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
+    { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
+    { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
+  ];
+  
+  const addExpense = (expenseData) => {
+    alert('Add expense feature coming soon!');
+  };
   const { preSelectedCategory } = useLocalSearchParams();
   
   const [title, setTitle] = useState('');

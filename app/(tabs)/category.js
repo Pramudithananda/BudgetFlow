@@ -12,20 +12,25 @@ import { useData } from '../../context/DataContext';
 export default function CategoryScreen() {
   const { colors, isDarkMode } = useTheme();
   
-  // Safe data access with fallbacks
-  let categories = [];
-  let deleteCategory = () => {};
-  let getExpensesByCategory = () => [];
+  // Use static sample data for now to ensure it works
+  const categories = [
+    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
+  ];
   
-  try {
-    const data = useData();
-    categories = data.categories || [];
-    deleteCategory = data.deleteCategory || deleteCategory;
-    getExpensesByCategory = data.getExpensesByCategory || getExpensesByCategory;
-    console.log('Categories loaded in category tab:', categories);
-  } catch (error) {
-    console.warn('Error accessing data context:', error);
-  }
+  const expenses = [
+    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+  ];
+  
+  const getExpensesByCategory = (categoryId) => expenses.filter(exp => exp.categoryId === categoryId);
+  const deleteCategory = (id) => {
+    alert('Delete category feature coming soon!');
+  };
 
   const handleDeleteCategory = (categoryId, categoryName) => {
     Alert.alert(

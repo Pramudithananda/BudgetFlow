@@ -11,22 +11,42 @@ import { useData } from '../../context/DataContext';
 export default function FundersScreen() {
   const { colors, isDarkMode } = useTheme();
   
-  // Safe data access with fallbacks
-  let funders = [];
-  let addFunder = () => {};
-  let updateFunder = () => {};
-  let deleteFunder = () => {};
+  // Use static sample data for now to ensure it works
+  const funders = [
+    { 
+      id: 1, 
+      name: 'Sujith', 
+      phone: '+94 77 123 4567', 
+      email: 'sujith@example.com',
+      totalAmount: 25000,
+      status: 'Spent'
+    },
+    { 
+      id: 2, 
+      name: 'Nirvan', 
+      phone: '+94 78 234 5678', 
+      email: 'nirvan@example.com',
+      totalAmount: 40000,
+      status: 'Available'
+    },
+    { 
+      id: 3, 
+      name: 'Welfare Funding', 
+      phone: '+94 11 345 6789', 
+      email: 'welfare@funding.org',
+      totalAmount: 35000,
+      status: 'Pending'
+    }
+  ];
   
-  try {
-    const data = useData();
-    funders = data.funders || [];
-    addFunder = data.addFunder || addFunder;
-    updateFunder = data.updateFunder || updateFunder;
-    deleteFunder = data.deleteFunder || deleteFunder;
-    console.log('Funders loaded in funders tab:', funders);
-  } catch (error) {
-    console.warn('Error accessing data context:', error);
-  }
+  const addFunder = (funderData) => {
+    alert('Add funder feature coming soon!');
+  };
+  
+  const updateFunder = () => {};
+  const deleteFunder = (id) => {
+    alert('Delete funder feature coming soon!');
+  };
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFunderName, setNewFunderName] = useState('');
