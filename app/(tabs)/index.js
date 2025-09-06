@@ -119,13 +119,13 @@ export default function HomeScreen() {
               const getStatusColor = (status) => {
                 switch (status) {
                   case 'Outstanding':
-                    return isDarkMode ? '#ff6b6b' : '#e74c3c';
+                    return isDarkMode ? '#ff4757' : '#e74c3c';
                   case 'Pending':
-                    return isDarkMode ? '#f39c12' : '#f39c12';
+                    return isDarkMode ? '#ffa502' : '#f39c12';
                   case 'Available':
-                    return isDarkMode ? '#3498db' : '#3498db';
+                    return isDarkMode ? '#3742fa' : '#3498db';
                   case 'Spent':
-                    return isDarkMode ? '#2ecc71' : '#27ae60';
+                    return isDarkMode ? '#2ed573' : '#27ae60';
                   default:
                     return colors.primary;
                 }
@@ -135,13 +135,13 @@ export default function HomeScreen() {
               const getStatusBackgroundColor = (status) => {
                 switch (status) {
                   case 'Outstanding':
-                    return isDarkMode ? 'rgba(255, 107, 107, 0.15)' : 'rgba(231, 76, 60, 0.1)';
+                    return isDarkMode ? 'rgba(255, 71, 87, 0.3)' : 'rgba(231, 76, 60, 0.25)';
                   case 'Pending':
-                    return isDarkMode ? 'rgba(243, 156, 18, 0.15)' : 'rgba(243, 156, 18, 0.1)';
+                    return isDarkMode ? 'rgba(255, 165, 2, 0.3)' : 'rgba(243, 156, 18, 0.25)';
                   case 'Available':
-                    return isDarkMode ? 'rgba(52, 152, 219, 0.15)' : 'rgba(52, 152, 219, 0.1)';
+                    return isDarkMode ? 'rgba(55, 66, 250, 0.3)' : 'rgba(52, 152, 219, 0.25)';
                   case 'Spent':
-                    return isDarkMode ? 'rgba(46, 204, 113, 0.15)' : 'rgba(39, 174, 96, 0.1)';
+                    return isDarkMode ? 'rgba(46, 213, 115, 0.3)' : 'rgba(39, 174, 96, 0.25)';
                   default:
                     return isDarkMode ? 'rgba(255,255,255,0.1)' : '#f8f9fa';
                 }
@@ -158,7 +158,7 @@ export default function HomeScreen() {
                     { 
                       backgroundColor: statusBackgroundColor,
                       borderColor: statusColor,
-                      borderWidth: 2
+                      borderWidth: 3
                     }
                   ]}
                 >
