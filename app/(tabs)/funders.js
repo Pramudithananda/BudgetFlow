@@ -19,6 +19,10 @@ export default function FundersScreen() {
   
   const [refreshing, setRefreshing] = useState(false);
 
+  // Debug funders data
+  console.log('FundersScreen - funders data:', funders);
+  console.log('FundersScreen - funders length:', funders?.length || 0);
+
   // Handle refresh
   const onRefresh = async () => {
     setRefreshing(true);
@@ -94,7 +98,7 @@ export default function FundersScreen() {
       <RNView style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Funders</Text>
         <Text style={[styles.subtitle, { color: colors.text }]}>
-          {funders.length} funders
+          {funders?.length || 0} funders
         </Text>
       </RNView>
 
@@ -113,14 +117,15 @@ export default function FundersScreen() {
         
         {/* Debug Info */}
         <Text style={[styles.debugText, { color: colors.text }]}>
-          Debug: {funders.length} funders loaded
+          Debug: {funders?.length || 0} funders loaded
         </Text>
         
-        {funders.length > 0 ? (
+        {/* Force display of funders */}
+        {funders && funders.length > 0 ? (
           funders.map((funder, index) => {
             console.log(`Rendering funder ${index}:`, funder);
             return (
-              <RNView key={`funder-${funder.id}-${Date.now()}`} style={[styles.funderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <RNView key={`funder-${funder.id}-${index}`} style={[styles.funderItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <RNView style={styles.funderContent}>
                   <RNView style={styles.funderInfo}>
                     <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
