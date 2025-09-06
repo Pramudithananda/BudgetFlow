@@ -1,137 +1,63 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, ScrollView, View as RNView } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
-import { getCategories, getExpenses, listenCategories, listenExpenses } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
 export default function CategoryScreen() {
   const { colors, isDarkMode } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [categories, setCategories] = useState([]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch both categories and expenses
-      const [categoriesData, expensesData] = await Promise.all([
-        getCategories(),
-        getExpenses()
-      ]);
-      
-      // Calculate totals for each category
-      const categoriesWithTotals = categoriesData.map(category => {
-        const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
-        const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-        const expenseCount = categoryExpenses.length;
-        
-        return {
-          ...category,
-          totalAmount,
-          expenseCount
-        };
-      });
-      
-      setCategories(categoriesWithTotals);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      Alert.alert('Error', 'Could not load categories. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-    // Real-time categories
-    const unsubCats = listenCategories((catsLive) => {
-      // When categories change, refetch expenses once (could optimize with expense listener aggregation)
-      getExpenses().then(expensesData => {
-        const categoriesWithTotals = catsLive.map(category => {
-          const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
-          const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-          const expenseCount = categoryExpenses.length;
-          return { ...category, totalAmount, expenseCount };
-        });
-        setCategories(categoriesWithTotals);
-      }).catch(err => console.error('Error updating categories live:', err));
-    });
-    // Real-time expenses (to keep totals current when expense status/amount changes)
-    const unsubExpenses = listenExpenses(null, (expensesLive) => {
-      setCategories(prevCats => prevCats.map(cat => {
-        const categoryExpenses = expensesLive.filter(e => e.categoryId === cat.id);
-        const totalAmount = categoryExpenses.reduce((s,e)=> s + (e.amount || 0), 0);
-        return { ...cat, totalAmount, expenseCount: categoryExpenses.length };
-      }));
-    });
-    return () => {
-      unsubCats && unsubCats();
-      unsubExpenses && unsubExpenses();
-    };
-  }, []);
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  
+  // Static sample data for categories
+  const [categories] = useState([
+    { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
+    { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
+    { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
+    { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
+  ]);
 
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
-      <RNView style={styles.header}>
-        <Text style={styles.title}>Categories</Text>
-        <Button 
-          title="+ Add Category" 
-          onPress={() => router.push('/new-category')}
-          style={styles.addButton}
-        />
-      </RNView>
-
-      {categories.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <RNView style={styles.emptyState}>
-            <FontAwesome5 name="list" size={36} color={colors.text} />
-            <Text style={styles.emptyText}>No categories yet</Text>
-            <Text style={styles.emptySubtext}>
+      <Card style={styles.card}>
+        <RNView style={styles.cardHeader}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Categories</Text>
+          <Button
+            title="Add Category"
+            onPress={() => router.push('/new-category')}
+            style={styles.addButton}
+          />
+        </RNView>
+        
+        {categories.length > 0 ? (
+          categories.map((category) => (
+            <CategoryItem
+              key={category.id}
+              name={category.name}
+              totalAmount={category.totalAmount}
+              totalExpenses={category.expenseCount}
+              onPress={() => router.push(`/category/${category.id}`)}
+            />
+          ))
+        ) : (
+          <RNView style={styles.emptyContainer}>
+            <FontAwesome5 name="list" size={48} color={colors.text} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No categories yet</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.text }]}>
               Add categories to organize your expenses
             </Text>
-            <Button 
-              title="Add Your First Category" 
+            <Button
+              title="Add Your First Category"
               onPress={() => router.push('/new-category')}
-              style={styles.firstButton}
+              style={styles.emptyButton}
             />
           </RNView>
-        </Card>
-      ) : (
-        categories.map((category) => (
-          <CategoryItem
-            key={category.id}
-            name={category.name}
-            totalExpenses={category.expenseCount || 0}
-            totalAmount={category.totalAmount || 0}
-            onPress={() => router.push(`/category/${category.id}`)}
-          />
-        ))
-      )}
+        )}
+      </Card>
     </ScrollView>
   );
 }
@@ -139,47 +65,47 @@ export default function CategoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  card: {
+    marginBottom: 16,
+    padding: 16,
   },
-  header: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    marginBottom: 16,
   },
-  title: {
-    fontSize: 22,
+  cardTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
   },
   addButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  emptyCard: {
-    margin: 16,
-  },
-  emptyState: {
+  emptyContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
+    paddingVertical: 40,
   },
-  emptyText: {
+  emptyIcon: {
+    marginBottom: 16,
+    opacity: 0.5,
+  },
+  emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  emptySubtext: {
+  emptySubtitle: {
     fontSize: 14,
+    opacity: 0.7,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  firstButton: {
-    width: '100%',
+  emptyButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
-}); 
+});
