@@ -26,11 +26,7 @@ export default function NewExpenseScreen() {
     { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
   ];
   
-  const addExpense = (expenseData) => {
-    console.log('Adding expense:', expenseData);
-    Alert.alert('Success', 'Expense added successfully!');
-    router.back();
-  };
+  const { addExpense } = useData();
   const { preSelectedCategory } = useLocalSearchParams();
   
   const [title, setTitle] = useState('');
@@ -41,7 +37,7 @@ export default function NewExpenseScreen() {
   const [assignedTo, setAssignedTo] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter an expense title');
       return;
@@ -58,7 +54,7 @@ export default function NewExpenseScreen() {
     }
 
     try {
-      addExpense({
+      await addExpense({
         title: title.trim(),
         amount: parseFloat(amount),
         description: description.trim(),
@@ -72,6 +68,7 @@ export default function NewExpenseScreen() {
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error) {
+      console.error('Error adding expense:', error);
       Alert.alert('Error', 'Failed to add expense. Please try again.');
     }
   };

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { StyleSheet, ScrollView, View as RNView, StatusBar, TouchableOpacity, Modal } from 'react-native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, View as RNView, StatusBar, TouchableOpacity, Modal, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -13,59 +13,50 @@ import { useData } from '../../context/DataContext';
 
 export default function HomeScreen() {
   const { colors, isDarkMode } = useTheme();
+  const { 
+    categories, 
+    funders, 
+    expenses, 
+    events, 
+    loading, 
+    error, 
+    getBudgetSummary, 
+    getStatusTotals, 
+    getExpensesByCategory,
+    refreshData 
+  } = useData();
   
-  // Use static sample data for now to ensure it works
-  const categories = [
-    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
-    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
-    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
-  ];
-  
-  const expenses = [
-    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
-    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
-    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
-    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
-  ];
-  
-  const events = [
-    { 
-      id: 1, 
-      name: 'Birthday Celebration', 
-      date: '2024-10-01', 
-      category: 'Conference',
-      totalFunding: 100000,
-      receivedFunding: 25000,
-      pendingFunding: 75000,
-      description: 'Annual birthday celebration event',
-      location: 'Colombo'
-    }
-  ];
-  
-  const budgetSummary = {
-    totalBudget: 100000,
-    totalSpent: 100000,
-    totalReceived: 25000,
-    remaining: 0,
-    pending: 75000
-  };
-  
-  const statusTotals = {
-    Pending: 10000,
-    Spent: 60000,
-    Available: 20000,
-    Outstanding: 10000
-  };
-  
-  const getExpensesByCategory = (categoryId) => expenses.filter(exp => exp.categoryId === categoryId);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Get dynamic data from context
+  const budgetSummary = getBudgetSummary();
+  const statusTotals = getStatusTotals();
   
   // Get dynamic data from context
   const recentExpenses = expenses.slice(-4); // Get last 4 expenses
-  
+
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
+
+  // Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshData();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to refresh data');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Show error if any
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-LK', {
@@ -85,6 +76,15 @@ export default function HomeScreen() {
     });
   };
 
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>Loading data...</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <StatusBar
@@ -94,6 +94,14 @@ export default function HomeScreen() {
       />
       <ScrollView 
         style={[styles.container, { backgroundColor: colors.background }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* Budget Summary */}
         <BudgetSummary 
@@ -267,6 +275,14 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     marginVertical: 2,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
   statusGrid: {
     flexDirection: 'row',

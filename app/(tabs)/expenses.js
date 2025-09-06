@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { StyleSheet, ScrollView, View as RNView, TouchableOpacity, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, View as RNView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -7,28 +7,38 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import ExpenseItem from '../../components/ExpenseItem';
 import { useTheme } from '../../context/theme';
+import { useData } from '../../context/DataContext';
 
 export default function ExpensesScreen() {
   const { colors, isDarkMode } = useTheme();
+  const { 
+    expenses, 
+    categories, 
+    loading, 
+    error, 
+    refreshData 
+  } = useData();
   
-  // Static sample data
-  const expenses = [
-    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
-    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
-    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
-    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' },
-    { id: 5, title: 'Venue Rental', amount: 15000, status: 'Spent', categoryId: 1, assignedTo: 'Nirvan', date: '2024-01-19', description: 'Event venue booking' },
-    { id: 6, title: 'Sound System', amount: 8000, status: 'Available', categoryId: 2, assignedTo: 'Welfare', date: '2024-01-20', description: 'Audio equipment rental' }
-  ];
+  const [refreshing, setRefreshing] = useState(false);
 
-  const categories = [
-    { id: 1, name: 'Food & Beverages', color: '#64a12d' },
-    { id: 2, name: 'Decorations', color: '#ff6b6b' },
-    { id: 3, name: 'Transportation', color: '#4ecdc4' },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1' }
-  ];
+  // Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshData();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to refresh data');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-  const getCategoryById = (id) => categories.find(cat => cat.id === id);
+  // Show error if any
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
 
   const handleAddExpense = () => {
     router.push('/new-expense');
@@ -72,8 +82,29 @@ export default function ExpensesScreen() {
     return expenses.filter(expense => expense.status === status);
   };
 
+  const getCategoryById = (id) => categories.find(cat => cat.id === id);
+
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>Loading expenses...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: colors.background }]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+    >
       {/* Header */}
       <RNView style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Expenses</Text>
@@ -294,5 +325,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.7,
     textAlign: 'center',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
 });

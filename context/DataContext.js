@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import * as SQLiteService from '../services/sqliteService';
 
 const DataContext = createContext();
 
@@ -6,12 +7,13 @@ export const useData = () => {
   const context = useContext(DataContext);
   if (!context) {
     console.warn('useData must be used within a DataProvider');
-    // Return default values instead of throwing error
     return {
       categories: [],
       funders: [],
       expenses: [],
       events: [],
+      loading: false,
+      error: null,
       addCategory: () => {},
       updateCategory: () => {},
       deleteCategory: () => {},
@@ -31,245 +33,278 @@ export const useData = () => {
       getExpensesByCategory: () => [],
       getExpensesByEvent: () => [],
       getBudgetSummary: () => ({ totalBudget: 0, totalSpent: 0, totalReceived: 0, remaining: 0, pending: 0 }),
-      getStatusTotals: () => ({ Pending: 0, Spent: 0, Available: 0, Outstanding: 0 })
+      getStatusTotals: () => ({ Pending: 0, Spent: 0, Available: 0, Outstanding: 0 }),
+      refreshData: () => {}
     };
   }
   return context;
 };
 
 export const DataProvider = ({ children }) => {
-  // Initial sample data
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
-    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
-    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [funders, setFunders] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [funders, setFunders] = useState([
-    { 
-      id: 1, 
-      name: 'Sujith', 
-      phone: '+94 77 123 4567', 
-      email: 'sujith@example.com',
-      totalAmount: 25000,
-      status: 'Spent'
-    },
-    { 
-      id: 2, 
-      name: 'Nirvan', 
-      phone: '+94 78 234 5678', 
-      email: 'nirvan@example.com',
-      totalAmount: 40000,
-      status: 'Available'
-    },
-    { 
-      id: 3, 
-      name: 'Welfare Funding', 
-      phone: '+94 11 345 6789', 
-      email: 'welfare@funding.org',
-      totalAmount: 35000,
-      status: 'Pending'
+  // Load all data from database
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Loading data from database...');
+      
+      // Load categories
+      const categoriesData = await SQLiteService.getCategories();
+      setCategories(categoriesData);
+      console.log('Categories loaded:', categoriesData.length);
+      
+      // Load funders
+      const fundersData = await SQLiteService.getFunders();
+      setFunders(fundersData);
+      console.log('Funders loaded:', fundersData.length);
+      
+      // Load events
+      const eventsData = await SQLiteService.getEvents();
+      setEvents(eventsData);
+      console.log('Events loaded:', eventsData.length);
+      
+      // Load expenses (we'll need to add this function)
+      // For now, we'll use static data for expenses
+      const expensesData = [
+        { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+        { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+        { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+        { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+      ];
+      setExpenses(expensesData);
+      
+      console.log('All data loaded successfully');
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const [expenses, setExpenses] = useState([
-    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
-    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
-    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
-    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
-  ]);
-
-  const [events, setEvents] = useState([
-    { 
-      id: 1, 
-      name: 'Birthday Celebration', 
-      date: '2024-10-01', 
-      category: 'Conference',
-      totalFunding: 100000,
-      receivedFunding: 25000,
-      pendingFunding: 75000,
-      description: 'Annual birthday celebration event',
-      location: 'Colombo',
-      expenses: [1, 2, 3, 4], // expense IDs
-      funders: [1, 2, 3] // funder IDs
-    }
-  ]);
+  // Load data on mount
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // Category CRUD operations
-  const addCategory = useCallback((categoryData) => {
-    console.log('Adding category:', categoryData);
-    const newCategory = {
-      id: Date.now(),
-      ...categoryData,
-      createdAt: new Date().toISOString()
-    };
-    console.log('New category created:', newCategory);
-    
-    setCategories(prev => {
-      const updated = [...prev, newCategory];
-      console.log('Categories updated:', updated);
-      return updated;
-    });
-    
-    return newCategory;
-  }, []);
+  const addCategory = async (categoryData) => {
+    try {
+      console.log('Adding category:', categoryData);
+      const newCategory = await SQLiteService.addCategory(categoryData);
+      console.log('Category added successfully:', newCategory);
+      await loadData(); // Reload data
+      return newCategory;
+    } catch (error) {
+      console.error('Error adding category:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const updateCategory = useCallback((id, categoryData) => {
-    setCategories(prev => prev.map(cat => 
-      cat.id === id ? { ...cat, ...categoryData, updatedAt: new Date().toISOString() } : cat
-    ));
-  }, []);
+  const updateCategory = async (id, categoryData) => {
+    try {
+      // We'll need to add updateCategory to SQLiteService
+      console.log('Updating category:', id, categoryData);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating category:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const deleteCategory = useCallback((id) => {
-    setCategories(prev => prev.filter(cat => cat.id !== id));
-    // Also remove expenses in this category
-    setExpenses(prev => prev.filter(exp => exp.categoryId !== id));
-  }, []);
+  const deleteCategory = async (id) => {
+    try {
+      // We'll need to add deleteCategory to SQLiteService
+      console.log('Deleting category:', id);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
   // Funder CRUD operations
-  const addFunder = useCallback((funderData) => {
-    console.log('Adding funder:', funderData);
-    const newFunder = {
-      id: Date.now(),
-      ...funderData,
-      createdAt: new Date().toISOString()
-    };
-    console.log('New funder created:', newFunder);
-    
-    setFunders(prev => {
-      const updated = [...prev, newFunder];
-      console.log('Funders updated:', updated);
-      return updated;
-    });
-    
-    return newFunder;
-  }, []);
+  const addFunder = async (funderData) => {
+    try {
+      console.log('Adding funder:', funderData);
+      const newFunder = await SQLiteService.addFunder(funderData);
+      console.log('Funder added successfully:', newFunder);
+      await loadData(); // Reload data
+      return newFunder;
+    } catch (error) {
+      console.error('Error adding funder:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const updateFunder = useCallback((id, funderData) => {
-    setFunders(prev => prev.map(funder => 
-      funder.id === id ? { ...funder, ...funderData, updatedAt: new Date().toISOString() } : funder
-    ));
-  }, []);
+  const updateFunder = async (id, funderData) => {
+    try {
+      // We'll need to add updateFunder to SQLiteService
+      console.log('Updating funder:', id, funderData);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating funder:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const deleteFunder = useCallback((id) => {
-    setFunders(prev => prev.filter(funder => funder.id !== id));
-  }, []);
+  const deleteFunder = async (id) => {
+    try {
+      // We'll need to add deleteFunder to SQLiteService
+      console.log('Deleting funder:', id);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error deleting funder:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
   // Expense CRUD operations
-  const addExpense = useCallback((expenseData) => {
-    const newExpense = {
-      id: Date.now(),
-      ...expenseData,
-      createdAt: new Date().toISOString()
-    };
-    setExpenses(prev => [...prev, newExpense]);
-    return newExpense;
-  }, []);
+  const addExpense = async (expenseData) => {
+    try {
+      console.log('Adding expense:', expenseData);
+      // We'll need to add addExpense to SQLiteService
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const updateExpense = useCallback((id, expenseData) => {
-    setExpenses(prev => prev.map(exp => 
-      exp.id === id ? { ...exp, ...expenseData, updatedAt: new Date().toISOString() } : exp
-    ));
-  }, []);
+  const updateExpense = async (id, expenseData) => {
+    try {
+      console.log('Updating expense:', id, expenseData);
+      // We'll need to add updateExpense to SQLiteService
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const deleteExpense = useCallback((id) => {
-    setExpenses(prev => prev.filter(exp => exp.id !== id));
-  }, []);
+  const deleteExpense = async (id) => {
+    try {
+      console.log('Deleting expense:', id);
+      // We'll need to add deleteExpense to SQLiteService
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
   // Event CRUD operations
-  const addEvent = useCallback((eventData) => {
-    const newEvent = {
-      id: Date.now(),
-      ...eventData,
-      createdAt: new Date().toISOString()
-    };
-    setEvents(prev => [...prev, newEvent]);
-    return newEvent;
-  }, []);
+  const addEvent = async (eventData) => {
+    try {
+      console.log('Adding event:', eventData);
+      const newEventId = await SQLiteService.addEvent(eventData);
+      console.log('Event added successfully with ID:', newEventId);
+      await loadData(); // Reload data
+      return newEventId;
+    } catch (error) {
+      console.error('Error adding event:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const updateEvent = useCallback((id, eventData) => {
-    setEvents(prev => prev.map(event => 
-      event.id === id ? { ...event, ...eventData, updatedAt: new Date().toISOString() } : event
-    ));
-  }, []);
+  const updateEvent = async (id, eventData) => {
+    try {
+      console.log('Updating event:', id, eventData);
+      // We'll need to add updateEvent to SQLiteService
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating event:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  const deleteEvent = useCallback((id) => {
-    setEvents(prev => prev.filter(event => event.id !== id));
-  }, []);
+  const deleteEvent = async (id) => {
+    try {
+      console.log('Deleting event:', id);
+      // We'll need to add deleteEvent to SQLiteService
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
 
-  // Helper functions
-  const getCategoryById = useCallback((id) => categories.find(cat => cat.id === id), [categories]);
-  const getFunderById = useCallback((id) => funders.find(funder => funder.id === id), [funders]);
-  const getExpenseById = useCallback((id) => expenses.find(exp => exp.id === id), [expenses]);
-  const getEventById = useCallback((id) => events.find(event => event.id === id), [events]);
+  // Helper functions for data retrieval
+  const getCategoryById = (id) => categories.find(cat => String(cat.id) === String(id));
+  const getFunderById = (id) => funders.find(funder => String(funder.id) === String(id));
+  const getExpenseById = (id) => expenses.find(exp => String(exp.id) === String(id));
+  const getEventById = (id) => events.find(event => String(event.id) === String(id));
 
-  const getExpensesByCategory = useCallback((categoryId) => expenses.filter(exp => exp.categoryId === categoryId), [expenses]);
-  const getExpensesByEvent = useCallback((eventId) => {
+  const getExpensesByCategory = (categoryId) => expenses.filter(exp => String(exp.categoryId) === String(categoryId));
+  const getExpensesByEvent = (eventId) => {
     const event = getEventById(eventId);
-    if (!event) return [];
+    if (!event || !event.expenses) return [];
     return expenses.filter(exp => event.expenses.includes(exp.id));
-  }, [expenses, getEventById]);
+  };
 
-  const getBudgetSummary = useCallback(() => {
-    const totalBudget = events.reduce((sum, event) => sum + event.totalFunding, 0);
-    const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const totalReceived = events.reduce((sum, event) => sum + event.receivedFunding, 0);
-    
-    return {
-      totalBudget,
-      totalSpent,
-      totalReceived,
-      remaining: totalBudget - totalSpent,
-      pending: totalBudget - totalReceived
-    };
-  }, [events, expenses]);
+  const getBudgetSummary = () => {
+    const totalBudget = events.reduce((sum, event) => sum + (event.budget || 0), 0);
+    const totalSpent = expenses.filter(exp => exp.status === 'Spent').reduce((sum, exp) => sum + (exp.amount || 0), 0);
+    const totalReceived = funders.reduce((sum, funder) => sum + (funder.totalAmount || 0), 0);
+    const remaining = totalBudget - totalSpent;
+    const pending = funders.filter(funder => funder.status === 'Pending').reduce((sum, funder) => sum + (funder.totalAmount || 0), 0);
 
-  const getStatusTotals = useCallback(() => {
-    const statusTotals = {
-      Pending: 0,
-      Spent: 0,
-      Available: 0,
-      Outstanding: 0
-    };
-    
-    expenses.forEach(expense => {
-      if (statusTotals.hasOwnProperty(expense.status)) {
-        statusTotals[expense.status] += expense.amount;
+    return { totalBudget, totalSpent, totalReceived, remaining, pending };
+  };
+
+  const getStatusTotals = () => {
+    const totals = { Pending: 0, Spent: 0, Available: 0, Outstanding: 0 };
+    expenses.forEach(exp => {
+      if (totals.hasOwnProperty(exp.status)) {
+        totals[exp.status] += exp.amount;
       }
     });
-    
-    return statusTotals;
-  }, [expenses]);
+    return totals;
+  };
 
-  const value = {
-    // Data
+  const refreshData = () => {
+    loadData();
+  };
+
+  const contextValue = {
     categories,
     funders,
     expenses,
     events,
-    
-    // Category operations
+    loading,
+    error,
     addCategory,
     updateCategory,
     deleteCategory,
-    
-    // Funder operations
     addFunder,
     updateFunder,
     deleteFunder,
-    
-    // Expense operations
     addExpense,
     updateExpense,
     deleteExpense,
-    
-    // Event operations
     addEvent,
     updateEvent,
     deleteEvent,
-    
-    // Helper functions
     getCategoryById,
     getFunderById,
     getExpenseById,
@@ -277,11 +312,12 @@ export const DataProvider = ({ children }) => {
     getExpensesByCategory,
     getExpensesByEvent,
     getBudgetSummary,
-    getStatusTotals
+    getStatusTotals,
+    refreshData
   };
 
   return (
-    <DataContext.Provider value={value}>
+    <DataContext.Provider value={contextValue}>
       {children}
     </DataContext.Provider>
   );

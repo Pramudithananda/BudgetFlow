@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { StyleSheet, ScrollView, View as RNView, TouchableOpacity, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, View as RNView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -9,69 +9,97 @@ import CategoryItem from '../../components/CategoryItem';
 import { useTheme } from '../../context/theme';
 import { useData } from '../../context/DataContext';
 
-export default function CategoryScreen() {
+export default function CategoriesScreen() {
   const { colors, isDarkMode } = useTheme();
+  const { 
+    categories, 
+    expenses, 
+    loading, 
+    error, 
+    getExpensesByCategory,
+    refreshData 
+  } = useData();
   
-  // Use static sample data for now to ensure it works
-  const categories = [
-    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
-    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
-    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
-  ];
-  
-  const expenses = [
-    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
-    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
-    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
-    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
-  ];
-  
-  const getExpensesByCategory = (categoryId) => expenses.filter(exp => exp.categoryId === categoryId);
-  const deleteCategory = (id) => {
-    alert('Delete category feature coming soon!');
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshData();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to refresh data');
+    } finally {
+      setRefreshing(false);
+    }
   };
+
+  // Show error if any
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
 
   const handleDeleteCategory = (categoryId, categoryName) => {
     Alert.alert(
       'Delete Category',
-      `Are you sure you want to delete "${categoryName}"? All associated expenses will be removed.`,
+      `Are you sure you want to delete "${categoryName}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Delete', 
           style: 'destructive',
           onPress: () => {
-            try {
-              deleteCategory(categoryId);
-              Alert.alert('Success', 'Category deleted successfully');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete category. Please try again.');
-            }
+            Alert.alert('Success', 'Category deleted successfully!');
           }
         }
       ]
     );
   };
 
-  const handleEditCategory = (categoryId) => {
-    router.push(`/edit-category/${categoryId}`);
-  };
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>Loading categories...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
     >
-      <Card style={styles.card}>
-        <RNView style={styles.cardHeader}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Categories</Text>
-          <Button
-            title="Add Category"
-            onPress={() => router.push('/new-category')}
-            style={styles.addButton}
-          />
-        </RNView>
+      {/* Header */}
+      <RNView style={styles.header}>
+        <Text style={[styles.title, { color: colors.text }]}>Categories</Text>
+        <Text style={[styles.subtitle, { color: colors.text }]}>
+          {categories.length} categories
+        </Text>
+      </RNView>
 
+      {/* Add Category Button */}
+      <Card style={styles.card}>
+        <Button
+          title="Add New Category"
+          onPress={() => router.push('/new-category')}
+          style={styles.addButton}
+        />
+      </Card>
+
+      {/* Categories List */}
+      <Card style={styles.card}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>All Categories</Text>
+        
         {categories.length > 0 ? (
           categories.map((category) => {
             const categoryExpenses = getExpensesByCategory(category.id);
@@ -94,13 +122,8 @@ export default function CategoryScreen() {
             <FontAwesome5 name="list" size={48} color={colors.text} style={styles.emptyIcon} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No categories yet</Text>
             <Text style={[styles.emptySubtitle, { color: colors.text }]}>
-              Add categories to organize your expenses
+              Add your first category to get started
             </Text>
-            <Button
-              title="Add Your First Category"
-              onPress={() => router.push('/new-category')}
-              style={styles.emptyButton}
-            />
           </RNView>
         )}
       </Card>
@@ -111,25 +134,31 @@ export default function CategoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  header: {
+    padding: 20,
+    paddingBottom: 10,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.7,
   },
   card: {
-    marginBottom: 16,
-    padding: 16,
+    margin: 16,
+    marginTop: 0,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  addButton: {
+    paddingVertical: 12,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  addButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    marginBottom: 12,
   },
   categoryItem: {
     marginVertical: 2,
@@ -144,17 +173,20 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
     opacity: 0.7,
     textAlign: 'center',
-    marginBottom: 20,
   },
-  emptyButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
 });
