@@ -6,37 +6,11 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { useTheme } from '../../context/theme';
+import { useData } from '../../context/DataContext';
 
 export default function FundersScreen() {
   const { colors, isDarkMode } = useTheme();
-  
-  // Static sample data for funders
-  const [funders] = useState([
-    { 
-      id: 1, 
-      name: 'Sujith', 
-      phone: '+94 77 123 4567', 
-      email: 'sujith@example.com',
-      totalAmount: 25000,
-      status: 'Spent'
-    },
-    { 
-      id: 2, 
-      name: 'Nirvan', 
-      phone: '+94 78 234 5678', 
-      email: 'nirvan@example.com',
-      totalAmount: 40000,
-      status: 'Available'
-    },
-    { 
-      id: 3, 
-      name: 'Welfare Funding', 
-      phone: '+94 11 345 6789', 
-      email: 'welfare@funding.org',
-      totalAmount: 35000,
-      status: 'Pending'
-    }
-  ]);
+  const { funders, addFunder, updateFunder, deleteFunder } = useData();
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFunderName, setNewFunderName] = useState('');
@@ -49,11 +23,45 @@ export default function FundersScreen() {
       return;
     }
     
-    Alert.alert('Info', 'Add Funder feature coming soon!');
-    setNewFunderName('');
-    setNewFunderPhone('');
-    setNewFunderEmail('');
-    setShowAddForm(false);
+    try {
+      addFunder({
+        name: newFunderName.trim(),
+        phone: newFunderPhone.trim(),
+        email: newFunderEmail.trim(),
+        totalAmount: 0,
+        status: 'Pending'
+      });
+      
+      Alert.alert('Success', 'Funder added successfully!');
+      setNewFunderName('');
+      setNewFunderPhone('');
+      setNewFunderEmail('');
+      setShowAddForm(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add funder. Please try again.');
+    }
+  };
+
+  const handleDeleteFunder = (funderId, funderName) => {
+    Alert.alert(
+      'Delete Funder',
+      `Are you sure you want to delete "${funderName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            try {
+              deleteFunder(funderId);
+              Alert.alert('Success', 'Funder deleted successfully');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete funder. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const getStatusColor = (status) => {
@@ -146,41 +154,48 @@ export default function FundersScreen() {
         {/* Funders List */}
         {funders.length > 0 ? (
           funders.map((funder) => (
-            <TouchableOpacity
-              key={funder.id}
-              style={[styles.funderItem, { 
-                backgroundColor: colors.card, 
-                borderColor: colors.border 
-              }]}
-            >
-              <RNView style={styles.funderHeader}>
-                <RNView style={styles.funderInfo}>
-                  <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
-                  <Text style={[styles.funderAmount, { color: colors.text }]}>
-                    Rs. {funder.totalAmount.toLocaleString()}
-                  </Text>
+            <RNView key={funder.id} style={styles.funderContainer}>
+              <TouchableOpacity
+                style={[styles.funderItem, { 
+                  backgroundColor: colors.card, 
+                  borderColor: colors.border 
+                }]}
+              >
+                <RNView style={styles.funderHeader}>
+                  <RNView style={styles.funderInfo}>
+                    <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
+                    <Text style={[styles.funderAmount, { color: colors.text }]}>
+                      Rs. {funder.totalAmount.toLocaleString()}
+                    </Text>
+                  </RNView>
+                  <RNView style={[styles.statusBadge, { backgroundColor: getStatusColor(funder.status) + '20' }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(funder.status) }]}>
+                      {funder.status}
+                    </Text>
+                  </RNView>
                 </RNView>
-                <RNView style={[styles.statusBadge, { backgroundColor: getStatusColor(funder.status) + '20' }]}>
-                  <Text style={[styles.statusText, { color: getStatusColor(funder.status) }]}>
-                    {funder.status}
-                  </Text>
-                </RNView>
-              </RNView>
-              
-              {funder.phone && (
-                <RNView style={styles.contactInfo}>
-                  <FontAwesome5 name="phone" size={12} color={colors.text} style={styles.contactIcon} />
-                  <Text style={[styles.contactText, { color: colors.text }]}>{funder.phone}</Text>
-                </RNView>
-              )}
-              
-              {funder.email && (
-                <RNView style={styles.contactInfo}>
-                  <FontAwesome5 name="envelope" size={12} color={colors.text} style={styles.contactIcon} />
-                  <Text style={[styles.contactText, { color: colors.text }]}>{funder.email}</Text>
-                </RNView>
-              )}
-            </TouchableOpacity>
+                
+                {funder.phone && (
+                  <RNView style={styles.contactInfo}>
+                    <FontAwesome5 name="phone" size={12} color={colors.text} style={styles.contactIcon} />
+                    <Text style={[styles.contactText, { color: colors.text }]}>{funder.phone}</Text>
+                  </RNView>
+                )}
+                
+                {funder.email && (
+                  <RNView style={styles.contactInfo}>
+                    <FontAwesome5 name="envelope" size={12} color={colors.text} style={styles.contactIcon} />
+                    <Text style={[styles.contactText, { color: colors.text }]}>{funder.email}</Text>
+                  </RNView>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.deleteButton, { backgroundColor: '#e74c3c' }]}
+                onPress={() => handleDeleteFunder(funder.id, funder.name)}
+              >
+                <FontAwesome5 name="trash" size={16} color="#fff" />
+              </TouchableOpacity>
+            </RNView>
           ))
         ) : (
           <RNView style={styles.emptyContainer}>
@@ -252,11 +267,24 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: '#6c757d',
   },
-  funderItem: {
-    padding: 16,
+  funderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  funderItem: {
+    flex: 1,
+    padding: 16,
     borderRadius: 8,
     borderWidth: 1,
+    marginRight: 10,
+  },
+  deleteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   funderHeader: {
     flexDirection: 'row',

@@ -1,56 +1,35 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, Alert, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, View as RNView, Alert, TextInput, TouchableOpacity } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { getCategories, getFunders, addExpense } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
+import { useData } from '../../context/DataContext';
+
+const STATUS_OPTIONS = ['Pending', 'Spent', 'Available', 'Outstanding'];
 
 export default function NewExpenseScreen() {
   const { colors, isDarkMode } = useTheme();
+  const { addExpense, categories, funders } = useData();
   const { preSelectedCategory } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [funders, setFunders] = useState([]);
+  
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(preSelectedCategory || '');
-  const [selectedFunder, setSelectedFunder] = useState('');
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const [showFunderPicker, setShowFunderPicker] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(preSelectedCategory || null);
+  const [selectedStatus, setSelectedStatus] = useState('Pending');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [categoriesData, fundersData] = await Promise.all([
-        getCategories(),
-        getFunders()
-      ]);
-      setCategories(categoriesData);
-      setFunders(fundersData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Could not load data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter an expense title');
       return;
     }
 
-    if (!amount.trim() || isNaN(Number(amount))) {
+    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
@@ -61,247 +40,246 @@ export default function NewExpenseScreen() {
     }
 
     try {
-      setSaving(true);
-      await addExpense({
+      addExpense({
         title: title.trim(),
-        amount: Number(amount),
+        amount: parseFloat(amount),
         description: description.trim(),
-        categoryId: selectedCategory,
-        funderId: selectedFunder || null,
-        eventId: null, // No specific event for general expenses
-        date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD format
-        status: 'Outstanding',
+        categoryId: parseInt(selectedCategory),
+        status: selectedStatus,
+        assignedTo: assignedTo.trim(),
+        date: date
       });
       
-      Alert.alert('Success', 'Expense added successfully');
-      router.back();
+      Alert.alert('Success', 'Expense added successfully!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (error) {
-      console.error('Error adding expense:', error);
-      Alert.alert('Error', 'Could not add expense. Please try again.');
-    } finally {
-      setSaving(false);
+      Alert.alert('Error', 'Failed to add expense. Please try again.');
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5',
+    },
+    header: {
+      padding: 20,
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+      borderBottomWidth: 1,
+      borderBottomColor: isDarkMode ? '#333' : '#e0e0e0',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      marginRight: 15,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#333',
+    },
+    content: {
+      padding: 20,
+    },
+    formCard: {
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+      padding: 20,
+      borderRadius: 12,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    formTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#333',
+      marginBottom: 20,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: isDarkMode ? '#444' : '#ddd',
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+      fontSize: 16,
+      backgroundColor: isDarkMode ? '#333' : '#fff',
+      color: isDarkMode ? '#fff' : '#333',
+    },
+    section: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#333',
+      marginBottom: 12,
+    },
+    optionGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    optionButton: {
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: isDarkMode ? '#444' : '#ddd',
+      backgroundColor: isDarkMode ? '#333' : '#fff',
+      minWidth: '48%',
+      alignItems: 'center',
+    },
+    selectedOption: {
+      backgroundColor: '#64a12d',
+      borderColor: '#64a12d',
+    },
+    optionText: {
+      fontSize: 14,
+      color: isDarkMode ? '#fff' : '#333',
+    },
+    selectedOptionText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 20,
+    },
+    button: {
+      flex: 1,
+      marginHorizontal: 8,
+    },
+    cancelButton: {
+      backgroundColor: '#6c757d',
+    },
+  });
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.formContainer}>
-        <Text style={styles.label}>Title</Text>
-        <TextInput
-          style={[styles.input, { 
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            color: colors.text,
-          }]}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Enter expense title"
-          placeholderTextColor={colors.text}
-        />
-
-        <Text style={styles.label}>Amount</Text>
-        <TextInput
-          style={[styles.input, { 
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            color: colors.text,
-          }]}
-          value={amount}
-          onChangeText={setAmount}
-          placeholder="Enter amount"
-          placeholderTextColor={colors.text}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Description (Optional)</Text>
-        <TextInput
-          style={[styles.input, styles.textArea, { 
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            color: colors.text,
-          }]}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Enter expense description"
-          placeholderTextColor={colors.text}
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-
-        <Text style={styles.label}>Category</Text>
-        <TouchableOpacity
-          style={[styles.pickerButton, { 
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-          }]}
-          onPress={() => setShowCategoryPicker(true)}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <Text style={[styles.pickerButtonText, { color: colors.text }]}>
-            {selectedCategory
-              ? categories.find(cat => cat.id === selectedCategory)?.name
-              : 'Select a category'}
-          </Text>
-          <FontAwesome5 name="chevron-down" size={14} color={colors.text} />
+          <FontAwesome5 name="arrow-left" size={20} color={isDarkMode ? '#fff' : '#333'} />
         </TouchableOpacity>
-
-        <Text style={styles.label}>Assigned To (Optional)</Text>
-        <TouchableOpacity
-          style={[styles.pickerButton, { 
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-          }]}
-          onPress={() => setShowFunderPicker(true)}
-        >
-          <Text style={[styles.pickerButtonText, { color: colors.text }]}>
-            {selectedFunder
-              ? funders.find(f => f.id === selectedFunder)?.name
-              : 'Select a funder'}
-          </Text>
-          <FontAwesome5 name="chevron-down" size={14} color={colors.text} />
-        </TouchableOpacity>
-
-        <Button
-          title={saving ? 'Saving...' : 'Save Expense'}
-          onPress={handleSave}
-          disabled={saving}
-          style={styles.submitButton}
-        />
+        <Text style={styles.headerTitle}>Add New Expense</Text>
       </View>
 
-      {showCategoryPicker && (
-        <View style={[styles.pickerOverlay, { backgroundColor: colors.overlay }]}>
-          <Card style={styles.pickerCard}>
-            <Text style={styles.pickerTitle}>Select Category</Text>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[styles.pickerItem, { borderBottomColor: colors.border }]}
-                onPress={() => {
-                  setSelectedCategory(category.id);
-                  setShowCategoryPicker(false);
-                }}
-              >
-                <Text style={[styles.pickerItemText, { color: colors.text }]}>{category.name}</Text>
-              </TouchableOpacity>
-            ))}
-            <Button
-              title="Cancel"
-              onPress={() => setShowCategoryPicker(false)}
-              variant="outline"
-              style={styles.pickerCancelButton}
-            />
-          </Card>
-        </View>
-      )}
+      <ScrollView style={styles.content}>
+        <Card style={styles.formCard}>
+          <Text style={styles.formTitle}>Expense Details</Text>
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Expense Title"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
+            value={title}
+            onChangeText={setTitle}
+            maxLength={100}
+          />
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Amount (Rs.)"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
+            value={amount}
+            onChangeText={setAmount}
+            keyboardType="numeric"
+          />
+          
+          <TextInput
+            style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+            placeholder="Description (Optional)"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            maxLength={200}
+          />
 
-      {showFunderPicker && (
-        <View style={[styles.pickerOverlay, { backgroundColor: colors.overlay }]}>
-          <Card style={styles.pickerCard}>
-            <Text style={styles.pickerTitle}>Select Funder</Text>
-            {funders.map((funder) => (
-              <TouchableOpacity
-                key={funder.id}
-                style={[styles.pickerItem, { borderBottomColor: colors.border }]}
-                onPress={() => {
-                  setSelectedFunder(funder.id);
-                  setShowFunderPicker(false);
-                }}
-              >
-                <Text style={[styles.pickerItemText, { color: colors.text }]}>{funder.name}</Text>
-              </TouchableOpacity>
-            ))}
+          <TextInput
+            style={styles.input}
+            placeholder="Assigned To (Optional)"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
+            value={assignedTo}
+            onChangeText={setAssignedTo}
+            maxLength={50}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Date"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
+            value={date}
+            onChangeText={setDate}
+          />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Category</Text>
+            <View style={styles.optionGrid}>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.optionButton,
+                    selectedCategory === category.id.toString() && styles.selectedOption
+                  ]}
+                  onPress={() => setSelectedCategory(category.id.toString())}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    selectedCategory === category.id.toString() && styles.selectedOptionText
+                  ]}>
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Status</Text>
+            <View style={styles.optionGrid}>
+              {STATUS_OPTIONS.map((status) => (
+                <TouchableOpacity
+                  key={status}
+                  style={[
+                    styles.optionButton,
+                    selectedStatus === status && styles.selectedOption
+                  ]}
+                  onPress={() => setSelectedStatus(status)}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    selectedStatus === status && styles.selectedOptionText
+                  ]}>
+                    {status}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.buttonRow}>
             <Button
               title="Cancel"
-              onPress={() => setShowFunderPicker(false)}
-              variant="outline"
-              style={styles.pickerCancelButton}
+              onPress={() => router.back()}
+              style={[styles.button, styles.cancelButton]}
             />
-          </Card>
-        </View>
-      )}
-    </ScrollView>
+            <Button
+              title="Save Expense"
+              onPress={handleSave}
+              style={styles.button}
+            />
+          </View>
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  formContainer: {
-    padding: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  textArea: {
-    height: 100,
-    paddingTop: 12,
-  },
-  pickerButton: {
-    borderRadius: 8,
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  pickerButtonText: {
-    fontSize: 16,
-  },
-  submitButton: {
-    marginTop: 8,
-  },
-  pickerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pickerCard: {
-    width: '80%',
-    maxHeight: '80%',
-  },
-  pickerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  pickerItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  pickerItemText: {
-    fontSize: 16,
-  },
-  pickerCancelButton: {
-    marginTop: 16,
-  },
-}); 

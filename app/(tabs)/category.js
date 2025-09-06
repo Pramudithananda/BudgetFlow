@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, ScrollView, View as RNView } from 'react-native';
+import { StyleSheet, ScrollView, View as RNView, TouchableOpacity, Alert } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -7,17 +7,37 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
 import { useTheme } from '../../context/theme';
+import { useData } from '../../context/DataContext';
 
 export default function CategoryScreen() {
   const { colors, isDarkMode } = useTheme();
-  
-  // Static sample data for categories
-  const [categories] = useState([
-    { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
-    { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
-    { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
-  ]);
+  const { categories, deleteCategory, getExpensesByCategory } = useData();
+
+  const handleDeleteCategory = (categoryId, categoryName) => {
+    Alert.alert(
+      'Delete Category',
+      `Are you sure you want to delete "${categoryName}"? All associated expenses will be removed.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            try {
+              deleteCategory(categoryId);
+              Alert.alert('Success', 'Category deleted successfully');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete category. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleEditCategory = (categoryId) => {
+    router.push(`/edit-category/${categoryId}`);
+  };
 
   return (
     <ScrollView 
@@ -32,17 +52,37 @@ export default function CategoryScreen() {
             style={styles.addButton}
           />
         </RNView>
-        
+
         {categories.length > 0 ? (
-          categories.map((category) => (
-            <CategoryItem
-              key={category.id}
-              name={category.name}
-              totalAmount={category.totalAmount}
-              totalExpenses={category.expenseCount}
-              onPress={() => router.push(`/category/${category.id}`)}
-            />
-          ))
+          categories.map((category) => {
+            const categoryExpenses = getExpensesByCategory(category.id);
+            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            
+            return (
+              <RNView key={category.id} style={styles.categoryContainer}>
+                <CategoryItem
+                  name={category.name}
+                  totalAmount={totalAmount}
+                  totalExpenses={categoryExpenses.length}
+                  onPress={() => router.push(`/category/${category.id}`)}
+                />
+                <RNView style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#64a12d' }]}
+                    onPress={() => handleEditCategory(category.id)}
+                  >
+                    <FontAwesome5 name="edit" size={16} color="#fff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#e74c3c' }]}
+                    onPress={() => handleDeleteCategory(category.id, category.name)}
+                  >
+                    <FontAwesome5 name="trash" size={16} color="#fff" />
+                  </TouchableOpacity>
+                </RNView>
+              </RNView>
+            );
+          })
         ) : (
           <RNView style={styles.emptyContainer}>
             <FontAwesome5 name="list" size={48} color={colors.text} style={styles.emptyIcon} />
@@ -84,6 +124,23 @@ const styles = StyleSheet.create({
   addButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    marginLeft: 10,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   emptyContainer: {
     alignItems: 'center',

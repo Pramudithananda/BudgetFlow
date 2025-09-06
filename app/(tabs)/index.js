@@ -9,66 +9,40 @@ import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
 import ExpenseItem from '../../components/ExpenseItem';
 import { useTheme } from '../../context/theme';
+import { useData } from '../../context/DataContext';
 
 export default function HomeScreen() {
   const { colors, isDarkMode } = useTheme();
+  const { 
+    categories, 
+    expenses, 
+    events, 
+    getBudgetSummary, 
+    getStatusTotals,
+    getExpensesByCategory 
+  } = useData();
   
-  // Sample data for Birthday Celebration
-  const [budgetSummary] = useState({
-    totalBudget: 100000,
-    receivedFund: 25000,
-  });
-  
-  const [statusTotals] = useState({
-    Pending: 35000,    // Welfare Funding
-    Spent: 25000,      // Sujith
-    Available: 40000,  // Nirvan
-    Outstanding: 0,
-  });
-  
-  const [categories] = useState([
-    { id: 1, name: 'Food & Beverages', color: '#64a12d', totalAmount: 60000, expenseCount: 1 },
-    { id: 2, name: 'Decorations', color: '#ff6b6b', totalAmount: 20000, expenseCount: 1 },
-    { id: 3, name: 'Transportation', color: '#4ecdc4', totalAmount: 10000, expenseCount: 1 },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1', totalAmount: 10000, expenseCount: 1 }
-  ]);
-  
-  const [recentExpenses] = useState([
-    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, date: '2024-01-15' },
-    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, date: '2024-01-16' },
-    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, date: '2024-01-17' },
-    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, date: '2024-01-18' }
-  ]);
-  
-  const [events] = useState([
-    { 
-      id: 1, 
-      name: 'Birthday Celebration', 
-      date: '2024-10-01', 
-      category: 'Conference', 
-      totalFunding: 100000, 
-      receivedFunding: 25000, 
-      pendingFunding: 75000,
-      funders: [
-        { name: 'Sujith', amount: 25000, status: 'Spent' },
-        { name: 'Nirvan', amount: 40000, status: 'Available' },
-        { name: 'Welfare Funding', amount: 35000, status: 'Pending' }
-      ]
-    }
-  ]);
+  // Get dynamic data from context
+  const budgetSummary = getBudgetSummary();
+  const statusTotals = getStatusTotals();
+  const recentExpenses = expenses.slice(-4); // Get last 4 expenses
   
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
 
-  const handleEventSelect = (event) => {
-    setSelectedEvent(event);
-    setShowEventModal(true);
-    setShowEventDropdown(false);
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-LK', {
+      style: 'currency',
+      currency: 'LKR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -88,90 +62,83 @@ export default function HomeScreen() {
         {/* Budget Summary */}
         <BudgetSummary 
           totalBudget={budgetSummary.totalBudget}
-          receivedFund={budgetSummary.receivedFund}
+          receivedFund={budgetSummary.totalReceived}
+          spent={statusTotals.Spent}
         />
 
-        {/* Funding Status Summary */}
+        {/* Funding Status */}
         <Card style={styles.card}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Funding Status</Text>
+          <Text style={styles.cardTitle}>Funding Status</Text>
           <RNView style={styles.statusGrid}>
-            <RNView style={styles.statusItem}>
-              <Text style={[styles.statusLabel, { color: colors.text }]}>Pending</Text>
-              <Text style={[styles.statusAmount, { color: '#ff6b6b' }]}>Rs. {statusTotals.Pending.toLocaleString()}</Text>
-            </RNView>
-            <RNView style={styles.statusItem}>
-              <Text style={[styles.statusLabel, { color: colors.text }]}>Spent</Text>
-              <Text style={[styles.statusAmount, { color: '#ff4757' }]}>Rs. {statusTotals.Spent.toLocaleString()}</Text>
-            </RNView>
-            <RNView style={styles.statusItem}>
-              <Text style={[styles.statusLabel, { color: colors.text }]}>Available</Text>
-              <Text style={[styles.statusAmount, { color: '#2ed573' }]}>Rs. {statusTotals.Available.toLocaleString()}</Text>
-            </RNView>
-            <RNView style={styles.statusItem}>
-              <Text style={[styles.statusLabel, { color: colors.text }]}>Outstanding</Text>
-              <Text style={[styles.statusAmount, { color: '#ffa502' }]}>Rs. {statusTotals.Outstanding.toLocaleString()}</Text>
-            </RNView>
+            {Object.entries(statusTotals).map(([status, amount]) => (
+              <RNView key={status} style={styles.statusItem}>
+                <Text style={styles.statusLabel}>{status}</Text>
+                <Text style={styles.statusValue}>Rs. {amount.toLocaleString()}</Text>
+              </RNView>
+            ))}
           </RNView>
         </Card>
 
-        {/* Event Selection */}
+        {/* Events Section */}
         <Card style={styles.card}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Select Event</Text>
-          <TouchableOpacity 
-            style={[styles.dropdownButton, { borderColor: colors.border }]}
-            onPress={() => setShowEventDropdown(!showEventDropdown)}
-          >
-            <Text style={[styles.dropdownText, { color: colors.text }]}>
-              {selectedEvent ? selectedEvent.name : 'Select an event'}
-            </Text>
-            <FontAwesome5 
-              name={showEventDropdown ? 'chevron-up' : 'chevron-down'} 
-              size={16} 
-              color={colors.text} 
-            />
-          </TouchableOpacity>
-          
+          <RNView style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Events</Text>
+            <TouchableOpacity onPress={() => setShowEventDropdown(!showEventDropdown)} style={styles.dropdownButton}>
+              <Text style={styles.dropdownButtonText}>{selectedEvent ? selectedEvent.name : 'Select Event'}</Text>
+              <FontAwesome5 name={showEventDropdown ? "chevron-up" : "chevron-down"} size={14} color={colors.text} />
+            </TouchableOpacity>
+          </RNView>
           {showEventDropdown && (
-            <RNView style={[styles.dropdown, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <RNView style={[styles.dropdownContainer, { backgroundColor: colors.card }]}>
               {events.map((event) => (
-                <TouchableOpacity
-                  key={event.id}
-                  style={[styles.dropdownItem, { borderBottomColor: colors.border }]}
-                  onPress={() => handleEventSelect(event)}
+                <TouchableOpacity 
+                  key={event.id} 
+                  style={styles.dropdownItem} 
+                  onPress={() => {
+                    setSelectedEvent(event);
+                    setShowEventDropdown(false);
+                    setShowEventModal(true);
+                  }}
                 >
-                  <Text style={[styles.dropdownItemText, { color: colors.text }]}>{event.name}</Text>
-                  <Text style={[styles.dropdownItemDate, { color: colors.text }]}>{formatDate(event.date)}</Text>
+                  <Text style={styles.dropdownItemText}>{event.name}</Text>
                 </TouchableOpacity>
               ))}
             </RNView>
           )}
+          {!selectedEvent && (
+            <Text style={styles.noDataText}>Select an event to view details.</Text>
+          )}
         </Card>
 
-        {/* Categories */}
+        {/* Categories Section */}
         <Card style={styles.card}>
           <RNView style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Categories</Text>
+            <Text style={styles.cardTitle}>Categories</Text>
             <Button
               title="Add Category"
               onPress={() => router.push('/new-category')}
               style={styles.addButton}
             />
           </RNView>
-          {categories.map((category) => (
-            <CategoryItem
-              key={category.id}
-              name={category.name}
-              totalAmount={category.totalAmount}
-              totalExpenses={category.expenseCount}
-              onPress={() => router.push(`/category/${category.id}`)}
-            />
-          ))}
+          {categories.map((category) => {
+            const categoryExpenses = getExpensesByCategory(category.id);
+            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            return (
+              <CategoryItem
+                key={category.id}
+                name={category.name}
+                totalAmount={totalAmount}
+                totalExpenses={categoryExpenses.length}
+                onPress={() => router.push(`/category/${category.id}`)}
+              />
+            );
+          })}
         </Card>
 
         {/* Recent Expenses */}
         <Card style={styles.card}>
           <RNView style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Recent Expenses</Text>
+            <Text style={styles.cardTitle}>Recent Expenses</Text>
             <Button
               title="Add Expense"
               onPress={() => router.push('/new-expense')}
@@ -185,7 +152,7 @@ export default function HomeScreen() {
               amount={expense.amount}
               status={expense.status}
               assignedTo={expense.assignedTo}
-              onPress={() => {}}
+              onPress={() => router.push(`/expense/${expense.id}`)}
             />
           ))}
         </Card>
@@ -193,56 +160,45 @@ export default function HomeScreen() {
 
       {/* Event Details Modal */}
       <Modal
-        visible={showEventModal}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent={true}
+        visible={showEventModal}
+        onRequestClose={() => setShowEventModal(false)}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <RNView style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Event Details</Text>
-            <TouchableOpacity onPress={() => setShowEventModal(false)}>
-              <FontAwesome5 name="times" size={24} color={colors.text} />
-            </TouchableOpacity>
-          </RNView>
-          
-          {selectedEvent && (
-            <ScrollView style={styles.modalContent}>
-              <Text style={[styles.eventName, { color: colors.text }]}>{selectedEvent.name}</Text>
-              <Text style={[styles.eventDate, { color: colors.text }]}>{formatDate(selectedEvent.date)}</Text>
-              <Text style={[styles.eventCategory, { color: colors.text }]}>Category: {selectedEvent.category}</Text>
-              
-              <Card style={styles.modalCard}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Funding Summary</Text>
-                <RNView style={styles.fundingRow}>
-                  <Text style={[styles.fundingLabel, { color: colors.text }]}>Total Funding:</Text>
-                  <Text style={[styles.fundingAmount, { color: colors.text }]}>Rs. {selectedEvent.totalFunding.toLocaleString()}</Text>
-                </RNView>
-                <RNView style={styles.fundingRow}>
-                  <Text style={[styles.fundingLabel, { color: colors.text }]}>Received:</Text>
-                  <Text style={[styles.fundingAmount, { color: '#2ed573' }]}>Rs. {selectedEvent.receivedFunding.toLocaleString()}</Text>
-                </RNView>
-                <RNView style={styles.fundingRow}>
-                  <Text style={[styles.fundingLabel, { color: colors.text }]}>Pending:</Text>
-                  <Text style={[styles.fundingAmount, { color: '#ff6b6b' }]}>Rs. {selectedEvent.pendingFunding.toLocaleString()}</Text>
-                </RNView>
-              </Card>
+        <RNView style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <RNView style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{selectedEvent?.name}</Text>
+              <TouchableOpacity onPress={() => setShowEventModal(false)}>
+                <FontAwesome5 name="times" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </RNView>
+            {selectedEvent && (
+              <ScrollView style={styles.modalBody}>
+                <Text style={styles.modalText}>Date: {formatDate(selectedEvent.date)}</Text>
+                <Text style={styles.modalText}>Category: {selectedEvent.category}</Text>
+                <Text style={styles.modalText}>Total Funding: {formatCurrency(selectedEvent.totalFunding)}</Text>
+                <Text style={styles.modalText}>Received Funding: {formatCurrency(selectedEvent.receivedFunding)}</Text>
+                <Text style={styles.modalText}>Pending Funding: {formatCurrency(selectedEvent.pendingFunding)}</Text>
 
-              <Card style={styles.modalCard}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Funder Details</Text>
-                {selectedEvent.funders.map((funder, index) => (
-                  <RNView key={index} style={styles.funderRow}>
-                    <Text style={[styles.funderName, { color: colors.text }]}>{funder.name}</Text>
-                    <Text style={[styles.funderAmount, { color: colors.text }]}>Rs. {funder.amount.toLocaleString()}</Text>
-                    <Text style={[styles.funderStatus, { 
-                      color: funder.status === 'Spent' ? '#ff4757' : 
-                            funder.status === 'Available' ? '#2ed573' : '#ff6b6b'
-                    }]}>{funder.status}</Text>
-                  </RNView>
-                ))}
-              </Card>
-            </ScrollView>
-          )}
-        </View>
+                <Text style={styles.modalSubtitle}>Expense Breakdown:</Text>
+                {categories.map((cat) => {
+                  const categoryExpenses = getExpensesByCategory(cat.id);
+                  const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                  if (totalAmount > 0) {
+                    return (
+                      <RNView key={cat.id} style={styles.modalExpenseItem}>
+                        <Text style={styles.modalExpenseTitle}>{cat.name}:</Text>
+                        <Text style={styles.modalExpenseAmount}>{formatCurrency(totalAmount)}</Text>
+                      </RNView>
+                    );
+                  }
+                  return null;
+                })}
+              </ScrollView>
+            )}
+          </View>
+        </RNView>
       </Modal>
     </>
   );
@@ -251,142 +207,129 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   card: {
-    marginBottom: 16,
-    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
   },
   addButton: {
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: 8,
   },
   statusGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    marginTop: 10,
   },
   statusItem: {
     width: '48%',
-    marginBottom: 12,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: '#f0f0f0',
   },
   statusLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  statusAmount: {
-    fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  statusValue: {
+    fontSize: 16,
   },
   dropdownButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
+    padding: 8,
     borderRadius: 8,
-    marginBottom: 8,
-  },
-  dropdownText: {
-    fontSize: 16,
-  },
-  dropdown: {
     borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  dropdownButtonText: {
+    marginRight: 8,
+  },
+  dropdownContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 10,
+    left: 10,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    zIndex: 1000,
     maxHeight: 200,
+    overflow: 'hidden',
   },
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   dropdownItemText: {
     fontSize: 16,
-    fontWeight: '500',
   },
-  dropdownItemDate: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginTop: 2,
+  noDataText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#888',
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '90%',
+    borderRadius: 10,
     padding: 20,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingTop: 20,
+    marginBottom: 15,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
   },
-  modalContent: {
-    flex: 1,
+  modalBody: {
+    marginTop: 10,
   },
-  eventName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  modalText: {
+    fontSize: 16,
     marginBottom: 8,
   },
-  eventDate: {
-    fontSize: 16,
-    opacity: 0.7,
-    marginBottom: 4,
+  modalSubtitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 10,
   },
-  eventCategory: {
-    fontSize: 16,
-    opacity: 0.7,
-    marginBottom: 20,
-  },
-  modalCard: {
-    marginBottom: 16,
-  },
-  fundingRow: {
+  modalExpenseItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 5,
   },
-  fundingLabel: {
+  modalExpenseTitle: {
     fontSize: 16,
   },
-  fundingAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  funderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    paddingVertical: 4,
-  },
-  funderName: {
-    fontSize: 16,
-    fontWeight: '500',
-    flex: 1,
-  },
-  funderAmount: {
+  modalExpenseAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginRight: 10,
-  },
-  funderStatus: {
-    fontSize: 14,
-    fontWeight: '500',
   },
 });

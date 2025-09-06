@@ -1,144 +1,204 @@
-import { useState } from 'react';
-import { StyleSheet, TextInput, ScrollView, View as RNView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, View as RNView, Alert, TextInput, TouchableOpacity } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
+import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { addCategory } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
+import { useData } from '../../context/DataContext';
+
+const COLORS = [
+  '#64a12d', '#ff6b6b', '#4ecdc4', '#45b7d1', 
+  '#f39c12', '#e74c3c', '#9b59b6', '#34495e',
+  '#1abc9c', '#f1c40f', '#e67e22', '#95a5a6'
+];
 
 export default function NewCategoryScreen() {
   const { colors, isDarkMode } = useTheme();
+  const { addCategory } = useData();
+  
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
-  const handleSubmit = async () => {
+  const handleSave = () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter a category name');
       return;
     }
 
     try {
-      setLoading(true);
-      
-      await addCategory({
+      addCategory({
         name: name.trim(),
         description: description.trim(),
-        expenseCount: 0,
-        totalAmount: 0,
+        color: selectedColor
       });
       
-      Alert.alert(
-        'Success',
-        'Category added successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      Alert.alert('Success', 'Category added successfully!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (error) {
-      console.error('Error adding category:', error);
-      Alert.alert('Error', 'Could not add category. Please try again.');
-    } finally {
-      setLoading(false);
+      Alert.alert('Error', 'Failed to add category. Please try again.');
     }
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5',
+    },
+    header: {
+      padding: 20,
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+      borderBottomWidth: 1,
+      borderBottomColor: isDarkMode ? '#333' : '#e0e0e0',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      marginRight: 15,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#333',
+    },
+    content: {
+      padding: 20,
+    },
+    formCard: {
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+      padding: 20,
+      borderRadius: 12,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    formTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#333',
+      marginBottom: 20,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: isDarkMode ? '#444' : '#ddd',
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+      fontSize: 16,
+      backgroundColor: isDarkMode ? '#333' : '#fff',
+      color: isDarkMode ? '#fff' : '#333',
+    },
+    colorSection: {
+      marginBottom: 20,
+    },
+    colorSectionTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#333',
+      marginBottom: 12,
+    },
+    colorGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    colorOption: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      marginBottom: 10,
+      borderWidth: 3,
+      borderColor: 'transparent',
+    },
+    selectedColor: {
+      borderColor: '#64a12d',
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 20,
+    },
+    button: {
+      flex: 1,
+      marginHorizontal: 8,
+    },
+    cancelButton: {
+      backgroundColor: '#6c757d',
+    },
+  });
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Card style={styles.formCard}>
-        <Text style={styles.title}>Add New Category</Text>
-        
-        <RNView style={styles.inputContainer}>
-          <Text style={styles.label}>Category Name</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <FontAwesome5 name="arrow-left" size={20} color={isDarkMode ? '#fff' : '#333'} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Add New Category</Text>
+      </View>
+
+      <ScrollView style={styles.content}>
+        <Card style={styles.formCard}>
+          <Text style={styles.formTitle}>Category Details</Text>
+          
           <TextInput
-            style={[styles.input, { 
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              color: colors.text,
-            }]}
+            style={styles.input}
+            placeholder="Category Name"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
             value={name}
             onChangeText={setName}
-            placeholder="Enter category name"
-            placeholderTextColor={colors.text}
+            maxLength={50}
           />
-        </RNView>
-        
-        <RNView style={styles.inputContainer}>
-          <Text style={styles.label}>Description (Optional)</Text>
+          
           <TextInput
-            style={[styles.input, styles.textArea, { 
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              color: colors.text,
-            }]}
+            style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+            placeholder="Description (Optional)"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
             value={description}
             onChangeText={setDescription}
-            placeholder="Enter category description"
-            placeholderTextColor={colors.text}
             multiline
-            numberOfLines={4}
-            textAlignVertical="top"
+            maxLength={200}
           />
-        </RNView>
-        
-        <RNView style={styles.buttonsContainer}>
-          <Button
-            title="Cancel"
-            onPress={() => router.back()}
-            variant="outline"
-            style={styles.cancelButton}
-          />
-          <Button
-            title="Add Category"
-            onPress={handleSubmit}
-            loading={loading}
-            style={styles.submitButton}
-          />
-        </RNView>
-      </Card>
-    </ScrollView>
+
+          <View style={styles.colorSection}>
+            <Text style={styles.colorSectionTitle}>Choose Color</Text>
+            <View style={styles.colorGrid}>
+              {COLORS.map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color },
+                    selectedColor === color && styles.selectedColor
+                  ]}
+                  onPress={() => setSelectedColor(color)}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.buttonRow}>
+            <Button
+              title="Cancel"
+              onPress={() => router.back()}
+              style={[styles.button, styles.cancelButton]}
+            />
+            <Button
+              title="Save Category"
+              onPress={handleSave}
+              style={styles.button}
+            />
+          </View>
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  formCard: {
-    margin: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 24,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  input: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    fontSize: 16,
-  },
-  textArea: {
-    minHeight: 120,
-  },
-  buttonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 24,
-  },
-  cancelButton: {
-    flex: 1,
-    marginRight: 8,
-  },
-  submitButton: {
-    flex: 1,
-    marginLeft: 8,
-  },
-}); 
