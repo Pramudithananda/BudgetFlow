@@ -110,27 +110,25 @@ export default function CategoriesScreen() {
           Debug: {categories.length} categories loaded
         </Text>
         
-        {/* Force re-render with key */}
+        {/* Categories List */}
         {categories.length > 0 ? (
-          <RNView key={`categories-${categories.length}`}>
-            {categories.map((category, index) => {
-              console.log(`Rendering category ${index}:`, category);
-              const categoryExpenses = getExpensesByCategory(category.id);
-              const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-              
-              return (
-                <CategoryItem
-                  key={`category-${category.id}-${index}`}
-                  name={category.name}
-                  totalAmount={totalAmount}
-                  totalExpenses={categoryExpenses.length}
-                  color={category.color}
-                  onPress={() => router.push(`/category/${category.id}`)}
-                  style={styles.categoryItem}
-                />
-              );
-            })}
-          </RNView>
+          categories.map((category, index) => {
+            console.log(`Rendering category ${index}:`, category);
+            const categoryExpenses = getExpensesByCategory(category.id);
+            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            
+            return (
+              <CategoryItem
+                key={`category-${category.id}-${Date.now()}`}
+                name={category.name}
+                totalAmount={totalAmount}
+                totalExpenses={categoryExpenses.length}
+                color={category.color}
+                onPress={() => router.push(`/category/${category.id}`)}
+                style={styles.categoryItem}
+              />
+            );
+          })
         ) : (
           <RNView style={styles.emptyContainer}>
             <FontAwesome5 name="list" size={48} color={colors.text} style={styles.emptyIcon} />

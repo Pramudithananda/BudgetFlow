@@ -124,14 +124,13 @@ export const DataProvider = ({ children }) => {
       };
       
       console.log('Current categories before add:', categories.length);
+      
+      // Force immediate state update
       setCategories(prev => {
         const updated = [...prev, newCategory];
         console.log('Categories after add:', updated.length);
         return updated;
       });
-      
-      // Force a small delay to ensure state update
-      await new Promise(resolve => setTimeout(resolve, 100));
       
       console.log('Category added successfully:', newCategory);
       return newCategory;

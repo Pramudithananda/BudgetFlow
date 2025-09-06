@@ -44,7 +44,8 @@ export default function NewCategoryScreen() {
       Alert.alert('Success', 'Category added successfully!', [
         { text: 'OK', onPress: () => {
           console.log('Navigating back to categories tab');
-          router.back();
+          // Force navigation to categories tab
+          router.replace('/(tabs)/category');
         }}
       ]);
     } catch (error) {
