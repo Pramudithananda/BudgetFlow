@@ -75,9 +75,9 @@ export const DataProvider = ({ children }) => {
   ]);
   
   const [funders, setFunders] = useState([
-    { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
-    { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
-    { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
+    { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com', totalAmount: 25000, status: 'Received' },
+    { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com', totalAmount: 15000, status: 'Received' },
+    { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org', totalAmount: 20000, status: 'Pending' }
   ]);
   
   const [events, setEvents] = useState([
