@@ -142,29 +142,27 @@ export default function CategoriesScreen() {
           displayCategories.map((category, index) => {
             console.log(`Rendering category ${index}:`, category);
             
-            // Hardcoded expense data for each category
-            let categoryExpenses = [];
+            // Direct hardcoded values for each category
             let totalAmount = 0;
+            let totalExpenses = 0;
             
             if (category.id === 1) { // Food & Beverages
-              categoryExpenses = [{ id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' }];
               totalAmount = 60000;
+              totalExpenses = 1;
             } else if (category.id === 2) { // Decorations
-              categoryExpenses = [{ id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' }];
               totalAmount = 20000;
+              totalExpenses = 1;
             } else if (category.id === 3) { // Transportation
-              categoryExpenses = [{ id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' }];
               totalAmount = 10000;
+              totalExpenses = 1;
             } else if (category.id === 4) { // Other Expenses
-              categoryExpenses = [{ id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }];
               totalAmount = 10000;
+              totalExpenses = 1;
             }
             
             console.log(`Category ${category.name} (ID: ${category.id}):`, {
-              categoryExpenses: categoryExpenses.length,
+              totalExpenses: totalExpenses,
               totalAmount: totalAmount,
-              expenses: categoryExpenses,
-              allExpenses: displayExpenses,
               categoryId: category.id,
               categoryIdType: typeof category.id
             });
@@ -174,7 +172,7 @@ export default function CategoriesScreen() {
                 key={`category-${category.id}-${index}`}
                 name={category.name}
                 totalAmount={totalAmount}
-                totalExpenses={categoryExpenses.length}
+                totalExpenses={totalExpenses}
                 color={category.color}
                 onPress={() => router.push(`/category/${category.id}`)}
                 style={styles.categoryItem}
