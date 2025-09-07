@@ -139,6 +139,17 @@ export default function EditExpenseScreen() {
       setIsSubmitting(true);
       setLoading(true);
 
+      console.log('=== EDIT EXPENSE SUBMIT DEBUG ===');
+      console.log('Expense ID:', id);
+      console.log('Form data:', {
+        title: title.trim(),
+        amount: numAmount,
+        categoryId,
+        assignedTo: funderId || null,
+        status,
+        description: sanitizeNotes(notes.trim()) || null,
+      });
+
       // Update expense using DataContext
       await updateExpense(id, {
         title: title.trim(),
@@ -148,6 +159,8 @@ export default function EditExpenseScreen() {
         status,
         description: sanitizeNotes(notes.trim()) || null,
       });
+
+      console.log('Update completed successfully');
 
       Alert.alert(
         'Success',

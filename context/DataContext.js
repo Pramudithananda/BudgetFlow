@@ -247,24 +247,37 @@ export const DataProvider = ({ children }) => {
 
   const updateExpense = async (id, expenseData) => {
     try {
-      console.log('Updating expense:', id, expenseData);
+      console.log('=== UPDATE EXPENSE DEBUG ===');
+      console.log('Expense ID to update:', id);
+      console.log('Expense data to update:', expenseData);
+      console.log('Current expenses before update:', expenses);
       
       // Update expense in state directly
-      setExpenses(prevExpenses => 
-        prevExpenses.map(expense => 
-          String(expense.id) === String(id) 
-            ? { 
-                ...expense, 
-                title: expenseData.title,
-                amount: expenseData.amount,
-                categoryId: expenseData.categoryId,
-                assignedTo: expenseData.assignedTo,
-                status: expenseData.status,
-                description: expenseData.description
-              }
-            : expense
-        )
-      );
+      setExpenses(prevExpenses => {
+        console.log('Previous expenses in setExpenses:', prevExpenses);
+        
+        const updatedExpenses = prevExpenses.map(expense => {
+          console.log(`Checking expense ${expense.id} (${String(expense.id)}) against ${id} (${String(id)})`);
+          
+          if (String(expense.id) === String(id)) {
+            const updatedExpense = { 
+              ...expense, 
+              title: expenseData.title,
+              amount: expenseData.amount,
+              categoryId: expenseData.categoryId,
+              assignedTo: expenseData.assignedTo,
+              status: expenseData.status,
+              description: expenseData.description
+            };
+            console.log('Found matching expense, updating:', updatedExpense);
+            return updatedExpense;
+          }
+          return expense;
+        });
+        
+        console.log('Updated expenses array:', updatedExpenses);
+        return updatedExpenses;
+      });
       
       console.log('Expense updated successfully in state');
     } catch (error) {
