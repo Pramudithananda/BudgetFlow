@@ -8,10 +8,12 @@ import { Picker } from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getExpense, updateExpense, getCategories, getFunders } from '../../../services/sqliteService';
 import { useTheme } from '../../../context/theme';
+import { useData } from '../../../context/DataContext';
 
 export default function EditExpenseScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
+  const { getExpenseById, categories, funders } = useData();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [title, setTitle] = useState('');
@@ -20,10 +22,20 @@ export default function EditExpenseScreen() {
   const [funderId, setFunderId] = useState('');
   const [status, setStatus] = useState('Outstanding');
   const [notes, setNotes] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [funders, setFunders] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState(null);
+
+  // Static data as fallback
+  const staticExpenses = [
+    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+  ];
+
+  const getStaticExpenseById = (expenseId) => {
+    return staticExpenses.find(exp => String(exp.id) === String(expenseId));
+  };
 
   useEffect(() => {
     if (!id) {
@@ -32,12 +44,13 @@ export default function EditExpenseScreen() {
       return;
     }
 
-    const fetchData = async () => {
+    const loadData = () => {
       try {
         setLoading(true);
         setError(null);
         
-        const expenseData = await getExpense(id);
+        // Get expense data from context or static data
+        const expenseData = getExpenseById(id) || getStaticExpenseById(id);
         if (!expenseData) {
           setError('Expense not found');
           Alert.alert('Error', 'Expense not found');
@@ -45,22 +58,15 @@ export default function EditExpenseScreen() {
           return;
         }
 
-        const [categoriesData, fundersData] = await Promise.all([
-          getCategories(),
-          getFunders()
-        ]);
-
         setTitle(expenseData.title);
         setAmount(expenseData.amount.toString());
         setCategoryId(expenseData.categoryId);
-        setFunderId(expenseData.funderId || '');
+        setFunderId(expenseData.assignedTo || '');
         setStatus(expenseData.status);
-        setNotes(expenseData.notes || '');
-        setCategories(categoriesData);
-        setFunders(fundersData);
+        setNotes(expenseData.description || '');
         setInitialData(expenseData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error loading data:', error);
         setError('Could not load expense data');
         Alert.alert('Error', 'Could not load expense data. Please try again.');
       } finally {
@@ -68,7 +74,7 @@ export default function EditExpenseScreen() {
       }
     };
 
-    fetchData();
+    loadData();
   }, [id]);
 
   const handleCancel = () => {
