@@ -130,7 +130,7 @@ export default function EditExpenseScreen() {
       return;
     }
 
-    if (!categoryId || !categories.some(cat => cat.id === categoryId)) {
+    if (!categoryId) {
       Alert.alert('Error', 'Please select a valid category');
       return;
     }
@@ -139,14 +139,19 @@ export default function EditExpenseScreen() {
       setIsSubmitting(true);
       setLoading(true);
 
-      await updateExpense(id, {
+      // Simulate update with static data
+      console.log('Updating expense:', {
+        id,
         title: title.trim(),
         amount: numAmount,
         categoryId,
-        funderId: funderId || null,
+        assignedTo: funderId || null,
         status,
-        notes: sanitizeNotes(notes.trim()) || null,
+        description: sanitizeNotes(notes.trim()) || null,
       });
+
+      // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       Alert.alert(
         'Success',
