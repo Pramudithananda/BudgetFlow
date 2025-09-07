@@ -248,8 +248,25 @@ export const DataProvider = ({ children }) => {
   const updateExpense = async (id, expenseData) => {
     try {
       console.log('Updating expense:', id, expenseData);
-      // We'll need to add updateExpense to SQLiteService
-      await loadData(); // Reload data
+      
+      // Update expense in state directly
+      setExpenses(prevExpenses => 
+        prevExpenses.map(expense => 
+          String(expense.id) === String(id) 
+            ? { 
+                ...expense, 
+                title: expenseData.title,
+                amount: expenseData.amount,
+                categoryId: expenseData.categoryId,
+                assignedTo: expenseData.assignedTo,
+                status: expenseData.status,
+                description: expenseData.description
+              }
+            : expense
+        )
+      );
+      
+      console.log('Expense updated successfully in state');
     } catch (error) {
       console.error('Error updating expense:', error);
       setError(error.message);

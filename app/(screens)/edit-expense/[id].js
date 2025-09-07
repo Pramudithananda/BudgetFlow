@@ -13,7 +13,7 @@ import { useData } from '../../../context/DataContext';
 export default function EditExpenseScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
-  const { getExpenseById, categories, funders } = useData();
+  const { getExpenseById, categories, funders, updateExpense } = useData();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [title, setTitle] = useState('');
@@ -139,9 +139,8 @@ export default function EditExpenseScreen() {
       setIsSubmitting(true);
       setLoading(true);
 
-      // Simulate update with static data
-      console.log('Updating expense:', {
-        id,
+      // Update expense using DataContext
+      await updateExpense(id, {
         title: title.trim(),
         amount: numAmount,
         categoryId,
@@ -149,9 +148,6 @@ export default function EditExpenseScreen() {
         status,
         description: sanitizeNotes(notes.trim()) || null,
       });
-
-      // Simulate delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       Alert.alert(
         'Success',
