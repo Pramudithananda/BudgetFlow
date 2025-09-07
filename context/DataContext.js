@@ -16,9 +16,9 @@ export const useData = () => {
         { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
       ],
       funders: [
-        { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
-        { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
-        { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
+        { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com', totalAmount: 25000, status: 'Received' },
+        { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com', totalAmount: 15000, status: 'Received' },
+        { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org', totalAmount: 20000, status: 'Pending' }
       ],
       expenses: [
         { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
@@ -57,8 +57,8 @@ export const useData = () => {
       getEventById: () => null,
       getExpensesByCategory: () => [],
       getExpensesByEvent: () => [],
-      getBudgetSummary: () => ({ totalBudget: 0, totalSpent: 0, totalReceived: 0, remaining: 0, pending: 0 }),
-      getStatusTotals: () => ({ Pending: 0, Spent: 0, Available: 0, Outstanding: 0 }),
+      getBudgetSummary: () => ({ totalBudget: 100000, totalSpent: 60000, totalReceived: 60000, remaining: 40000, pending: 20000 }),
+      getStatusTotals: () => ({ Pending: 10000, Spent: 60000, Available: 20000, Outstanding: 10000 }),
       refreshData: () => {}
     };
   }
