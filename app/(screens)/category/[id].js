@@ -1,64 +1,43 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, ScrollView, View as RNView } from 'react-native';
 import { Text, View } from '../../../components/Themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import ExpenseItem from '../../../components/ExpenseItem';
-import { getExpenses, getCategories, deleteCategory } from '../../../services/sqliteService';
 import { useTheme } from '../../../context/theme';
+import { useData } from '../../../context/DataContext';
 
 export default function CategoryDetailScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [category, setCategory] = useState(null);
-  const [expenses, setExpenses] = useState([]);
+  const { getCategoryById, getExpensesByCategory, categories, expenses: allExpenses, deleteCategory } = useData();
+  
+  // Get category and expenses from DataContext
+  const category = getCategoryById(id) || categories.find(cat => String(cat.id) === String(id));
+  const expenses = allExpenses ? allExpenses.filter(exp => String(exp.categoryId) === String(id)) : [];
+  
+  // Calculate total amount
+  const totalAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      const [categoriesData, expensesData] = await Promise.all([
-        getCategories(),
-        getExpenses(id)
-      ]);
-      
-      const foundCategory = categoriesData.find(cat => cat.id === id);
-      if (!foundCategory) {
-        Alert.alert('Error', 'Category not found');
-        router.back();
-        return;
-      }
-      
-      // Calculate total amount from expenses
-      const totalAmount = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-      
-      setCategory({
-        ...foundCategory,
-        totalAmount: totalAmount
-      });
-      setExpenses(expensesData);
-    } catch (error) {
-      console.error('Error fetching category data:', error);
-      Alert.alert('Error', 'Could not load category data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
-  };
+  // Debug logging
+  console.log('CategoryDetailScreen:', {
+    categoryId: id,
+    categoryIdType: typeof id,
+    category: category,
+    expenses: expenses,
+    totalAmount: totalAmount,
+    allCategories: categories,
+    allExpenses: allExpenses,
+    categoryFound: !!category,
+    expensesFound: expenses.length
+  });
 
   const handleDeleteCategory = () => {
     Alert.alert(
       'Delete Category',
-      'Are you sure you want to delete this category? All associated expenses will be orphaned.',
+      `Are you sure you want to delete "${category?.name}"? This action cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -67,10 +46,10 @@ export default function CategoryDetailScreen() {
           onPress: async () => {
             try {
               await deleteCategory(id);
-              Alert.alert('Success', 'Category deleted successfully');
-              router.back();
+              Alert.alert('Success', 'Category deleted successfully!', [
+                { text: 'OK', onPress: () => router.push('/category') }
+              ]);
             } catch (error) {
-              console.error('Error deleting category:', error);
               Alert.alert('Error', 'Could not delete category. Please try again.');
             }
           }
@@ -79,14 +58,21 @@ export default function CategoryDetailScreen() {
     );
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
+  const handleEditCategory = () => {
+    // Navigate to edit category page
+    router.push(`/edit-category/${id}`);
+  };
 
-  if (loading) {
+  if (!category) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.errorContainer}>
+        <FontAwesome5 name="exclamation-triangle" size={48} color={colors.text} />
+        <Text style={[styles.errorText, { color: colors.text }]}>Category not found</Text>
+        <Button
+          title="Go Back"
+          onPress={() => router.back()}
+          style={styles.backButton}
+        />
       </View>
     );
   }
@@ -94,23 +80,20 @@ export default function CategoryDetailScreen() {
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
       <Card style={styles.headerCard}>
-        <Text style={styles.categoryName}>{category?.name}</Text>
-        {category?.description && (
-          <Text style={styles.categoryDescription}>{category.description}</Text>
+        <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
+        {category.description && (
+          <Text style={[styles.categoryDescription, { color: colors.text }]}>{category.description}</Text>
         )}
         <RNView style={styles.statsRow}>
           <RNView style={styles.statItem}>
             <Text style={[styles.statNumber, { color: colors.primary }]}>{expenses.length}</Text>
-            <Text style={styles.statLabel}>Expenses</Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>Expenses</Text>
           </RNView>
           <RNView style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: colors.primary }]}>Rs. {(category?.totalAmount || 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+            <Text style={[styles.statNumber, { color: colors.primary }]}>Rs. {totalAmount.toLocaleString()}</Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>Total</Text>
           </RNView>
         </RNView>
         <RNView style={styles.buttonRow}>
@@ -124,7 +107,7 @@ export default function CategoryDetailScreen() {
           />
           <Button
             title="Edit"
-            onPress={() => router.push(`/edit-category/${id}`)}
+            onPress={handleEditCategory}
             variant="outline"
             style={styles.actionButton}
           />
@@ -137,15 +120,15 @@ export default function CategoryDetailScreen() {
         </RNView>
       </Card>
 
-      <Text style={styles.sectionTitle}>Expenses</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Expenses</Text>
 
       {expenses.length === 0 ? (
         <Card style={styles.emptyCard}>
           <RNView style={styles.emptyState}>
             <FontAwesome5 name="receipt" size={36} color={colors.text} />
-            <Text style={styles.emptyText}>No expenses yet</Text>
-            <Text style={styles.emptySubtext}>
-              Add expenses to this category to track your sremaining
+            <Text style={[styles.emptyText, { color: colors.text }]}>No expenses yet</Text>
+            <Text style={[styles.emptySubtext, { color: colors.text }]}>
+              Add expenses to this category to track your spending
             </Text>
             <Button 
               title="Add Your First Expense" 
@@ -165,7 +148,7 @@ export default function CategoryDetailScreen() {
             amount={expense.amount}
             status={expense.status}
             assignedTo={expense.assignedTo}
-            onPress={() => router.push(`/expense/${expense.id}`)}
+            onPress={() => alert('Expense details coming soon!')}
             style={styles.expenseItem}
           />
         ))
@@ -178,10 +161,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
+  errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 20,
+  },
+  backButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   headerCard: {
     margin: 16,
@@ -194,6 +188,7 @@ const styles = StyleSheet.create({
   categoryDescription: {
     fontSize: 16,
     marginBottom: 16,
+    opacity: 0.8,
   },
   statsRow: {
     flexDirection: 'row',
@@ -209,6 +204,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
+    opacity: 0.8,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -247,6 +243,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 24,
+    opacity: 0.8,
   },
   firstButton: {
     width: '100%',
@@ -255,4 +252,4 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 8,
   },
-}); 
+});

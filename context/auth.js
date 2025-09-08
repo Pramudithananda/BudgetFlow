@@ -7,7 +7,7 @@ const AuthContext = createContext({});
 // In a production app, you'd want to implement proper authentication with a backend
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in

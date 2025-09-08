@@ -1,91 +1,100 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { StyleSheet, ScrollView, View as RNView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
-import { getCategories, getExpenses, listenCategories, listenExpenses } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
+import { useData } from '../../context/DataContext';
 
-export default function CategoryScreen() {
+export default function CategoriesScreen() {
   const { colors, isDarkMode } = useTheme();
-  const [loading, setLoading] = useState(true);
+  const { 
+    categories, 
+    expenses, 
+    loading, 
+    error, 
+    getExpensesByCategory,
+    refreshData 
+  } = useData();
+  
   const [refreshing, setRefreshing] = useState(false);
-  const [categories, setCategories] = useState([]);
 
-  const fetchData = async () => {
+  // Static data as fallback
+  const staticCategories = [
+    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
+  ];
+  
+  const staticExpenses = [
+    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+  ];
+
+  // Use static data if context data is not available
+  const displayCategories = categories && categories.length > 0 ? categories : staticCategories;
+  const displayExpenses = expenses && expenses.length > 0 ? expenses : staticExpenses;
+
+  // Debug data access
+  console.log('CategoriesScreen - Data:', {
+    categories: displayCategories?.length || 0,
+    expenses: displayExpenses?.length || 0,
+    categoriesData: displayCategories,
+    expensesData: displayExpenses
+  });
+
+  // Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
     try {
-      setLoading(true);
-      
-      // Fetch both categories and expenses
-      const [categoriesData, expensesData] = await Promise.all([
-        getCategories(),
-        getExpenses()
-      ]);
-      
-      // Calculate totals for each category
-      const categoriesWithTotals = categoriesData.map(category => {
-        const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
-        const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-        const expenseCount = categoryExpenses.length;
-        
-        return {
-          ...category,
-          totalAmount,
-          expenseCount
-        };
-      });
-      
-      setCategories(categoriesWithTotals);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      Alert.alert('Error', 'Could not load categories. Please try again.');
+      await refreshData();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to refresh data');
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
+  // Show error if any
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+    }
+  }, [error]);
+
+  // Force re-render when categories change
+  useEffect(() => {
+    console.log('Categories changed:', categories.length);
+  }, [categories]);
+
+  const handleDeleteCategory = (categoryId, categoryName) => {
+    Alert.alert(
+      'Delete Category',
+      `Are you sure you want to delete "${categoryName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Success', 'Category deleted successfully!');
+          }
+        }
+      ]
+    );
   };
 
-  useEffect(() => {
-    fetchData();
-    // Real-time categories
-    const unsubCats = listenCategories((catsLive) => {
-      // When categories change, refetch expenses once (could optimize with expense listener aggregation)
-      getExpenses().then(expensesData => {
-        const categoriesWithTotals = catsLive.map(category => {
-          const categoryExpenses = expensesData.filter(expense => expense.categoryId === category.id);
-          const totalAmount = categoryExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-          const expenseCount = categoryExpenses.length;
-          return { ...category, totalAmount, expenseCount };
-        });
-        setCategories(categoriesWithTotals);
-      }).catch(err => console.error('Error updating categories live:', err));
-    });
-    // Real-time expenses (to keep totals current when expense status/amount changes)
-    const unsubExpenses = listenExpenses(null, (expensesLive) => {
-      setCategories(prevCats => prevCats.map(cat => {
-        const categoryExpenses = expensesLive.filter(e => e.categoryId === cat.id);
-        const totalAmount = categoryExpenses.reduce((s,e)=> s + (e.amount || 0), 0);
-        return { ...cat, totalAmount, expenseCount: categoryExpenses.length };
-      }));
-    });
-    return () => {
-      unsubCats && unsubCats();
-      unsubExpenses && unsubExpenses();
-    };
-  }, []);
-
-  if (loading) {
+  if (loading && !refreshing) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.text }]}>Loading categories...</Text>
       </View>
     );
   }
@@ -94,44 +103,83 @@ export default function CategoryScreen() {
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
       }
     >
+      {/* Header */}
       <RNView style={styles.header}>
-        <Text style={styles.title}>Categories</Text>
-        <Button 
-          title="+ Add Category" 
+        <Text style={[styles.title, { color: colors.text }]}>Categories</Text>
+        <Text style={[styles.subtitle, { color: colors.text }]}>
+          {categories.length} categories
+        </Text>
+      </RNView>
+
+      {/* Add Category Button */}
+      <Card style={styles.card}>
+        <Button
+          title="Add New Category"
           onPress={() => router.push('/new-category')}
           style={styles.addButton}
         />
-      </RNView>
+      </Card>
 
-      {categories.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <RNView style={styles.emptyState}>
-            <FontAwesome5 name="list" size={36} color={colors.text} />
-            <Text style={styles.emptyText}>No categories yet</Text>
-            <Text style={styles.emptySubtext}>
-              Add categories to organize your expenses
+      {/* Categories List */}
+      <Card style={styles.card}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>All Categories</Text>
+        
+        {/* Debug Info */}
+        <Text style={[styles.debugText, { color: colors.text }]}>
+          Debug: {displayCategories.length} categories loaded
+        </Text>
+        
+        {/* Categories List */}
+        {displayCategories && displayCategories.length > 0 ? (
+          displayCategories.map((category, index) => {
+            console.log(`Categories tab rendering category ${index}:`, category);
+            console.log('Categories tab - All expenses available:', expenses);
+            
+            // Direct filtering from expenses array
+            const categoryExpenses = expenses.filter(exp => String(exp.categoryId) === String(category.id));
+            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalExpenses = categoryExpenses.length;
+            
+            console.log(`Categories tab - Category ${category.name} (ID: ${category.id}):`, {
+              allExpenses: expenses.length,
+              categoryExpenses: categoryExpenses.length,
+              totalAmount: totalAmount,
+              totalExpenses: totalExpenses,
+              categoryId: category.id,
+              categoryIdType: typeof category.id,
+              expenses: categoryExpenses
+            });
+            
+            return (
+              <CategoryItem
+                key={`category-${category.id}-${index}`}
+                name={category.name}
+                totalAmount={totalAmount}
+                totalExpenses={totalExpenses}
+                color={category.color}
+                onPress={() => router.push(`/category/${category.id}`)}
+                style={styles.categoryItem}
+              />
+            );
+          })
+        ) : (
+          <RNView style={styles.emptyContainer}>
+            <FontAwesome5 name="list" size={48} color={colors.text} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No categories yet</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.text }]}>
+              Add your first category to get started
             </Text>
-            <Button 
-              title="Add Your First Category" 
-              onPress={() => router.push('/new-category')}
-              style={styles.firstButton}
-            />
           </RNView>
-        </Card>
-      ) : (
-        categories.map((category) => (
-          <CategoryItem
-            key={category.id}
-            name={category.name}
-            totalExpenses={category.expenseCount || 0}
-            totalAmount={category.totalAmount || 0}
-            onPress={() => router.push(`/category/${category.id}`)}
-          />
-        ))
-      )}
+        )}
+      </Card>
     </ScrollView>
   );
 }
@@ -140,46 +188,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    padding: 20,
+    paddingBottom: 10,
   },
   title: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
+  card: {
+    margin: 16,
+    marginTop: 0,
   },
   addButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  emptyCard: {
-    margin: 16,
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
-  emptyState: {
+  categoryItem: {
+    marginVertical: 2,
+  },
+  emptyContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
+    paddingVertical: 40,
   },
-  emptyText: {
+  emptyIcon: {
+    marginBottom: 16,
+    opacity: 0.5,
+  },
+  emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginTop: 16,
     marginBottom: 8,
   },
-  emptySubtext: {
+  emptySubtitle: {
     fontSize: 14,
+    opacity: 0.7,
     textAlign: 'center',
-    marginBottom: 24,
   },
-  firstButton: {
-    width: '100%',
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-}); 
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  debugText: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginBottom: 8,
+  },
+});

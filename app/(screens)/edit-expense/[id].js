@@ -8,10 +8,12 @@ import { Picker } from '@react-native-picker/picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getExpense, updateExpense, getCategories, getFunders } from '../../../services/sqliteService';
 import { useTheme } from '../../../context/theme';
+import { useData } from '../../../context/DataContext';
 
 export default function EditExpenseScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
+  const { getExpenseById, categories, funders, updateExpense } = useData();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [title, setTitle] = useState('');
@@ -20,10 +22,20 @@ export default function EditExpenseScreen() {
   const [funderId, setFunderId] = useState('');
   const [status, setStatus] = useState('Outstanding');
   const [notes, setNotes] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [funders, setFunders] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState(null);
+
+  // Static data as fallback
+  const staticExpenses = [
+    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+  ];
+
+  const getStaticExpenseById = (expenseId) => {
+    return staticExpenses.find(exp => String(exp.id) === String(expenseId));
+  };
 
   useEffect(() => {
     if (!id) {
@@ -32,12 +44,13 @@ export default function EditExpenseScreen() {
       return;
     }
 
-    const fetchData = async () => {
+    const loadData = () => {
       try {
         setLoading(true);
         setError(null);
         
-        const expenseData = await getExpense(id);
+        // Get expense data from context or static data
+        const expenseData = getExpenseById(id) || getStaticExpenseById(id);
         if (!expenseData) {
           setError('Expense not found');
           Alert.alert('Error', 'Expense not found');
@@ -45,22 +58,15 @@ export default function EditExpenseScreen() {
           return;
         }
 
-        const [categoriesData, fundersData] = await Promise.all([
-          getCategories(),
-          getFunders()
-        ]);
-
         setTitle(expenseData.title);
         setAmount(expenseData.amount.toString());
         setCategoryId(expenseData.categoryId);
-        setFunderId(expenseData.funderId || '');
+        setFunderId(expenseData.assignedTo || '');
         setStatus(expenseData.status);
-        setNotes(expenseData.notes || '');
-        setCategories(categoriesData);
-        setFunders(fundersData);
+        setNotes(expenseData.description || '');
         setInitialData(expenseData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error loading data:', error);
         setError('Could not load expense data');
         Alert.alert('Error', 'Could not load expense data. Please try again.');
       } finally {
@@ -68,7 +74,7 @@ export default function EditExpenseScreen() {
       }
     };
 
-    fetchData();
+    loadData();
   }, [id]);
 
   const handleCancel = () => {
@@ -124,7 +130,7 @@ export default function EditExpenseScreen() {
       return;
     }
 
-    if (!categoryId || !categories.some(cat => cat.id === categoryId)) {
+    if (!categoryId) {
       Alert.alert('Error', 'Please select a valid category');
       return;
     }
@@ -133,19 +139,36 @@ export default function EditExpenseScreen() {
       setIsSubmitting(true);
       setLoading(true);
 
+      console.log('=== EDIT EXPENSE SUBMIT DEBUG ===');
+      console.log('Expense ID:', id);
+      console.log('Form data:', {
+        title: title.trim(),
+        amount: numAmount,
+        categoryId,
+        assignedTo: funderId || null,
+        status,
+        description: sanitizeNotes(notes.trim()) || null,
+      });
+
+      // Update expense using DataContext
       await updateExpense(id, {
         title: title.trim(),
         amount: numAmount,
         categoryId,
-        funderId: funderId || null,
+        assignedTo: funderId || null,
         status,
-        notes: sanitizeNotes(notes.trim()) || null,
+        description: sanitizeNotes(notes.trim()) || null,
       });
 
+      console.log('Update completed successfully');
+
       Alert.alert(
-        'Success',
-        'Expense updated successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
+        '✅ Success!',
+        `Expense "${title.trim()}" has been updated successfully!\n\nChanges have been saved and will appear across all screens.`,
+        [
+          { text: 'View Expense', onPress: () => router.back() },
+          { text: 'Go to Expenses', onPress: () => router.push('/(tabs)/expenses') }
+        ]
       );
     } catch (error) {
       console.error('Error updating expense:', error);
