@@ -7,36 +7,11 @@ export const useData = () => {
   const context = useContext(DataContext);
   if (!context) {
     console.warn('useData must be used within a DataProvider');
-    // Return static data as fallback
     return {
-      categories: [
-        { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
-        { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
-        { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
-        { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
-      ],
-      funders: [
-        { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com', totalAmount: 25000, status: 'Received' },
-        { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com', totalAmount: 15000, status: 'Received' },
-        { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org', totalAmount: 20000, status: 'Pending' }
-      ],
-      expenses: [
-        { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
-        { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
-        { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
-        { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
-      ],
-      events: [
-        { 
-          id: 1, 
-          name: 'Birthday Celebration', 
-          date: '2024-10-01', 
-          category: 'Conference',
-          budget: 100000,
-          description: 'Annual birthday celebration event',
-          location: 'Colombo'
-        }
-      ],
+      categories: [],
+      funders: [],
+      expenses: [],
+      events: [],
       loading: false,
       error: null,
       addCategory: () => {},
@@ -51,88 +26,108 @@ export const useData = () => {
       addEvent: () => {},
       updateEvent: () => {},
       deleteEvent: () => {},
+      refreshData: () => {},
       getCategoryById: () => null,
       getFunderById: () => null,
       getExpenseById: () => null,
       getEventById: () => null,
       getExpensesByCategory: () => [],
-      getExpensesByEvent: () => [],
-      getBudgetSummary: () => ({ totalBudget: 100000, totalSpent: 60000, totalReceived: 60000, remaining: 40000, pending: 20000 }),
-      getStatusTotals: () => ({ Pending: 10000, Spent: 60000, Available: 20000, Outstanding: 10000 }),
-      refreshData: () => {}
     };
   }
   return context;
 };
 
 export const DataProvider = ({ children }) => {
-  // Initialize with static data directly
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
-    { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
-    { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
-    { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
-  ]);
-  
-  const [funders, setFunders] = useState([
-    { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com', totalAmount: 25000, status: 'Received' },
-    { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com', totalAmount: 15000, status: 'Received' },
-    { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org', totalAmount: 20000, status: 'Pending' }
-  ]);
-  
-  const [events, setEvents] = useState([
-    { 
-      id: 1, 
-      name: 'Birthday Celebration', 
-      date: '2024-10-01', 
-      category: 'Conference',
-      budget: 100000,
-      description: 'Annual birthday celebration event',
-      location: 'Colombo'
-    }
-  ]);
-  
-  const [expenses, setExpenses] = useState([
-    { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
-    { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
-    { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
-    { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
-  ]);
-  
+  const [categories, setCategories] = useState([]);
+  const [funders, setFunders] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Data is already initialized in useState
-  console.log('DataContext initialized with:', {
-    categories: categories.length,
-    funders: funders.length,
-    events: events.length,
-    expenses: expenses.length
-  });
+  // Initialize database and load data
+  useEffect(() => {
+    initializeDatabase();
+  }, []);
+
+  const initializeDatabase = async () => {
+    try {
+      console.log('=== INITIALIZING DATABASE ===');
+      setLoading(true);
+      setError(null);
+
+      // Initialize SQLite database
+      await SQLiteService.initDatabase();
+      console.log('Database initialized successfully');
+
+      // Load all data from database
+      await loadData();
+      console.log('Data loaded successfully from database');
+    } catch (error) {
+      console.error('Error initializing database:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      console.log('=== LOADING DATA FROM DATABASE ===');
+      
+      // Load all data from database
+      const [categoriesData, fundersData, expensesData, eventsData] = await Promise.all([
+        SQLiteService.getCategories(),
+        SQLiteService.getFunders(),
+        SQLiteService.getExpenses(),
+        SQLiteService.getEvents()
+      ]);
+
+      console.log('Loaded data from database:', {
+        categories: categoriesData.length,
+        funders: fundersData.length,
+        expenses: expensesData.length,
+        events: eventsData.length
+      });
+
+      // Update state with database data
+      setCategories(categoriesData);
+      setFunders(fundersData);
+      setExpenses(expensesData);
+      setEvents(eventsData);
+
+      console.log('State updated with database data');
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  const refreshData = async () => {
+    try {
+      console.log('=== REFRESHING DATA ===');
+      await loadData();
+      console.log('Data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      setError(error.message);
+    }
+  };
 
   // Category CRUD operations
   const addCategory = async (categoryData) => {
     try {
-      console.log('Adding category:', categoryData);
-      const newCategory = {
-        id: Date.now(),
-        name: categoryData.name,
-        color: categoryData.color || '#64a12d',
-        description: categoryData.description || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      console.log('=== ADDING CATEGORY ===');
+      console.log('Category data:', categoryData);
       
-      console.log('Current categories before add:', categories.length);
+      const newCategory = await SQLiteService.addCategory(categoryData);
+      console.log('Category added to database:', newCategory);
       
-      // Force immediate state update
-      setCategories(prev => {
-        const updated = [...prev, newCategory];
-        console.log('Categories after add:', updated.length);
-        return updated;
-      });
+      // Reload data to get updated state
+      await loadData();
       
-      console.log('Category added successfully:', newCategory);
+      console.log('Category added successfully');
       return newCategory;
     } catch (error) {
       console.error('Error adding category:', error);
@@ -143,41 +138,17 @@ export const DataProvider = ({ children }) => {
 
   const updateCategory = async (id, categoryData) => {
     try {
-      console.log('=== UPDATE CATEGORY DEBUG ===');
-      console.log('Category ID to update:', id);
-      console.log('Category data to update:', categoryData);
-      console.log('Current categories before update:', categories);
+      console.log('=== UPDATING CATEGORY ===');
+      console.log('Category ID:', id);
+      console.log('Category data:', categoryData);
       
-      // Update category in state directly
-      setCategories(prevCategories => {
-        console.log('Previous categories in setCategories:', prevCategories);
-        
-        const updatedCategories = prevCategories.map(category => {
-          console.log(`Checking category ${category.id} (${String(category.id)}) against ${id} (${String(id)})`);
-          
-          if (String(category.id) === String(id)) {
-            const updatedCategory = { 
-              ...category, 
-              name: categoryData.name,
-              description: categoryData.description,
-              color: categoryData.color
-            };
-            console.log('Found matching category, updating:', updatedCategory);
-            return updatedCategory;
-          }
-          return category;
-        });
-        
-        console.log('Updated categories array:', updatedCategories);
-        return updatedCategories;
-      });
+      await SQLiteService.updateCategory(id, categoryData);
+      console.log('Category updated in database');
       
-      console.log('Category updated successfully in state');
+      // Reload data to get updated state
+      await loadData();
       
-      // Force a small delay to ensure state update
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      console.log('State update completed, categories should be updated');
+      console.log('Category updated successfully');
     } catch (error) {
       console.error('Error updating category:', error);
       setError(error.message);
@@ -187,39 +158,16 @@ export const DataProvider = ({ children }) => {
 
   const deleteCategory = async (id) => {
     try {
-      console.log('=== DELETE CATEGORY DEBUG ===');
-      console.log('Category ID to delete:', id);
-      console.log('Current categories before delete:', categories);
+      console.log('=== DELETING CATEGORY ===');
+      console.log('Category ID:', id);
       
-      // Delete category from state directly
-      setCategories(prevCategories => {
-        console.log('Previous categories in setCategories:', prevCategories);
-        
-        const updatedCategories = prevCategories.filter(category => {
-          const shouldKeep = String(category.id) !== String(id);
-          console.log(`Category ${category.id} (${String(category.id)}) vs ${id} (${String(id)}): ${shouldKeep ? 'KEEP' : 'DELETE'}`);
-          return shouldKeep;
-        });
-        
-        console.log('Updated categories array after delete:', updatedCategories);
-        return updatedCategories;
-      });
+      await SQLiteService.deleteCategory(id);
+      console.log('Category deleted from database');
       
-      // Also delete related expenses
-      setExpenses(prevExpenses => {
-        console.log('Previous expenses before category delete:', prevExpenses);
-        
-        const updatedExpenses = prevExpenses.filter(expense => {
-          const shouldKeep = String(expense.categoryId) !== String(id);
-          console.log(`Expense ${expense.id} (categoryId: ${expense.categoryId}) vs ${id}: ${shouldKeep ? 'KEEP' : 'DELETE'}`);
-          return shouldKeep;
-        });
-        
-        console.log('Updated expenses array after category delete:', updatedExpenses);
-        return updatedExpenses;
-      });
+      // Reload data to get updated state
+      await loadData();
       
-      console.log('Category and related expenses deleted successfully');
+      console.log('Category deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
       setError(error.message);
@@ -230,24 +178,16 @@ export const DataProvider = ({ children }) => {
   // Funder CRUD operations
   const addFunder = async (funderData) => {
     try {
-      console.log('Adding funder:', funderData);
-      const newFunder = {
-        id: Date.now(),
-        name: funderData.name,
-        phone: funderData.phone || '',
-        email: funderData.email || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      console.log('=== ADDING FUNDER ===');
+      console.log('Funder data:', funderData);
       
-      console.log('Current funders before add:', funders.length);
-      setFunders(prev => {
-        const updated = [...prev, newFunder];
-        console.log('Funders after add:', updated.length);
-        return updated;
-      });
+      const newFunder = await SQLiteService.addFunder(funderData);
+      console.log('Funder added to database:', newFunder);
       
-      console.log('Funder added successfully:', newFunder);
+      // Reload data to get updated state
+      await loadData();
+      
+      console.log('Funder added successfully');
       return newFunder;
     } catch (error) {
       console.error('Error adding funder:', error);
@@ -258,41 +198,17 @@ export const DataProvider = ({ children }) => {
 
   const updateFunder = async (id, funderData) => {
     try {
-      console.log('=== UPDATE FUNDER DEBUG ===');
-      console.log('Funder ID to update:', id);
-      console.log('Funder data to update:', funderData);
-      console.log('Current funders before update:', funders);
+      console.log('=== UPDATING FUNDER ===');
+      console.log('Funder ID:', id);
+      console.log('Funder data:', funderData);
       
-      // Update funder in state directly
-      setFunders(prevFunders => {
-        console.log('Previous funders in setFunders:', prevFunders);
-        
-        const updatedFunders = prevFunders.map(funder => {
-          console.log(`Checking funder ${funder.id} (${String(funder.id)}) against ${id} (${String(id)})`);
-          
-          if (String(funder.id) === String(id)) {
-            const updatedFunder = { 
-              ...funder, 
-              name: funderData.name,
-              phone: funderData.phone,
-              email: funderData.email
-            };
-            console.log('Found matching funder, updating:', updatedFunder);
-            return updatedFunder;
-          }
-          return funder;
-        });
-        
-        console.log('Updated funders array:', updatedFunders);
-        return updatedFunders;
-      });
+      await SQLiteService.updateFunder(id, funderData);
+      console.log('Funder updated in database');
       
-      console.log('Funder updated successfully in state');
+      // Reload data to get updated state
+      await loadData();
       
-      // Force a small delay to ensure state update
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      console.log('State update completed, funders should be updated');
+      console.log('Funder updated successfully');
     } catch (error) {
       console.error('Error updating funder:', error);
       setError(error.message);
@@ -302,9 +218,16 @@ export const DataProvider = ({ children }) => {
 
   const deleteFunder = async (id) => {
     try {
-      // We'll need to add deleteFunder to SQLiteService
-      console.log('Deleting funder:', id);
-      await loadData(); // Reload data
+      console.log('=== DELETING FUNDER ===');
+      console.log('Funder ID:', id);
+      
+      await SQLiteService.deleteFunder(id);
+      console.log('Funder deleted from database');
+      
+      // Reload data to get updated state
+      await loadData();
+      
+      console.log('Funder deleted successfully');
     } catch (error) {
       console.error('Error deleting funder:', error);
       setError(error.message);
@@ -315,22 +238,16 @@ export const DataProvider = ({ children }) => {
   // Expense CRUD operations
   const addExpense = async (expenseData) => {
     try {
-      console.log('Adding expense:', expenseData);
-      const newExpense = {
-        id: Date.now(),
-        title: expenseData.title,
-        amount: expenseData.amount,
-        status: expenseData.status,
-        categoryId: expenseData.categoryId,
-        assignedTo: expenseData.assignedTo || '',
-        date: expenseData.date || new Date().toISOString().split('T')[0],
-        description: expenseData.description || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      console.log('=== ADDING EXPENSE ===');
+      console.log('Expense data:', expenseData);
       
-      setExpenses(prev => [...prev, newExpense]);
-      console.log('Expense added successfully:', newExpense);
+      const newExpense = await SQLiteService.addExpense(expenseData);
+      console.log('Expense added to database:', newExpense);
+      
+      // Reload data to get updated state
+      await loadData();
+      
+      console.log('Expense added successfully');
       return newExpense;
     } catch (error) {
       console.error('Error adding expense:', error);
@@ -341,39 +258,17 @@ export const DataProvider = ({ children }) => {
 
   const updateExpense = async (id, expenseData) => {
     try {
-      console.log('=== UPDATE EXPENSE DEBUG ===');
-      console.log('Expense ID to update:', id);
-      console.log('Expense data to update:', expenseData);
-      console.log('Current expenses before update:', expenses);
+      console.log('=== UPDATING EXPENSE ===');
+      console.log('Expense ID:', id);
+      console.log('Expense data:', expenseData);
       
-      // Update expense in state directly
-      setExpenses(prevExpenses => {
-        console.log('Previous expenses in setExpenses:', prevExpenses);
-        
-        const updatedExpenses = prevExpenses.map(expense => {
-          console.log(`Checking expense ${expense.id} (${String(expense.id)}) against ${id} (${String(id)})`);
-          
-          if (String(expense.id) === String(id)) {
-            const updatedExpense = { 
-              ...expense, 
-              title: expenseData.title,
-              amount: expenseData.amount,
-              categoryId: expenseData.categoryId,
-              assignedTo: expenseData.assignedTo,
-              status: expenseData.status,
-              description: expenseData.description
-            };
-            console.log('Found matching expense, updating:', updatedExpense);
-            return updatedExpense;
-          }
-          return expense;
-        });
-        
-        console.log('Updated expenses array:', updatedExpenses);
-        return updatedExpenses;
-      });
+      await SQLiteService.updateExpense(id, expenseData);
+      console.log('Expense updated in database');
       
-      console.log('Expense updated successfully in state');
+      // Reload data to get updated state
+      await loadData();
+      
+      console.log('Expense updated successfully');
     } catch (error) {
       console.error('Error updating expense:', error);
       setError(error.message);
@@ -383,23 +278,14 @@ export const DataProvider = ({ children }) => {
 
   const deleteExpense = async (id) => {
     try {
-      console.log('=== DELETE EXPENSE DEBUG ===');
-      console.log('Expense ID to delete:', id);
-      console.log('Current expenses before delete:', expenses);
+      console.log('=== DELETING EXPENSE ===');
+      console.log('Expense ID:', id);
       
-      // Delete expense from state directly
-      setExpenses(prevExpenses => {
-        console.log('Previous expenses in setExpenses:', prevExpenses);
-        
-        const updatedExpenses = prevExpenses.filter(expense => {
-          const shouldKeep = String(expense.id) !== String(id);
-          console.log(`Expense ${expense.id} (${String(expense.id)}) vs ${id} (${String(id)}): ${shouldKeep ? 'KEEP' : 'DELETE'}`);
-          return shouldKeep;
-        });
-        
-        console.log('Updated expenses array after delete:', updatedExpenses);
-        return updatedExpenses;
-      });
+      await SQLiteService.deleteExpense(id);
+      console.log('Expense deleted from database');
+      
+      // Reload data to get updated state
+      await loadData();
       
       console.log('Expense deleted successfully');
     } catch (error) {
@@ -412,21 +298,17 @@ export const DataProvider = ({ children }) => {
   // Event CRUD operations
   const addEvent = async (eventData) => {
     try {
-      console.log('Adding event:', eventData);
-      const newEvent = {
-        id: Date.now(),
-        name: eventData.name,
-        description: eventData.description || '',
-        date: eventData.date || '',
-        budget: eventData.budget || 0,
-        location: eventData.location || '',
-        category: eventData.category || '',
-        createdAt: new Date().toISOString()
-      };
+      console.log('=== ADDING EVENT ===');
+      console.log('Event data:', eventData);
       
-      setEvents(prev => [...prev, newEvent]);
-      console.log('Event added successfully:', newEvent);
-      return newEvent.id;
+      const newEvent = await SQLiteService.addEvent(eventData);
+      console.log('Event added to database:', newEvent);
+      
+      // Reload data to get updated state
+      await loadData();
+      
+      console.log('Event added successfully');
+      return newEvent;
     } catch (error) {
       console.error('Error adding event:', error);
       setError(error.message);
@@ -436,44 +318,17 @@ export const DataProvider = ({ children }) => {
 
   const updateEvent = async (id, eventData) => {
     try {
-      console.log('=== UPDATE EVENT DEBUG ===');
-      console.log('Event ID to update:', id);
-      console.log('Event data to update:', eventData);
-      console.log('Current events before update:', events);
+      console.log('=== UPDATING EVENT ===');
+      console.log('Event ID:', id);
+      console.log('Event data:', eventData);
       
-      // Update event in state directly
-      setEvents(prevEvents => {
-        console.log('Previous events in setEvents:', prevEvents);
-        
-        const updatedEvents = prevEvents.map(event => {
-          console.log(`Checking event ${event.id} (${String(event.id)}) against ${id} (${String(id)})`);
-          
-          if (String(event.id) === String(id)) {
-            const updatedEvent = { 
-              ...event, 
-              name: eventData.name,
-              date: eventData.date,
-              category: eventData.category,
-              budget: eventData.budget,
-              description: eventData.description,
-              location: eventData.location
-            };
-            console.log('Found matching event, updating:', updatedEvent);
-            return updatedEvent;
-          }
-          return event;
-        });
-        
-        console.log('Updated events array:', updatedEvents);
-        return updatedEvents;
-      });
+      await SQLiteService.updateEvent(id, eventData);
+      console.log('Event updated in database');
       
-      console.log('Event updated successfully in state');
+      // Reload data to get updated state
+      await loadData();
       
-      // Force a small delay to ensure state update
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      console.log('State update completed, events should be updated');
+      console.log('Event updated successfully');
     } catch (error) {
       console.error('Error updating event:', error);
       setError(error.message);
@@ -483,23 +338,14 @@ export const DataProvider = ({ children }) => {
 
   const deleteEvent = async (id) => {
     try {
-      console.log('=== DELETE EVENT DEBUG ===');
-      console.log('Event ID to delete:', id);
-      console.log('Current events before delete:', events);
+      console.log('=== DELETING EVENT ===');
+      console.log('Event ID:', id);
       
-      // Delete event from state directly
-      setEvents(prevEvents => {
-        console.log('Previous events in setEvents:', prevEvents);
-        
-        const updatedEvents = prevEvents.filter(event => {
-          const shouldKeep = String(event.id) !== String(id);
-          console.log(`Event ${event.id} (${String(event.id)}) vs ${id} (${String(id)}): ${shouldKeep ? 'KEEP' : 'DELETE'}`);
-          return shouldKeep;
-        });
-        
-        console.log('Updated events array after delete:', updatedEvents);
-        return updatedEvents;
-      });
+      await SQLiteService.deleteEvent(id);
+      console.log('Event deleted from database');
+      
+      // Reload data to get updated state
+      await loadData();
       
       console.log('Event deleted successfully');
     } catch (error) {
@@ -509,64 +355,28 @@ export const DataProvider = ({ children }) => {
     }
   };
 
-  // Helper functions for data retrieval
-  const getCategoryById = (id) => categories.find(cat => String(cat.id) === String(id));
-  const getFunderById = (id) => funders.find(funder => String(funder.id) === String(id));
-  const getExpenseById = (id) => expenses.find(exp => String(exp.id) === String(id));
-  const getEventById = (id) => events.find(event => String(event.id) === String(id));
+  // Helper functions
+  const getCategoryById = (id) => {
+    return categories.find(category => String(category.id) === String(id));
+  };
+
+  const getFunderById = (id) => {
+    return funders.find(funder => String(funder.id) === String(id));
+  };
+
+  const getExpenseById = (id) => {
+    return expenses.find(expense => String(expense.id) === String(id));
+  };
+
+  const getEventById = (id) => {
+    return events.find(event => String(event.id) === String(id));
+  };
 
   const getExpensesByCategory = (categoryId) => {
-    const filtered = expenses.filter(exp => String(exp.categoryId) === String(categoryId));
-    console.log(`getExpensesByCategory(${categoryId}):`, {
-      totalExpenses: expenses.length,
-      filteredExpenses: filtered.length,
-      expenses: filtered
-    });
-    return filtered;
-  };
-  const getExpensesByEvent = (eventId) => {
-    const event = getEventById(eventId);
-    if (!event || !event.expenses) return [];
-    return expenses.filter(exp => event.expenses.includes(exp.id));
+    return expenses.filter(expense => String(expense.categoryId) === String(categoryId));
   };
 
-  const getBudgetSummary = () => {
-    const totalBudget = events.reduce((sum, event) => sum + (event.budget || 0), 0);
-    const totalSpent = expenses.filter(exp => exp.status === 'Spent').reduce((sum, exp) => sum + (exp.amount || 0), 0);
-    const totalReceived = funders.reduce((sum, funder) => sum + (funder.totalAmount || 0), 0);
-    const remaining = totalBudget - totalSpent;
-    const pending = funders.filter(funder => funder.status === 'Pending').reduce((sum, funder) => sum + (funder.totalAmount || 0), 0);
-
-    return { totalBudget, totalSpent, totalReceived, remaining, pending };
-  };
-
-  const getStatusTotals = () => {
-    const totals = { Pending: 0, Spent: 0, Available: 0, Outstanding: 0 };
-    expenses.forEach(exp => {
-      if (totals.hasOwnProperty(exp.status)) {
-        totals[exp.status] += exp.amount;
-      }
-    });
-    return totals;
-  };
-
-  const refreshData = () => {
-    console.log('=== REFRESH DATA DEBUG ===');
-    console.log('Current data state:', {
-      categories: categories.length,
-      funders: funders.length,
-      expenses: expenses.length,
-      events: events.length
-    });
-    console.log('Categories:', categories);
-    console.log('Funders:', funders);
-    console.log('Expenses:', expenses);
-    console.log('Events:', events);
-    console.log('Refresh completed - data is current');
-    return Promise.resolve();
-  };
-
-  const contextValue = {
+  const value = {
     categories,
     funders,
     expenses,
@@ -585,29 +395,16 @@ export const DataProvider = ({ children }) => {
     addEvent,
     updateEvent,
     deleteEvent,
+    refreshData,
     getCategoryById,
     getFunderById,
     getExpenseById,
     getEventById,
     getExpensesByCategory,
-    getExpensesByEvent,
-    getBudgetSummary,
-    getStatusTotals,
-    refreshData
   };
 
-  // Debug context value
-  console.log('DataContext value:', {
-    categoriesCount: categories.length,
-    fundersCount: funders.length,
-    expensesCount: expenses.length,
-    eventsCount: events.length,
-    loading,
-    error
-  });
-
   return (
-    <DataContext.Provider value={contextValue}>
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );

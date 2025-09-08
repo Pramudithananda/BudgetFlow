@@ -126,10 +126,10 @@ const initDatabase = () => {
         
         // Insert sample data
         const sampleCategories = [
-          { name: 'Food & Catering', color: '#FF6B6B', description: 'Food and catering expenses - Rs. 60,000' },
-          { name: 'Decorations', color: '#4ECDC4', description: 'Party decorations and setup - Rs. 20,000' },
-          { name: 'Transportation', color: '#45B7D1', description: 'Transportation costs - Rs. 10,000' },
-          { name: 'Other Expenses', color: '#96CEB4', description: 'Other miscellaneous expenses' }
+          { name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+          { name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+          { name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+          { name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
         ];
         
         sampleCategories.forEach(category => {
@@ -140,9 +140,9 @@ const initDatabase = () => {
         });
         
         const sampleFunders = [
-          { name: 'Sujith', phone: '0771234567', email: 'sujith@email.com' },
-          { name: 'Nirvan', phone: '0777654321', email: 'nirvan@email.com' },
-          { name: 'Welfare Funding', phone: '0112345678', email: 'welfare@funding.lk' }
+          { name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
+          { name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
+          { name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
         ];
         
         sampleFunders.forEach(funder => {
@@ -157,13 +157,28 @@ const initDatabase = () => {
            VALUES (?, ?, ?, ?, ?, ?);`,
           [
             'Birthday Celebration',
-            'Birthday party celebration with food, decorations, transportation and other expenses',
+            'Annual birthday celebration event',
             '2024-10-01',
             100000,
-            'Party Hall',
-            'Celebration'
+            'Colombo',
+            'Conference'
           ]
         );
+        
+        // Sample expenses data
+        const sampleExpenses = [
+          { title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+          { title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+          { title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+          { title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+        ];
+        
+        sampleExpenses.forEach(expense => {
+          tx.executeSql(
+            'INSERT OR IGNORE INTO expenses (title, amount, status, category_id, assigned_to, date, description) VALUES (?, ?, ?, ?, ?, ?, ?);',
+            [expense.title, expense.amount, expense.status, expense.categoryId, expense.assignedTo, expense.date, expense.description]
+          );
+        });
         
         // Sample funding data
         tx.executeSql(
@@ -241,14 +256,16 @@ export const addCategory = (categoryData) => {
     ensureDatabase().then(() => {
       db.transaction(tx => {
         tx.executeSql(
-          'INSERT INTO categories (name) VALUES (?)',
-          [categoryData.name],
+          'INSERT INTO categories (name, color, description) VALUES (?, ?, ?)',
+          [categoryData.name, categoryData.color || '#64a12d', categoryData.description || ''],
           (_, result) => {
             const newCategory = {
               id: result.insertId,
               name: categoryData.name,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+              color: categoryData.color || '#64a12d',
+              description: categoryData.description || '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             };
             
             console.log('Category added successfully with ID:', result.insertId);
@@ -256,6 +273,48 @@ export const addCategory = (categoryData) => {
           },
           (_, error) => {
             console.error('Error adding category:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const updateCategory = (id, categoryData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'UPDATE categories SET name = ?, color = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [categoryData.name, categoryData.color || '#64a12d', categoryData.description || '', id],
+          (_, result) => {
+            console.log('Category updated successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error updating category:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const deleteCategory = (id) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM categories WHERE id = ?',
+          [id],
+          (_, result) => {
+            console.log('Category deleted successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error deleting category:', error);
             reject(error);
           }
         );
@@ -303,8 +362,8 @@ export const addFunder = (funderData) => {
               name: funderData.name,
               phone: funderData.phone || '',
               email: funderData.email || '',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             };
             
             console.log('Funder added successfully with ID:', result.insertId);
@@ -312,6 +371,48 @@ export const addFunder = (funderData) => {
           },
           (_, error) => {
             console.error('Error adding funder:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const updateFunder = (id, funderData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'UPDATE funders SET name = ?, phone = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [funderData.name, funderData.phone || '', funderData.email || '', id],
+          (_, result) => {
+            console.log('Funder updated successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error updating funder:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const deleteFunder = (id) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM funders WHERE id = ?',
+          [id],
+          (_, result) => {
+            console.log('Funder deleted successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error deleting funder:', error);
             reject(error);
           }
         );
@@ -337,11 +438,71 @@ export const addEvent = (eventData) => {
             eventData.category || ''
           ],
           (_, result) => {
+            const newEvent = {
+              id: result.insertId,
+              name: eventData.name,
+              description: eventData.description || '',
+              date: eventData.date || '',
+              budget: eventData.budget || 0,
+              location: eventData.location || '',
+              category: eventData.category || '',
+              createdAt: new Date().toISOString()
+            };
             console.log('Event added successfully with ID:', result.insertId);
-            resolve(result.insertId);
+            resolve(newEvent);
           },
           (_, error) => {
             console.error('Error adding event:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const updateEvent = (id, eventData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `UPDATE events SET name = ?, description = ?, date = ?, budget = ?, location = ?, category = ? WHERE id = ?`,
+          [
+            eventData.name,
+            eventData.description || '',
+            eventData.date || '',
+            eventData.budget || 0,
+            eventData.location || '',
+            eventData.category || '',
+            id
+          ],
+          (_, result) => {
+            console.log('Event updated successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error updating event:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const deleteEvent = (id) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM events WHERE id = ?',
+          [id],
+          (_, result) => {
+            console.log('Event deleted successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error deleting event:', error);
             reject(error);
           }
         );
@@ -436,6 +597,131 @@ export const getEventFundingSummary = (eventId) => {
           },
           (_, error) => {
             console.error('Error getting event funding summary:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+// Expense Operations
+export const getExpenses = () => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM expenses ORDER BY created_at DESC',
+          [],
+          (_, result) => {
+            const expenses = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              expenses.push(result.rows.item(i));
+            }
+            console.log('Retrieved expenses:', expenses);
+            resolve(expenses);
+          },
+          (_, error) => {
+            console.error('Error getting expenses:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const addExpense = (expenseData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `INSERT INTO expenses (title, amount, status, category_id, funder_id, event_id, date, assigned_to, description) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            expenseData.title,
+            expenseData.amount || 0,
+            expenseData.status || 'Outstanding',
+            expenseData.categoryId || null,
+            expenseData.funderId || null,
+            expenseData.eventId || null,
+            expenseData.date || new Date().toISOString().slice(0, 10),
+            expenseData.assignedTo || '',
+            expenseData.description || ''
+          ],
+          (_, result) => {
+            const newExpense = {
+              id: result.insertId,
+              title: expenseData.title,
+              amount: expenseData.amount || 0,
+              status: expenseData.status || 'Outstanding',
+              categoryId: expenseData.categoryId || null,
+              funderId: expenseData.funderId || null,
+              eventId: expenseData.eventId || null,
+              date: expenseData.date || new Date().toISOString().slice(0, 10),
+              assignedTo: expenseData.assignedTo || '',
+              description: expenseData.description || '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            console.log('Expense added successfully with ID:', result.insertId);
+            resolve(newExpense);
+          },
+          (_, error) => {
+            console.error('Error adding expense:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const updateExpense = (id, expenseData) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `UPDATE expenses SET title = ?, amount = ?, status = ?, category_id = ?, funder_id = ?, event_id = ?, date = ?, assigned_to = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          [
+            expenseData.title,
+            expenseData.amount || 0,
+            expenseData.status || 'Outstanding',
+            expenseData.categoryId || null,
+            expenseData.funderId || null,
+            expenseData.eventId || null,
+            expenseData.date || new Date().toISOString().slice(0, 10),
+            expenseData.assignedTo || '',
+            expenseData.description || '',
+            id
+          ],
+          (_, result) => {
+            console.log('Expense updated successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error updating expense:', error);
+            reject(error);
+          }
+        );
+      });
+    }).catch(reject);
+  });
+};
+
+export const deleteExpense = (id) => {
+  return new Promise((resolve, reject) => {
+    ensureDatabase().then(() => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM expenses WHERE id = ?',
+          [id],
+          (_, result) => {
+            console.log('Expense deleted successfully:', result.rowsAffected);
+            resolve(result.rowsAffected);
+          },
+          (_, error) => {
+            console.error('Error deleting expense:', error);
             reject(error);
           }
         );
