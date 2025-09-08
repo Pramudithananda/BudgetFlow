@@ -187,9 +187,39 @@ export const DataProvider = ({ children }) => {
 
   const deleteCategory = async (id) => {
     try {
-      // We'll need to add deleteCategory to SQLiteService
-      console.log('Deleting category:', id);
-      await loadData(); // Reload data
+      console.log('=== DELETE CATEGORY DEBUG ===');
+      console.log('Category ID to delete:', id);
+      console.log('Current categories before delete:', categories);
+      
+      // Delete category from state directly
+      setCategories(prevCategories => {
+        console.log('Previous categories in setCategories:', prevCategories);
+        
+        const updatedCategories = prevCategories.filter(category => {
+          const shouldKeep = String(category.id) !== String(id);
+          console.log(`Category ${category.id} (${String(category.id)}) vs ${id} (${String(id)}): ${shouldKeep ? 'KEEP' : 'DELETE'}`);
+          return shouldKeep;
+        });
+        
+        console.log('Updated categories array after delete:', updatedCategories);
+        return updatedCategories;
+      });
+      
+      // Also delete related expenses
+      setExpenses(prevExpenses => {
+        console.log('Previous expenses before category delete:', prevExpenses);
+        
+        const updatedExpenses = prevExpenses.filter(expense => {
+          const shouldKeep = String(expense.categoryId) !== String(id);
+          console.log(`Expense ${expense.id} (categoryId: ${expense.categoryId}) vs ${id}: ${shouldKeep ? 'KEEP' : 'DELETE'}`);
+          return shouldKeep;
+        });
+        
+        console.log('Updated expenses array after category delete:', updatedExpenses);
+        return updatedExpenses;
+      });
+      
+      console.log('Category and related expenses deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
       setError(error.message);
@@ -228,9 +258,41 @@ export const DataProvider = ({ children }) => {
 
   const updateFunder = async (id, funderData) => {
     try {
-      // We'll need to add updateFunder to SQLiteService
-      console.log('Updating funder:', id, funderData);
-      await loadData(); // Reload data
+      console.log('=== UPDATE FUNDER DEBUG ===');
+      console.log('Funder ID to update:', id);
+      console.log('Funder data to update:', funderData);
+      console.log('Current funders before update:', funders);
+      
+      // Update funder in state directly
+      setFunders(prevFunders => {
+        console.log('Previous funders in setFunders:', prevFunders);
+        
+        const updatedFunders = prevFunders.map(funder => {
+          console.log(`Checking funder ${funder.id} (${String(funder.id)}) against ${id} (${String(id)})`);
+          
+          if (String(funder.id) === String(id)) {
+            const updatedFunder = { 
+              ...funder, 
+              name: funderData.name,
+              phone: funderData.phone,
+              email: funderData.email
+            };
+            console.log('Found matching funder, updating:', updatedFunder);
+            return updatedFunder;
+          }
+          return funder;
+        });
+        
+        console.log('Updated funders array:', updatedFunders);
+        return updatedFunders;
+      });
+      
+      console.log('Funder updated successfully in state');
+      
+      // Force a small delay to ensure state update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('State update completed, funders should be updated');
     } catch (error) {
       console.error('Error updating funder:', error);
       setError(error.message);
@@ -321,9 +383,25 @@ export const DataProvider = ({ children }) => {
 
   const deleteExpense = async (id) => {
     try {
-      console.log('Deleting expense:', id);
-      // We'll need to add deleteExpense to SQLiteService
-      await loadData(); // Reload data
+      console.log('=== DELETE EXPENSE DEBUG ===');
+      console.log('Expense ID to delete:', id);
+      console.log('Current expenses before delete:', expenses);
+      
+      // Delete expense from state directly
+      setExpenses(prevExpenses => {
+        console.log('Previous expenses in setExpenses:', prevExpenses);
+        
+        const updatedExpenses = prevExpenses.filter(expense => {
+          const shouldKeep = String(expense.id) !== String(id);
+          console.log(`Expense ${expense.id} (${String(expense.id)}) vs ${id} (${String(id)}): ${shouldKeep ? 'KEEP' : 'DELETE'}`);
+          return shouldKeep;
+        });
+        
+        console.log('Updated expenses array after delete:', updatedExpenses);
+        return updatedExpenses;
+      });
+      
+      console.log('Expense deleted successfully');
     } catch (error) {
       console.error('Error deleting expense:', error);
       setError(error.message);
@@ -358,9 +436,44 @@ export const DataProvider = ({ children }) => {
 
   const updateEvent = async (id, eventData) => {
     try {
-      console.log('Updating event:', id, eventData);
-      // We'll need to add updateEvent to SQLiteService
-      await loadData(); // Reload data
+      console.log('=== UPDATE EVENT DEBUG ===');
+      console.log('Event ID to update:', id);
+      console.log('Event data to update:', eventData);
+      console.log('Current events before update:', events);
+      
+      // Update event in state directly
+      setEvents(prevEvents => {
+        console.log('Previous events in setEvents:', prevEvents);
+        
+        const updatedEvents = prevEvents.map(event => {
+          console.log(`Checking event ${event.id} (${String(event.id)}) against ${id} (${String(id)})`);
+          
+          if (String(event.id) === String(id)) {
+            const updatedEvent = { 
+              ...event, 
+              name: eventData.name,
+              date: eventData.date,
+              category: eventData.category,
+              budget: eventData.budget,
+              description: eventData.description,
+              location: eventData.location
+            };
+            console.log('Found matching event, updating:', updatedEvent);
+            return updatedEvent;
+          }
+          return event;
+        });
+        
+        console.log('Updated events array:', updatedEvents);
+        return updatedEvents;
+      });
+      
+      console.log('Event updated successfully in state');
+      
+      // Force a small delay to ensure state update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('State update completed, events should be updated');
     } catch (error) {
       console.error('Error updating event:', error);
       setError(error.message);
@@ -370,9 +483,25 @@ export const DataProvider = ({ children }) => {
 
   const deleteEvent = async (id) => {
     try {
-      console.log('Deleting event:', id);
-      // We'll need to add deleteEvent to SQLiteService
-      await loadData(); // Reload data
+      console.log('=== DELETE EVENT DEBUG ===');
+      console.log('Event ID to delete:', id);
+      console.log('Current events before delete:', events);
+      
+      // Delete event from state directly
+      setEvents(prevEvents => {
+        console.log('Previous events in setEvents:', prevEvents);
+        
+        const updatedEvents = prevEvents.filter(event => {
+          const shouldKeep = String(event.id) !== String(id);
+          console.log(`Event ${event.id} (${String(event.id)}) vs ${id} (${String(id)}): ${shouldKeep ? 'KEEP' : 'DELETE'}`);
+          return shouldKeep;
+        });
+        
+        console.log('Updated events array after delete:', updatedEvents);
+        return updatedEvents;
+      });
+      
+      console.log('Event deleted successfully');
     } catch (error) {
       console.error('Error deleting event:', error);
       setError(error.message);

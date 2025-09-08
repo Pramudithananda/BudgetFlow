@@ -141,7 +141,7 @@ export default function FundersScreen() {
                   <RNView style={styles.actionButtons}>
                     <TouchableOpacity
                       style={[styles.actionButton, { backgroundColor: '#64a12d' }]}
-                      onPress={() => Alert.alert('Edit Funder', 'Edit functionality coming soon!')}
+                      onPress={() => router.push(`/edit-funder/${funder.id}`)}
                     >
                       <FontAwesome5 name="edit" size={14} color="#fff" />
                     </TouchableOpacity>

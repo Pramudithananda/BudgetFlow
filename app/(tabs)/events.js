@@ -17,6 +17,8 @@ export default function EventsScreen() {
     loading, 
     error, 
     addEvent,
+    updateEvent,
+    deleteEvent,
     refreshData 
   } = useData();
   
@@ -86,6 +88,28 @@ export default function EventsScreen() {
       console.error('Error adding event:', error);
       Alert.alert('Error', 'Failed to add event. Please try again.');
     }
+  };
+
+  const handleDeleteEvent = (eventId, eventName) => {
+    Alert.alert(
+      'Delete Event',
+      `Are you sure you want to delete "${eventName}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteEvent(eventId);
+              Alert.alert('Success', 'Event deleted successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Could not delete event. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const formatDate = (dateString) => {
@@ -171,13 +195,13 @@ export default function EventsScreen() {
                 <RNView style={styles.actionButtons}>
                   <TouchableOpacity
                     style={[styles.actionButton, { backgroundColor: '#64a12d' }]}
-                    onPress={() => Alert.alert('Edit Event', 'Edit functionality coming soon!')}
+                    onPress={() => router.push(`/edit-event/${event.id}`)}
                   >
                     <FontAwesome5 name="edit" size={14} color="#fff" />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.actionButton, { backgroundColor: '#e74c3c' }]}
-                    onPress={() => Alert.alert('Delete Event', 'Delete functionality coming soon!')}
+                    onPress={() => handleDeleteEvent(event.id, event.name)}
                   >
                     <FontAwesome5 name="trash" size={14} color="#fff" />
                   </TouchableOpacity>

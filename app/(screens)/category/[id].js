@@ -12,7 +12,7 @@ import { useData } from '../../../context/DataContext';
 export default function CategoryDetailScreen() {
   const { colors, isDarkMode } = useTheme();
   const { id } = useLocalSearchParams();
-  const { getCategoryById, getExpensesByCategory, categories, expenses: allExpenses } = useData();
+  const { getCategoryById, getExpensesByCategory, categories, expenses: allExpenses, deleteCategory } = useData();
   
   // Get category and expenses from DataContext
   const category = getCategoryById(id) || categories.find(cat => String(cat.id) === String(id));
@@ -35,8 +35,27 @@ export default function CategoryDetailScreen() {
   });
 
   const handleDeleteCategory = () => {
-    // Show info message since this is static data
-    alert('Delete Category feature coming soon!');
+    Alert.alert(
+      'Delete Category',
+      `Are you sure you want to delete "${category?.name}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteCategory(id);
+              Alert.alert('Success', 'Category deleted successfully!', [
+                { text: 'OK', onPress: () => router.push('/category') }
+              ]);
+            } catch (error) {
+              Alert.alert('Error', 'Could not delete category. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleEditCategory = () => {

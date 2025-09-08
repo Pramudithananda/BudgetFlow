@@ -16,7 +16,8 @@ export default function ExpensesScreen() {
     categories, 
     loading, 
     error, 
-    refreshData 
+    refreshData,
+    deleteExpense 
   } = useData();
   
   const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +46,7 @@ export default function ExpensesScreen() {
   };
 
   const handleEditExpense = (expenseId) => {
-    Alert.alert('Edit Expense', 'Edit functionality coming soon!');
+    router.push(`/edit-expense/${expenseId}`);
   };
 
   const handleDeleteExpense = (expenseId, expenseTitle) => {
@@ -57,8 +58,13 @@ export default function ExpensesScreen() {
         { 
           text: 'Delete', 
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('Success', 'Expense deleted successfully!');
+          onPress: async () => {
+            try {
+              await deleteExpense(expenseId);
+              Alert.alert('Success', 'Expense deleted successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Could not delete expense. Please try again.');
+            }
           }
         }
       ]
