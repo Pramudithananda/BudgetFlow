@@ -213,16 +213,19 @@ export default function HomeScreen() {
           </RNView>
           {categories.map((category) => {
             console.log('Home screen rendering category:', category);
+            console.log('All expenses available:', expenses);
             
-            // Use dynamic data from DataContext
-            const categoryExpenses = getExpensesByCategory(category.id);
+            // Direct filtering from expenses array
+            const categoryExpenses = expenses.filter(exp => String(exp.categoryId) === String(category.id));
             const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
             const totalExpenses = categoryExpenses.length;
             
-            console.log(`Category ${category.name} (ID: ${category.id}):`, {
+            console.log(`Home screen - Category ${category.name} (ID: ${category.id}):`, {
+              allExpenses: expenses.length,
               categoryExpenses: categoryExpenses.length,
               totalAmount: totalAmount,
-              totalExpenses: totalExpenses
+              totalExpenses: totalExpenses,
+              expenses: categoryExpenses
             });
             
             return (
