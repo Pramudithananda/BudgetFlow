@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, ScrollView, View as RNView, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { Text, View } from '../../../components/Themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -153,18 +153,20 @@ export default function EditCategoryScreen() {
       <Card style={styles.card}>
         <Text style={[styles.label, { color: colors.text }]}>Category Name *</Text>
         <RNView style={[styles.inputContainer, { backgroundColor: colors.card }]}>
-          <Text
+          <TextInput
             style={[styles.input, { color: colors.text }]}
             value={name}
             onChangeText={setName}
             placeholder="Enter category name"
             placeholderTextColor={colors.text + '80'}
+            autoCapitalize="words"
+            autoCorrect={false}
           />
         </RNView>
 
         <Text style={[styles.label, { color: colors.text }]}>Description (Optional)</Text>
         <RNView style={[styles.inputContainer, { backgroundColor: colors.card }]}>
-          <Text
+          <TextInput
             style={[styles.textArea, { color: colors.text }]}
             value={description}
             onChangeText={setDescription}
@@ -172,6 +174,8 @@ export default function EditCategoryScreen() {
             placeholderTextColor={colors.text + '80'}
             multiline
             numberOfLines={3}
+            autoCapitalize="sentences"
+            autoCorrect={true}
           />
         </RNView>
 
