@@ -52,7 +52,6 @@ export const DataProvider = ({ children }) => {
 
   const loadStaticData = () => {
     console.log('=== LOADING STATIC DATA ===');
-    setLoading(true);
     setError(null);
 
     // Load static data immediately to prevent white screen
@@ -88,7 +87,6 @@ export const DataProvider = ({ children }) => {
       }
     ]);
     
-    setLoading(false);
     console.log('Static data loaded successfully');
     
     // Try to initialize database in background (non-blocking)
