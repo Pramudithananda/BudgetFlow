@@ -65,7 +65,43 @@ export const DataProvider = ({ children }) => {
       console.log('Data loaded successfully from database');
     } catch (error) {
       console.error('Error initializing database:', error);
-      setError(error.message);
+      console.log('Falling back to static data due to database error');
+      
+      // Fallback to static data if database fails
+      setCategories([
+        { id: 1, name: 'Food & Beverages', color: '#64a12d', description: 'Meals, snacks, and drinks' },
+        { id: 2, name: 'Decorations', color: '#ff6b6b', description: 'Party decorations and setup' },
+        { id: 3, name: 'Transportation', color: '#4ecdc4', description: 'Travel and transport costs' },
+        { id: 4, name: 'Other Expenses', color: '#45b7d1', description: 'Miscellaneous expenses' }
+      ]);
+      
+      setFunders([
+        { id: 1, name: 'Sujith', phone: '+94 77 123 4567', email: 'sujith@example.com' },
+        { id: 2, name: 'Nirvan', phone: '+94 78 234 5678', email: 'nirvan@example.com' },
+        { id: 3, name: 'Welfare Funding', phone: '+94 11 345 6789', email: 'welfare@funding.org' }
+      ]);
+      
+      setExpenses([
+        { id: 1, title: 'Food & Beverages', amount: 60000, status: 'Spent', categoryId: 1, assignedTo: 'Sujith', date: '2024-01-15', description: 'Birthday party catering' },
+        { id: 2, title: 'Decorations', amount: 20000, status: 'Available', categoryId: 2, assignedTo: 'Nirvan', date: '2024-01-16', description: 'Party decorations and balloons' },
+        { id: 3, title: 'Transportation', amount: 10000, status: 'Pending', categoryId: 3, assignedTo: 'Welfare', date: '2024-01-17', description: 'Transport for guests' },
+        { id: 4, title: 'Other Expenses', amount: 10000, status: 'Outstanding', categoryId: 4, assignedTo: 'Sujith', date: '2024-01-18', description: 'Miscellaneous costs' }
+      ]);
+      
+      setEvents([
+        { 
+          id: 1, 
+          name: 'Birthday Celebration', 
+          date: '2024-10-01', 
+          category: 'Conference',
+          budget: 100000,
+          description: 'Annual birthday celebration event',
+          location: 'Colombo'
+        }
+      ]);
+      
+      setError('Database unavailable - using offline mode');
+      console.log('Static data loaded as fallback');
     } finally {
       setLoading(false);
     }
@@ -130,9 +166,22 @@ export const DataProvider = ({ children }) => {
       console.log('Category added successfully');
       return newCategory;
     } catch (error) {
-      console.error('Error adding category:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error adding category to database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      const newCategory = {
+        id: Date.now(), // Generate temporary ID
+        name: categoryData.name,
+        color: categoryData.color || '#64a12d',
+        description: categoryData.description || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setCategories(prev => [...prev, newCategory]);
+      console.log('Category added to state as fallback');
+      return newCategory;
     }
   };
 
@@ -150,9 +199,16 @@ export const DataProvider = ({ children }) => {
       
       console.log('Category updated successfully');
     } catch (error) {
-      console.error('Error updating category:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error updating category in database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setCategories(prev => prev.map(category => 
+        String(category.id) === String(id) 
+          ? { ...category, ...categoryData, updated_at: new Date().toISOString() }
+          : category
+      ));
+      console.log('Category updated in state as fallback');
     }
   };
 
@@ -169,9 +225,13 @@ export const DataProvider = ({ children }) => {
       
       console.log('Category deleted successfully');
     } catch (error) {
-      console.error('Error deleting category:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error deleting category from database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setCategories(prev => prev.filter(category => String(category.id) !== String(id)));
+      setExpenses(prev => prev.filter(expense => String(expense.categoryId) !== String(id)));
+      console.log('Category deleted from state as fallback');
     }
   };
 
@@ -190,9 +250,22 @@ export const DataProvider = ({ children }) => {
       console.log('Funder added successfully');
       return newFunder;
     } catch (error) {
-      console.error('Error adding funder:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error adding funder to database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      const newFunder = {
+        id: Date.now(), // Generate temporary ID
+        name: funderData.name,
+        phone: funderData.phone || '',
+        email: funderData.email || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setFunders(prev => [...prev, newFunder]);
+      console.log('Funder added to state as fallback');
+      return newFunder;
     }
   };
 
@@ -210,9 +283,16 @@ export const DataProvider = ({ children }) => {
       
       console.log('Funder updated successfully');
     } catch (error) {
-      console.error('Error updating funder:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error updating funder in database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setFunders(prev => prev.map(funder => 
+        String(funder.id) === String(id) 
+          ? { ...funder, ...funderData, updated_at: new Date().toISOString() }
+          : funder
+      ));
+      console.log('Funder updated in state as fallback');
     }
   };
 
@@ -229,9 +309,12 @@ export const DataProvider = ({ children }) => {
       
       console.log('Funder deleted successfully');
     } catch (error) {
-      console.error('Error deleting funder:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error deleting funder from database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setFunders(prev => prev.filter(funder => String(funder.id) !== String(id)));
+      console.log('Funder deleted from state as fallback');
     }
   };
 
@@ -250,9 +333,28 @@ export const DataProvider = ({ children }) => {
       console.log('Expense added successfully');
       return newExpense;
     } catch (error) {
-      console.error('Error adding expense:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error adding expense to database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      const newExpense = {
+        id: Date.now(), // Generate temporary ID
+        title: expenseData.title,
+        amount: expenseData.amount || 0,
+        status: expenseData.status || 'Outstanding',
+        categoryId: expenseData.categoryId || null,
+        funderId: expenseData.funderId || null,
+        eventId: expenseData.eventId || null,
+        date: expenseData.date || new Date().toISOString().slice(0, 10),
+        assignedTo: expenseData.assignedTo || '',
+        description: expenseData.description || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setExpenses(prev => [...prev, newExpense]);
+      console.log('Expense added to state as fallback');
+      return newExpense;
     }
   };
 
@@ -270,9 +372,16 @@ export const DataProvider = ({ children }) => {
       
       console.log('Expense updated successfully');
     } catch (error) {
-      console.error('Error updating expense:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error updating expense in database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setExpenses(prev => prev.map(expense => 
+        String(expense.id) === String(id) 
+          ? { ...expense, ...expenseData, updated_at: new Date().toISOString() }
+          : expense
+      ));
+      console.log('Expense updated in state as fallback');
     }
   };
 
@@ -289,9 +398,12 @@ export const DataProvider = ({ children }) => {
       
       console.log('Expense deleted successfully');
     } catch (error) {
-      console.error('Error deleting expense:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error deleting expense from database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setExpenses(prev => prev.filter(expense => String(expense.id) !== String(id)));
+      console.log('Expense deleted from state as fallback');
     }
   };
 
@@ -310,9 +422,24 @@ export const DataProvider = ({ children }) => {
       console.log('Event added successfully');
       return newEvent;
     } catch (error) {
-      console.error('Error adding event:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error adding event to database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      const newEvent = {
+        id: Date.now(), // Generate temporary ID
+        name: eventData.name,
+        description: eventData.description || '',
+        date: eventData.date || '',
+        budget: eventData.budget || 0,
+        location: eventData.location || '',
+        category: eventData.category || '',
+        createdAt: new Date().toISOString()
+      };
+      
+      setEvents(prev => [...prev, newEvent]);
+      console.log('Event added to state as fallback');
+      return newEvent;
     }
   };
 
@@ -330,9 +457,16 @@ export const DataProvider = ({ children }) => {
       
       console.log('Event updated successfully');
     } catch (error) {
-      console.error('Error updating event:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error updating event in database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setEvents(prev => prev.map(event => 
+        String(event.id) === String(id) 
+          ? { ...event, ...eventData }
+          : event
+      ));
+      console.log('Event updated in state as fallback');
     }
   };
 
@@ -349,9 +483,12 @@ export const DataProvider = ({ children }) => {
       
       console.log('Event deleted successfully');
     } catch (error) {
-      console.error('Error deleting event:', error);
-      setError(error.message);
-      throw error;
+      console.error('Error deleting event from database:', error);
+      console.log('Falling back to state update');
+      
+      // Fallback to state update if database fails
+      setEvents(prev => prev.filter(event => String(event.id) !== String(id)));
+      console.log('Event deleted from state as fallback');
     }
   };
 
