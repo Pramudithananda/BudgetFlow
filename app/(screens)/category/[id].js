@@ -40,8 +40,8 @@ export default function CategoryDetailScreen() {
   };
 
   const handleEditCategory = () => {
-    // Show info message since this is static data
-    alert('Edit Category feature coming soon!');
+    // Navigate to edit category page
+    router.push(`/edit-category/${id}`);
   };
 
   if (!category) {

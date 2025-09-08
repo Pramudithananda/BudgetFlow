@@ -143,9 +143,36 @@ export const DataProvider = ({ children }) => {
 
   const updateCategory = async (id, categoryData) => {
     try {
-      // We'll need to add updateCategory to SQLiteService
-      console.log('Updating category:', id, categoryData);
-      await loadData(); // Reload data
+      console.log('=== UPDATE CATEGORY DEBUG ===');
+      console.log('Category ID to update:', id);
+      console.log('Category data to update:', categoryData);
+      console.log('Current categories before update:', categories);
+      
+      // Update category in state directly
+      setCategories(prevCategories => {
+        console.log('Previous categories in setCategories:', prevCategories);
+        
+        const updatedCategories = prevCategories.map(category => {
+          console.log(`Checking category ${category.id} (${String(category.id)}) against ${id} (${String(id)})`);
+          
+          if (String(category.id) === String(id)) {
+            const updatedCategory = { 
+              ...category, 
+              name: categoryData.name,
+              description: categoryData.description,
+              color: categoryData.color
+            };
+            console.log('Found matching category, updating:', updatedCategory);
+            return updatedCategory;
+          }
+          return category;
+        });
+        
+        console.log('Updated categories array:', updatedCategories);
+        return updatedCategories;
+      });
+      
+      console.log('Category updated successfully in state');
     } catch (error) {
       console.error('Error updating category:', error);
       setError(error.message);
