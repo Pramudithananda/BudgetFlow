@@ -551,7 +551,18 @@ export const DataProvider = ({ children }) => {
   };
 
   const refreshData = () => {
-    console.log('Refresh data called - data already loaded');
+    console.log('=== REFRESH DATA DEBUG ===');
+    console.log('Current data state:', {
+      categories: categories.length,
+      funders: funders.length,
+      expenses: expenses.length,
+      events: events.length
+    });
+    console.log('Categories:', categories);
+    console.log('Funders:', funders);
+    console.log('Expenses:', expenses);
+    console.log('Events:', events);
+    console.log('Refresh completed - data is current');
     return Promise.resolve();
   };
 

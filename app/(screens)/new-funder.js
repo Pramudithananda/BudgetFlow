@@ -34,13 +34,21 @@ export default function NewFunderScreen() {
       const result = await addFunder(funderData);
       console.log('Funder save result:', result);
       
-      Alert.alert('Success', 'Funder added successfully!', [
-        { text: 'OK', onPress: () => {
-          console.log('Navigating back to funders tab');
-          // Force navigation to funders tab
-          router.replace('/(tabs)/funders');
-        }}
-      ]);
+      Alert.alert(
+        '✅ Success!', 
+        `Funder "${funderData.name}" has been added successfully!\n\nYou can now see them in the Funders tab.`, 
+        [
+          { text: 'View Funders', onPress: () => {
+            console.log('Navigating back to funders tab');
+            router.replace('/(tabs)/funders');
+          }},
+          { text: 'Add Another', onPress: () => {
+            setName('');
+            setPhone('');
+            setEmail('');
+          }}
+        ]
+      );
     } catch (error) {
       console.error('Error adding funder:', error);
       Alert.alert('Error', 'Failed to add funder. Please try again.');

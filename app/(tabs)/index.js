@@ -110,6 +110,22 @@ export default function HomeScreen() {
           spent={statusTotals.Spent}
         />
 
+        {/* Data Verification Section */}
+        <Card style={styles.card}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>📊 Data Status</Text>
+          <Text style={[styles.dataStatus, { color: colors.text }]}>
+            Categories: {categories.length} | Funders: {funders.length} | Expenses: {expenses.length} | Events: {events.length}
+          </Text>
+          <Text style={[styles.dataStatus, { color: colors.text }]}>
+            Last Updated: {new Date().toLocaleTimeString()}
+          </Text>
+          <Button
+            title="🔄 Refresh Data"
+            onPress={onRefresh}
+            style={[styles.refreshButton, { backgroundColor: colors.primary }]}
+          />
+        </Card>
+
         {/* Funding Status */}
         <Card style={styles.card}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Funding Status</Text>
@@ -456,5 +472,14 @@ const styles = StyleSheet.create({
   modalExpenseAmount: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  dataStatus: {
+    fontSize: 14,
+    marginBottom: 4,
+    opacity: 0.8,
+  },
+  refreshButton: {
+    marginTop: 8,
+    paddingVertical: 8,
   },
 });

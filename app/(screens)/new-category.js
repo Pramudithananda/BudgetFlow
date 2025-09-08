@@ -41,13 +41,21 @@ export default function NewCategoryScreen() {
       const result = await addCategory(categoryData);
       console.log('Category save result:', result);
       
-      Alert.alert('Success', 'Category added successfully!', [
-        { text: 'OK', onPress: () => {
-          console.log('Navigating back to categories tab');
-          // Force navigation to categories tab
-          router.replace('/(tabs)/category');
-        }}
-      ]);
+      Alert.alert(
+        '✅ Success!', 
+        `Category "${categoryData.name}" has been added successfully!\n\nYou can now see it in the Categories tab.`, 
+        [
+          { text: 'View Categories', onPress: () => {
+            console.log('Navigating back to categories tab');
+            router.replace('/(tabs)/category');
+          }},
+          { text: 'Add Another', onPress: () => {
+            setName('');
+            setDescription('');
+            setColor('#64a12d');
+          }}
+        ]
+      );
     } catch (error) {
       console.error('Error adding category:', error);
       Alert.alert('Error', 'Failed to add category. Please try again.');
