@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppLayout from './app/_layout';
 import { StatusBar } from 'expo-status-bar';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
   return (
@@ -13,7 +14,9 @@ export default function App() {
         <AuthProvider>
           <DataProvider>
             <StatusBar style="auto" />
-            <AppLayout />
+            <ErrorBoundary>
+              <AppLayout />
+            </ErrorBoundary>
           </DataProvider>
         </AuthProvider>
       </SafeAreaProvider>
