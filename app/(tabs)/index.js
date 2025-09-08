@@ -28,6 +28,18 @@ export default function HomeScreen() {
   
   const [refreshing, setRefreshing] = useState(false);
 
+  // Show loading only if no data is available
+  if (loading && categories.length === 0 && funders.length === 0 && expenses.length === 0 && events.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading BudgetFlow...</Text>
+        </View>
+      </View>
+    );
+  }
+
   // Get dynamic data from context
   const budgetSummary = getBudgetSummary();
   const statusTotals = getStatusTotals();
@@ -481,5 +493,16 @@ const styles = StyleSheet.create({
   refreshButton: {
     marginTop: 8,
     paddingVertical: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
