@@ -140,29 +140,17 @@ export default function CategoriesScreen() {
         {/* Categories List */}
         {displayCategories && displayCategories.length > 0 ? (
           displayCategories.map((category, index) => {
-            console.log(`Rendering category ${index}:`, category);
+            console.log(`Categories tab rendering category ${index}:`, category);
             
-            // Direct hardcoded values for each category
-            let totalAmount = 0;
-            let totalExpenses = 0;
+            // Use dynamic data from DataContext
+            const categoryExpenses = getExpensesByCategory(category.id);
+            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalExpenses = categoryExpenses.length;
             
-            if (category.id === 1) { // Food & Beverages
-              totalAmount = 60000;
-              totalExpenses = 1;
-            } else if (category.id === 2) { // Decorations
-              totalAmount = 20000;
-              totalExpenses = 1;
-            } else if (category.id === 3) { // Transportation
-              totalAmount = 10000;
-              totalExpenses = 1;
-            } else if (category.id === 4) { // Other Expenses
-              totalAmount = 10000;
-              totalExpenses = 1;
-            }
-            
-            console.log(`Category ${category.name} (ID: ${category.id}):`, {
-              totalExpenses: totalExpenses,
+            console.log(`Categories tab - Category ${category.name} (ID: ${category.id}):`, {
+              categoryExpenses: categoryExpenses.length,
               totalAmount: totalAmount,
+              totalExpenses: totalExpenses,
               categoryId: category.id,
               categoryIdType: typeof category.id
             });

@@ -212,23 +212,18 @@ export default function HomeScreen() {
             />
           </RNView>
           {categories.map((category) => {
-            // Direct hardcoded values for each category to match static data
-            let totalAmount = 0;
-            let totalExpenses = 0;
+            console.log('Home screen rendering category:', category);
             
-            if (category.id === 1) { // Food & Beverages
-              totalAmount = 60000;
-              totalExpenses = 1;
-            } else if (category.id === 2) { // Decorations
-              totalAmount = 20000;
-              totalExpenses = 1;
-            } else if (category.id === 3) { // Transportation
-              totalAmount = 10000;
-              totalExpenses = 1;
-            } else if (category.id === 4) { // Other Expenses
-              totalAmount = 10000;
-              totalExpenses = 1;
-            }
+            // Use dynamic data from DataContext
+            const categoryExpenses = getExpensesByCategory(category.id);
+            const totalAmount = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalExpenses = categoryExpenses.length;
+            
+            console.log(`Category ${category.name} (ID: ${category.id}):`, {
+              categoryExpenses: categoryExpenses.length,
+              totalAmount: totalAmount,
+              totalExpenses: totalExpenses
+            });
             
             return (
               <CategoryItem

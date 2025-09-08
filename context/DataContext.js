@@ -173,6 +173,11 @@ export const DataProvider = ({ children }) => {
       });
       
       console.log('Category updated successfully in state');
+      
+      // Force a small delay to ensure state update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('State update completed, categories should be updated');
     } catch (error) {
       console.error('Error updating category:', error);
       setError(error.message);
