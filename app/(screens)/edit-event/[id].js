@@ -136,9 +136,12 @@ export default function EditEventScreen() {
       console.log('Update completed successfully');
 
       Alert.alert(
-        'Success',
-        'Event updated successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
+        '✅ Success!',
+        `Event "${name.trim()}" has been updated successfully!\n\nChanges have been saved and will appear across all screens.`,
+        [
+          { text: 'View Event', onPress: () => router.back() },
+          { text: 'Go to Events', onPress: () => router.push('/(tabs)/events') }
+        ]
       );
     } catch (error) {
       console.error('Error updating event:', error);

@@ -102,9 +102,12 @@ export default function EditFunderScreen() {
       console.log('Update completed successfully');
 
       Alert.alert(
-        'Success',
-        'Funder updated successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
+        '✅ Success!',
+        `Funder "${name.trim()}" has been updated successfully!\n\nChanges have been saved and will appear across all screens.`,
+        [
+          { text: 'View Funder', onPress: () => router.back() },
+          { text: 'Go to Funders', onPress: () => router.push('/(tabs)/funders') }
+        ]
       );
     } catch (error) {
       console.error('Error updating funder:', error);

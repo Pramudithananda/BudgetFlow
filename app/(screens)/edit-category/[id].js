@@ -103,9 +103,12 @@ export default function EditCategoryScreen() {
       console.log('Update completed successfully');
 
       Alert.alert(
-        'Success',
-        'Category updated successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
+        '✅ Success!',
+        `Category "${name.trim()}" has been updated successfully!\n\nChanges have been saved and will appear across all screens.`,
+        [
+          { text: 'View Category', onPress: () => router.back() },
+          { text: 'Go to Categories', onPress: () => router.push('/(tabs)/category') }
+        ]
       );
     } catch (error) {
       console.error('Error updating category:', error);

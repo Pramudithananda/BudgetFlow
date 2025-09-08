@@ -163,9 +163,12 @@ export default function EditExpenseScreen() {
       console.log('Update completed successfully');
 
       Alert.alert(
-        'Success',
-        'Expense updated successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
+        '✅ Success!',
+        `Expense "${title.trim()}" has been updated successfully!\n\nChanges have been saved and will appear across all screens.`,
+        [
+          { text: 'View Expense', onPress: () => router.back() },
+          { text: 'Go to Expenses', onPress: () => router.push('/(tabs)/expenses') }
+        ]
       );
     } catch (error) {
       console.error('Error updating expense:', error);
