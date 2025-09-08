@@ -6,8 +6,8 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const systemColorScheme = useColorScheme();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(systemColorScheme === 'dark');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadThemePreference();
@@ -55,10 +55,6 @@ export function ThemeProvider({ children }) {
       info: '#2196F3',
     },
   };
-
-  if (isLoading) {
-    return null;
-  }
 
   return (
     <ThemeContext.Provider value={theme}>
