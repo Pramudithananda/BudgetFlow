@@ -221,11 +221,37 @@
 
     goto :goto_1
 
+    :catch_0
+    move-exception v2
+
+    .line 286
+    invoke-virtual {v2}, Ljava/lang/Exception;->getMessage()Ljava/lang/String;
+
+    move-result-object v3
+
+    invoke-static {p1, v3, v2}, Lcom/facebook/common/logging/FLog;->w(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+
+    .line 288
+    invoke-virtual {v2}, Ljava/lang/Exception;->getMessage()Ljava/lang/String;
+
+    move-result-object p1
+
+    invoke-static {v1, p1}, Lcom/reactnativecommunity/asyncstorage/AsyncStorageErrorUtil;->getError(Ljava/lang/String;Ljava/lang/String;)Lcom/facebook/react/bridge/WritableMap;
+
+    move-result-object v1
+
+    goto :goto_1
+
+    :catchall_0
+    move-exception v0
+
+    goto :goto_3
+
     :catch_1
     move-exception v2
 
     .line 280
-    :try_start_1
+    :try_start_2
     invoke-virtual {v2}, Ljava/lang/Exception;->getMessage()Ljava/lang/String;
 
     move-result-object v3
@@ -240,11 +266,11 @@
     invoke-static {v1, v2}, Lcom/reactnativecommunity/asyncstorage/AsyncStorageErrorUtil;->getError(Ljava/lang/String;Ljava/lang/String;)Lcom/facebook/react/bridge/WritableMap;
 
     move-result-object v2
-    :try_end_1
-    .catchall {:try_start_1 .. :try_end_1} :catchall_0
+    :try_end_2
+    .catchall {:try_start_2 .. :try_end_2} :catchall_0
 
     .line 284
-    :try_start_2
+    :try_start_3
     iget-object v3, p0, Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule$3;->this$0:Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule;
 
     invoke-static {v3}, Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule;->-$$Nest$fgetmReactDatabaseSupplier(Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule;)Lcom/reactnativecommunity/asyncstorage/ReactDatabaseSupplier;
@@ -256,15 +282,15 @@
     move-result-object v3
 
     invoke-virtual {v3}, Landroid/database/sqlite/SQLiteDatabase;->endTransaction()V
-    :try_end_2
-    .catch Ljava/lang/Exception; {:try_start_2 .. :try_end_2} :catch_0
+    :try_end_3
+    .catch Ljava/lang/Exception; {:try_start_3 .. :try_end_3} :catch_2
 
     :cond_2
     move-object v1, v2
 
     goto :goto_1
 
-    :catch_0
+    :catch_2
     move-exception v3
 
     .line 286
@@ -286,13 +312,6 @@
     move-result-object p1
 
     move-object v1, p1
-
-    goto :goto_1
-
-    :catchall_0
-    move-exception v0
-
-    goto :goto_3
 
     :goto_1
     if-eqz v1, :cond_3
@@ -321,7 +340,7 @@
 
     .line 284
     :goto_3
-    :try_start_3
+    :try_start_4
     iget-object v2, p0, Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule$3;->this$0:Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule;
 
     invoke-static {v2}, Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule;->-$$Nest$fgetmReactDatabaseSupplier(Lcom/reactnativecommunity/asyncstorage/AsyncStorageModule;)Lcom/reactnativecommunity/asyncstorage/ReactDatabaseSupplier;
@@ -333,12 +352,12 @@
     move-result-object v2
 
     invoke-virtual {v2}, Landroid/database/sqlite/SQLiteDatabase;->endTransaction()V
-    :try_end_3
-    .catch Ljava/lang/Exception; {:try_start_3 .. :try_end_3} :catch_2
+    :try_end_4
+    .catch Ljava/lang/Exception; {:try_start_4 .. :try_end_4} :catch_3
 
     goto :goto_4
 
-    :catch_2
+    :catch_3
     move-exception v2
 
     .line 286
