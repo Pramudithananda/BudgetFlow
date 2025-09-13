@@ -147,15 +147,45 @@ export const updateCategory = async (categoryId, categoryData) => {
   }
 };
 
+// FIXED: Enhanced deleteCategory with proper transaction handling
 export const deleteCategory = async (categoryId) => {
   try {
     const database = await getDatabase();
-    await database.runAsync('DELETE FROM categories WHERE id = ?', [categoryId]);
     
-    // Notify listeners
-    notifyListeners('categories');
+    // Start transaction for safe deletion
+    await database.execAsync('BEGIN TRANSACTION;');
     
-    return categoryId;
+    try {
+      // First check if category exists
+      const existingCategory = await database.getFirstAsync('SELECT id FROM categories WHERE id = ?', [categoryId]);
+      if (!existingCategory) {
+        await database.execAsync('ROLLBACK;');
+        throw new Error('Category not found');
+      }
+      
+      // Delete the category
+      const result = await database.runAsync('DELETE FROM categories WHERE id = ?', [categoryId]);
+      
+      // Verify deletion was successful
+      if (result.changes === 0) {
+        await database.execAsync('ROLLBACK;');
+        throw new Error('Failed to delete category - no rows affected');
+      }
+      
+      // Commit transaction
+      await database.execAsync('COMMIT;');
+      
+      console.log(`Successfully deleted category ${categoryId}, rows affected: ${result.changes}`);
+      
+      // Notify listeners
+      notifyListeners('categories');
+      
+      return categoryId;
+    } catch (transactionError) {
+      // Rollback on any error
+      await database.execAsync('ROLLBACK;');
+      throw transactionError;
+    }
   } catch (error) {
     console.error('Error deleting category:', error);
     throw error;
@@ -362,15 +392,45 @@ export const updateExpense = async (expenseId, expenseData) => {
   }
 };
 
+// FIXED: Enhanced deleteExpense with proper transaction handling
 export const deleteExpense = async (expenseId) => {
   try {
     const database = await getDatabase();
-    await database.runAsync('DELETE FROM expenses WHERE id = ?', [expenseId]);
     
-    // Notify listeners
-    notifyListeners('expenses');
+    // Start transaction for safe deletion
+    await database.execAsync('BEGIN TRANSACTION;');
     
-    return expenseId;
+    try {
+      // First check if expense exists
+      const existingExpense = await database.getFirstAsync('SELECT id FROM expenses WHERE id = ?', [expenseId]);
+      if (!existingExpense) {
+        await database.execAsync('ROLLBACK;');
+        throw new Error('Expense not found');
+      }
+      
+      // Delete the expense
+      const result = await database.runAsync('DELETE FROM expenses WHERE id = ?', [expenseId]);
+      
+      // Verify deletion was successful
+      if (result.changes === 0) {
+        await database.execAsync('ROLLBACK;');
+        throw new Error('Failed to delete expense - no rows affected');
+      }
+      
+      // Commit transaction
+      await database.execAsync('COMMIT;');
+      
+      console.log(`Successfully deleted expense ${expenseId}, rows affected: ${result.changes}`);
+      
+      // Notify listeners
+      notifyListeners('expenses');
+      
+      return expenseId;
+    } catch (transactionError) {
+      // Rollback on any error
+      await database.execAsync('ROLLBACK;');
+      throw transactionError;
+    }
   } catch (error) {
     console.error('Error deleting expense:', error);
     throw error;
@@ -511,15 +571,45 @@ export const updateFunder = async (funderId, funderData) => {
   }
 };
 
+// FIXED: Enhanced deleteFunder with proper transaction handling
 export const deleteFunder = async (funderId) => {
   try {
     const database = await getDatabase();
-    await database.runAsync('DELETE FROM funders WHERE id = ?', [funderId]);
     
-    // Notify listeners
-    notifyListeners('funders');
+    // Start transaction for safe deletion
+    await database.execAsync('BEGIN TRANSACTION;');
     
-    return funderId;
+    try {
+      // First check if funder exists
+      const existingFunder = await database.getFirstAsync('SELECT id FROM funders WHERE id = ?', [funderId]);
+      if (!existingFunder) {
+        await database.execAsync('ROLLBACK;');
+        throw new Error('Funder not found');
+      }
+      
+      // Delete the funder
+      const result = await database.runAsync('DELETE FROM funders WHERE id = ?', [funderId]);
+      
+      // Verify deletion was successful
+      if (result.changes === 0) {
+        await database.execAsync('ROLLBACK;');
+        throw new Error('Failed to delete funder - no rows affected');
+      }
+      
+      // Commit transaction
+      await database.execAsync('COMMIT;');
+      
+      console.log(`Successfully deleted funder ${funderId}, rows affected: ${result.changes}`);
+      
+      // Notify listeners
+      notifyListeners('funders');
+      
+      return funderId;
+    } catch (transactionError) {
+      // Rollback on any error
+      await database.execAsync('ROLLBACK;');
+      throw transactionError;
+    }
   } catch (error) {
     console.error('Error deleting funder:', error);
     throw error;
