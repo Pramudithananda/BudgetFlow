@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudgetFlow App - Fixed Version</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .fix-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .fix-info h3 {
+            color: #28a745;
+            margin-top: 0;
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 20px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        .file-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .sinhala {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">BF</div>
+        <h1>BudgetFlow App</h1>
+        <p class="subtitle">Fixed Version - Database Delete Issue Resolved</p>
+        
+        <div class="fix-info">
+            <h3>✅ Fixed Issue (නිවැරදි කරන ලද ගැටලුව)</h3>
+            <p class="sinhala">
+                <strong>Sinhala:</strong> SQLite database එකේ events delete කරන විට success message එනවා නමුත් actually delete වෙන්නේ නැති bug එක නිවැරදි කර ඇත. දැන් events properly delete වෙයි.
+            </p>
+            <p>
+                <strong>English:</strong> Fixed the bug where events showed success message when deleting but weren't actually removed from the SQLite database. Events now delete properly.
+            </p>
+        </div>
+
+        <div class="file-info">
+            <strong>File:</strong> ObU4H_fixed.apk<br>
+            <strong>Size:</strong> 76 MB<br>
+            <strong>Version:</strong> Fixed Database Delete Issue<br>
+            <strong>Signed:</strong> Yes (Self-signed certificate)
+        </div>
+
+        <a href="/ObU4H_fixed.apk" class="download-btn" download="BudgetFlow_Fixed.apk">
+            📱 Download Fixed APK
+        </a>
+
+        <div class="warning">
+            <strong>⚠️ Installation Note:</strong><br>
+            Since this is a modified APK with a self-signed certificate, you may need to:
+            <ul style="text-align: left; margin-top: 10px;">
+                <li>Enable "Unknown Sources" in Android settings</li>
+                <li>Allow installation from this source</li>
+                <li>Uninstall the previous version first if installed</li>
+            </ul>
+        </div>
+
+        <div class="fix-info">
+            <h3>🔧 Technical Details</h3>
+            <p>
+                <strong>Fixed Code Location:</strong> AsyncStorageModule$3.smali<br>
+                <strong>Issue:</strong> Transaction commit failure in SQLite delete operations<br>
+                <strong>Solution:</strong> Proper exception handling for database transactions
+            </p>
+        </div>
+    </div>
+</body>
+</html>
