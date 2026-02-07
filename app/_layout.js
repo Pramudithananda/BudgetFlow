@@ -53,6 +53,16 @@ export default function RootLayout() {
               headerTintColor: '#fff',
             }} 
           />
+          <Stack.Screen 
+            name="(screens)/setup-test-data" 
+            options={{ 
+              title: 'Test Data Setup',
+              headerStyle: {
+                backgroundColor: '#64a12d',
+              },
+              headerTintColor: '#fff',
+            }} 
+          />
         </Stack>
       </ConfirmDialogProvider>
     </ThemeProvider>

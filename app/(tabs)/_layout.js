@@ -60,15 +60,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="all-expenses"
-        options={{
-          title: 'Expenses',
-          tabBarIcon: ({ color }) => (
-            <FontAwesome5 name="receipt" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="dashboard"
         options={{
           title: 'Dashboard',
