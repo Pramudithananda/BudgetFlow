@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert, StatusBar } from 'react-native';
+import { StyleSheet, ScrollView, View as RNView, ActivityIndicator, RefreshControl, Alert, TouchableOpacity } from 'react-native';
 import { Text, View } from '../../components/Themed';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import CategoryItem from '../../components/CategoryItem';
 import ExpenseItem from '../../components/ExpenseItem';
+import NotificationCard from '../../components/NotificationCard';
 import { getCategories, getExpenses, getBudgetSummary, listenExpenses, listenCategories } from '../../services/sqliteService';
 import { useTheme } from '../../context/theme';
 
@@ -27,6 +28,7 @@ export default function HomeScreen() {
     received: 0,
     spent: 0,
   });
+  const [notifications, setNotifications] = useState([]);
 
   const fetchData = async () => {
     try {
@@ -88,6 +90,10 @@ export default function HomeScreen() {
       
       setCategories(categoriesWithTotals);
       setRecentExpenses(expensesData.slice(0, 5)); // Get only 5 most recent expenses
+      
+      // Generate notifications
+      generateNotifications(totals, totalBudget, receivedFund);
+      
     } catch (error) {
       console.error('Error fetching data:', error);
       Alert.alert('Error', 'Could not load data. Please try again.');
@@ -96,49 +102,98 @@ export default function HomeScreen() {
     }
   };
 
+  const generateNotifications = (totals, totalBudget, receivedFund) => {
+    const newNotifications = [];
+    
+    // Budget warning
+    if (totals.remaining > totalBudget * 0.8) {
+      newNotifications.push({
+        id: 'budget_warning',
+        type: 'warning',
+        title: 'Budget Warning',
+        message: 'Outstanding expenses are approaching your total budget limit.',
+        onPress: () => Alert.alert('Budget Warning', 'Consider reviewing your expenses or increasing your budget.'),
+        onDismiss: () => removeNotification('budget_warning')
+      });
+    }
+    
+    // High pending amount
+    if (totals.pending > receivedFund * 0.5) {
+      newNotifications.push({
+        id: 'pending_warning',
+        type: 'info',
+        title: 'Pending Amount Alert',
+        message: 'You have a high amount of pending expenses compared to received funds.',
+        onPress: () => Alert.alert('Pending Alert', 'Review pending expenses and follow up on fund disbursements.'),
+        onDismiss: () => removeNotification('pending_warning')
+      });
+    }
+    
+    // Low received funds
+    if (receivedFund < totalBudget * 0.3) {
+      newNotifications.push({
+        id: 'funds_warning',
+        type: 'error',
+        title: 'Low Fund Receipt',
+        message: 'Received funds are significantly lower than total budget.',
+        onPress: () => Alert.alert('Funds Warning', 'Focus on securing fund disbursements for your projects.'),
+        onDismiss: () => removeNotification('funds_warning')
+      });
+    }
+    
+    setNotifications(newNotifications);
+  };
+
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'remaining':
+        return '#F44336';
+      case 'pending':
+        return '#FF9800';
+      case 'received':
+        return '#2196F3';
+      case 'spent':
+        return '#4CAF50';
+      default:
+        return '#9E9E9E';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'remaining':
+        return 'clock';
+      case 'pending':
+        return 'hourglass-half';
+      case 'received':
+        return 'check-circle';
+      case 'spent':
+        return 'money-bill-wave';
+      default:
+        return 'question-circle';
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  const unsubscribeExpenses = listenExpenses(null, (expensesLive) => {
-      const expensesData = expensesLive.map(exp => ({
-        ...exp,
-        createdAt: exp.createdAt?.toDate ? exp.createdAt.toDate().toISOString() : exp.createdAt,
-      }));
-      // Recompute budget & status totals
-      const totalBudget = expensesData.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const receivedFund = expensesData.filter(e=> e.status==='Received').reduce((s,e)=> s + (e.amount||0),0);
-      setBudgetSummary(prev => ({ ...prev, totalBudget, receivedFund }));
-      const totals = { remaining:0,pending:0,received:0,spent:0 };
-      expensesData.forEach(e=>{
-        if(e.status==='Outstanding') totals.remaining += e.amount||0;
-        else if(e.status==='Pending') totals.pending += e.amount||0;
-        else if(e.status==='Received') totals.received += e.amount||0;
-        else if(e.status==='Spent') totals.spent += e.amount||0;
-      });
-      setStatusTotals(totals);
-      // Update categories amounts (requires categories state)
-      setCategories(prevCats => prevCats.map(cat => {
-        const catExpenses = expensesData.filter(e=> e.categoryId===cat.id);
-        const totalAmount = catExpenses.reduce((s,e)=> s + (e.amount||0),0);
-        return { ...cat, totalAmount, expenseCount: catExpenses.length };
-      }));
-      setRecentExpenses(expensesData.slice(0,5));
-    });
-    // Listen for category additions/updates
-    const unsubscribeCategories = listenCategories((catsLive) => {
-      setCategories(prev => {
-        // Merge updated categories while preserving computed totals (will be recomputed below anyway)
-        return catsLive.map(c => prev.find(p=>p.id===c.id) ? { ...c, ...prev.find(p=>p.id===c.id) } : { ...c, totalAmount:0, expenseCount:0 });
-      });
-    });
+    
+    // Real-time listeners
+    const unsubExpenses = listenExpenses(null, () => fetchData());
+    const unsubCategories = listenCategories(() => fetchData());
+    
     return () => {
-      unsubscribeExpenses && unsubscribeExpenses();
-      unsubscribeCategories && unsubscribeCategories();
+      unsubExpenses && unsubExpenses();
+      unsubCategories && unsubCategories();
     };
   }, []);
 
@@ -151,128 +206,205 @@ export default function HomeScreen() {
   }
 
   return (
-    <>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={colors.primary}
-        translucent={false}
-      />
-      <ScrollView 
-        style={[styles.container, { backgroundColor: colors.background }]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <BudgetSummary
+    <ScrollView 
+      style={[styles.container, { backgroundColor: colors.background }]}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      {/* Welcome Header */}
+      <View style={styles.welcomeHeader}>
+        <Text style={[styles.welcomeTitle, { color: colors.text }]}>Welcome to BudgetFlow</Text>
+        <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
+          Manage your finances with ease
+        </Text>
+      </View>
+
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <View style={styles.notificationsContainer}>
+          {notifications.map((notification) => (
+            <NotificationCard
+              key={notification.id}
+              type={notification.type}
+              title={notification.title}
+              message={notification.message}
+              onPress={notification.onPress}
+              onDismiss={notification.onDismiss}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Budget Summary */}
+      <View style={styles.section}>
+        <BudgetSummary 
           totalBudget={budgetSummary.totalBudget}
           receivedFund={budgetSummary.receivedFund}
-          spent={statusTotals.spent}
+          remainingFund={budgetSummary.totalBudget - budgetSummary.receivedFund}
         />
-        
-        <Card style={styles.sectionCard}>
-          <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Expense Status</Text>
-          </RNView>
-          <RNView style={styles.statusCardsContainer}>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 39, 39, 0.73)' : '#FFCCCC' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.remaining || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Outstanding</Text>
-            </RNView>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(255, 148, 33, 0.7)' : '#ffe0b2ff' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.pending || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Pending</Text>
-            </RNView>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(51, 125, 254, 0.57)' : '#c4d9ffff' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.received || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Available</Text>
-            </RNView>
-            <RNView style={[styles.statusCard, { backgroundColor: isDarkMode ? 'rgba(83, 255, 49, 0.5)' : '#3ee14977' }]}>
-              <Text style={styles.statusAmount}>Rs. {(statusTotals.spent || 0).toLocaleString()}</Text>
-              <Text style={styles.statusLabel}>Spent</Text>
-            </RNView>
-          </RNView>
-        </Card>
-        
-        <Card style={styles.sectionCard}>
-          <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Categories</Text>
-            <Button 
-              title="Add Category" 
-              onPress={() => router.push('/new-category')}
-              variant="outline"
-              style={styles.addButton}
-            />
-          </RNView>
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+        <View style={styles.quickActionsGrid}>
+          <TouchableOpacity 
+            style={[styles.quickActionCard, { backgroundColor: colors.card }]}
+            onPress={() => router.push('/add-expense')}
+          >
+            <FontAwesome5 name="plus-circle" size={24} color={colors.primary} />
+            <Text style={[styles.quickActionText, { color: colors.text }]}>Add Expense</Text>
+          </TouchableOpacity>
           
-          {categories.length === 0 ? (
-            <RNView style={styles.emptyState}>
-              <FontAwesome5 name="list" size={24} color={colors.text} />
-              <Text style={styles.emptyText}>No categories yet</Text>
-              <Text style={styles.emptySubtext}>Add categories to organize your expenses</Text>
-            </RNView>
-          ) : (
-            categories.slice(0, 3).map((category) => (
+          <TouchableOpacity 
+            style={[styles.quickActionCard, { backgroundColor: colors.card }]}
+            onPress={() => router.push('/add-category')}
+          >
+            <FontAwesome5 name="folder-plus" size={24} color={colors.primary} />
+            <Text style={[styles.quickActionText, { color: colors.text }]}>New Category</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.quickActionCard, { backgroundColor: colors.card }]}
+            onPress={() => router.push('/add-funder')}
+          >
+            <FontAwesome5 name="user-plus" size={24} color={colors.primary} />
+            <Text style={[styles.quickActionText, { color: colors.text }]}>Add Funder</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.quickActionCard, { backgroundColor: colors.card }]}
+            onPress={() => router.push('/dashboard')}
+          >
+            <FontAwesome5 name="chart-pie" size={24} color={colors.primary} />
+            <Text style={[styles.quickActionText, { color: colors.text }]}>View Reports</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Status Overview */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Status Overview</Text>
+        <View style={styles.statusGrid}>
+          {Object.entries(statusTotals).map(([status, amount]) => (
+            <Card key={status} style={styles.statusCard}>
+              <View style={styles.statusContent}>
+                <FontAwesome5 
+                  name={getStatusIcon(status)} 
+                  size={20} 
+                  color={getStatusColor(status)} 
+                />
+                <Text style={[styles.statusLabel, { color: colors.text }]}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Text>
+                <Text style={[styles.statusAmount, { color: colors.primary }]}>
+                  Rs. {amount.toLocaleString()}
+                </Text>
+              </View>
+            </Card>
+          ))}
+        </View>
+      </View>
+
+      {/* Top Categories */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Categories</Text>
+          <TouchableOpacity onPress={() => router.push('/category')}>
+            <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {categories.length > 0 ? (
+          categories
+            .filter(cat => cat.expenseCount > 0)
+            .sort((a, b) => b.totalAmount - a.totalAmount)
+            .slice(0, 3)
+            .map((category) => (
               <CategoryItem
                 key={category.id}
-                name={category.name}
-                totalExpenses={category.expenseCount || 0}
-                totalAmount={category.totalAmount || 0}
+                category={category}
                 onPress={() => router.push(`/category/${category.id}`)}
               />
             ))
-          )}
-          
-          {categories.length > 3 && (
-            <Button
-              title="View All Categories"
-              onPress={() => router.push('/category')}
-              variant="outline"
-              style={styles.viewAllButton}
-            />
-          )}
-        </Card>
+        ) : (
+          <Card style={styles.emptyCard}>
+            <View style={styles.emptyContent}>
+              <FontAwesome5 name="folder-open" size={32} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No categories yet
+              </Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+                Create your first category to get started
+              </Text>
+            </View>
+          </Card>
+        )}
+      </View>
+
+      {/* Recent Expenses */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Expenses</Text>
+          <TouchableOpacity onPress={() => router.push('/all-expenses')}>
+            <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+          </TouchableOpacity>
+        </View>
         
-        <Card style={styles.sectionCard}>
-          <RNView style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Expenses</Text>
-            <Button 
-              title="Add Expense" 
-              onPress={() => router.push('/new-expense')}
-              variant="outline"
-              style={styles.addButton}
+        {recentExpenses.length > 0 ? (
+          recentExpenses.map((expense) => (
+            <ExpenseItem
+              key={expense.id}
+              expense={expense}
+              onPress={() => router.push(`/expense/${expense.id}`)}
             />
-          </RNView>
+          ))
+        ) : (
+          <Card style={styles.emptyCard}>
+            <View style={styles.emptyContent}>
+              <FontAwesome5 name="receipt" size={32} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No expenses yet
+              </Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+                Add your first expense to start tracking
+              </Text>
+            </View>
+          </Card>
+        )}
+      </View>
+
+      {/* Quick Stats */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Stats</Text>
+        <View style={styles.statsGrid}>
+          <Card style={styles.statCard}>
+            <View style={styles.statContent}>
+              <FontAwesome5 name="calendar-check" size={20} color={colors.primary} />
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {new Date().getDate()}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Days this month
+              </Text>
+            </View>
+          </Card>
           
-          {recentExpenses.length === 0 ? (
-            <RNView style={styles.emptyState}>
-              <FontAwesome5 name="receipt" size={24} color={colors.text} />
-              <Text style={styles.emptyText}>No expenses yet</Text>
-              <Text style={styles.emptySubtext}>Add your first expense to get started</Text>
-            </RNView>
-          ) : (
-            recentExpenses.map((expense) => (
-              <ExpenseItem
-                key={expense.id}
-                title={expense.title}
-                amount={expense.amount}
-                status={expense.status}
-                assignedTo={expense.assignedTo}
-                onPress={() => router.push(`/expense/${expense.id}`)}
-              />
-            ))
-          )}
-          
-          {recentExpenses.length > 0 && (
-            <Button
-              title="View All Expenses"
-              onPress={() => router.push('/all-expenses')}
-              variant="outline"
-              style={styles.viewAllButton}
-            />
-          )}
-        </Card>
-      </ScrollView>
-    </>
+          <Card style={styles.statCard}>
+            <View style={styles.statContent}>
+              <FontAwesome5 name="chart-line" size={20} color={colors.primary} />
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {((budgetSummary.receivedFund / budgetSummary.totalBudget) * 100).toFixed(1)}%
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Fund utilization
+              </Text>
+            </View>
+          </Card>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -285,55 +417,132 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sectionCard: {
-    marginTop: 16,
+  welcomeHeader: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  notificationsContainer: {
+    marginBottom: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  viewAllText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
-  statusCardsContainer: {
+  quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  quickActionCard: {
+    width: '45%',
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  statusGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    gap: 12,
   },
   statusCard: {
-    width: '48%',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    flex: 1,
+    minWidth: '45%',
+  },
+  statusContent: {
+    alignItems: 'center',
+    padding: 16,
+  },
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 8,
+    textAlign: 'center',
   },
   statusAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginTop: 4,
   },
-  statusLabel: {
-    fontSize: 14,
+  statsGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  addButton: {
-    width: 150,
+  statCard: {
+    flex: 1,
   },
-  viewAllButton: {
-    marginTop: 16,
-  },
-  emptyState: {
+  statContent: {
     alignItems: 'center',
-    paddingVertical: 32,
+    padding: 16,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  statLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  emptyCard: {
+    marginHorizontal: 16,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    padding: 32,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginTop: 12,
+    marginTop: 16,
+    textAlign: 'center',
   },
   emptySubtext: {
     fontSize: 14,
-    marginTop: 4,
+    marginTop: 8,
+    textAlign: 'center',
+    opacity: 0.7,
   },
 }); 
